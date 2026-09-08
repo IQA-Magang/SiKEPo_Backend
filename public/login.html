@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login Test - SiKEPo</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#f6f8fb;display:flex;align-items:center;justify-content:center;height:100vh}
+    .card{background:#fff;padding:24px;border-radius:8px;box-shadow:0 8px 24px rgba(12,24,48,.08);width:320px}
+    .card h2{margin:0 0 12px;font-size:18px}
+    label{display:block;font-size:13px;margin-top:8px}
+    input{width:100%;padding:8px;margin-top:6px;border:1px solid #ddd;border-radius:4px}
+    button{width:100%;padding:10px;margin-top:14px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer}
+    .msg{margin-top:12px;font-size:13px}
+    pre{background:#f3f4f6;padding:8px;border-radius:6px;overflow:auto}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Login (test)</h2>
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input id="email" type="email" placeholder="user@example.com" required />
+
+      <label for="password">Password</label>
+      <input id="password" type="password" placeholder="password" required />
+
+
+      <div style="margin-top:12px" id="recaptcha"></div>
+
+      <button type="submit">Login</button>
+    </form>
+
+    <div class="msg" id="msg"></div>
+    <pre id="out" style="display:none"></pre>
+  </div>
+
+  <script>
+    // recaptcha widget id will be set after rendering
+    let recaptchaWidgetId = null
+
+    function onRecaptchaLoad() {
+      fetch('/recaptcha/sitekey')
+        .then(r => r.json())
+        .then(d => {
+          const key = d.site_key
+          if (!key) {
+            document.getElementById('msg').textContent = 'Site key reCAPTCHA tidak tersedia'
+            return
+          }
+          recaptchaWidgetId = grecaptcha.render('recaptcha', { 'sitekey': key })
+        })
+        .catch(err => {
+          console.error(err)
+          document.getElementById('msg').textContent = 'Gagal memuat site key'
+        })
+    }
+
+    // load explicit grecaptcha renderer
+  </script>
+  <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit" async defer></script>
+
+  <script>
+    const form = document.getElementById('loginForm')
+    const msg = document.getElementById('msg')
+    const out = document.getElementById('out')
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      msg.textContent = ''
+      out.style.display = 'none'
+
+      const email = document.getElementById('email').value
+      const password = document.getElementById('password').value
+
+      // get recaptcha token (v2 checkbox)
+      const recaptchaResponse = recaptchaWidgetId !== null ? grecaptcha.getResponse(recaptchaWidgetId) : grecaptcha.getResponse()
+      if (!recaptchaResponse) {
+        msg.textContent = 'Silakan centang reCAPTCHA terlebih dahulu.'
+        return
+      }
+
+      try {
+        const res = await fetch('/api/users/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, recaptcha_token: recaptchaResponse })
+        })
+
+        const data = await res.json()
+        if (!data.success) {
+          msg.textContent = data.message || 'Login gagal'
+          out.style.display = 'block'
+          out.textContent = JSON.stringify(data, null, 2)
+          // reset recaptcha
+          if (recaptchaWidgetId !== null) grecaptcha.reset(recaptchaWidgetId)
+          else grecaptcha.reset()
+          return
+        }
+
+        msg.textContent = 'Login berhasil — token disimpan di console.'
+        out.style.display = 'block'
+        out.textContent = JSON.stringify(data, null, 2)
+        console.log('Login response:', data)
+      } catch (err) {
+        msg.textContent = 'Terjadi kesalahan koneksi'
+        out.style.display = 'block'
+        out.textContent = err.toString()
+      }
+    })
+  </script>
+</body>
+</html>

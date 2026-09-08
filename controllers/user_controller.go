@@ -5,10 +5,13 @@ import (
 	"strconv"
 	"strings"
 
+	"backend/config"
 	"backend/models"
 	"backend/repositories"
+	"backend/utils"
 
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -386,4 +389,93 @@ func isValidRole(role string) bool {
 	default:
 		return false
 	}
+}
+
+// ========================================
+// LOGIN
+// ========================================
+
+func (c *UserController) Login(ctx *fiber.Ctx) error {
+
+	type LoginRequest struct {
+		Email          string `json:"email"`
+		Password       string `json:"password"`
+		RecaptchaToken string `json:"recaptcha_token"`
+	}
+
+	var req LoginRequest
+
+	if err := ctx.BodyParser(&req); err != nil {
+		return ctx.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": "Format JSON tidak valid",
+		})
+	}
+
+	req.Email = strings.TrimSpace(req.Email)
+
+	if req.Email == "" || req.Password == "" || req.RecaptchaToken == "" {
+		return ctx.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": "Email, password, dan recaptcha_token wajib diisi",
+		})
+	}
+
+	// Verify recaptcha
+	ok, err := config.VerifyRecaptcha(req.RecaptchaToken)
+	if err != nil {
+		return ctx.Status(500).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal memverifikasi recaptcha",
+			"error":   err.Error(),
+		})
+	}
+
+	if !ok {
+		return ctx.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": "Recaptcha tidak valid",
+		})
+	}
+
+	user, err := c.Repository.GetUserByEmail(req.Email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ctx.Status(401).JSON(fiber.Map{
+				"success": false,
+				"message": "Email atau password salah",
+			})
+		}
+
+		return ctx.Status(500).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal mengambil data user",
+			"error":   err.Error(),
+		})
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		return ctx.Status(401).JSON(fiber.Map{
+			"success": false,
+			"message": "Email atau password salah",
+		})
+	}
+
+	token, err := utils.CreateToken(user)
+	if err != nil {
+		return ctx.Status(500).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal membuat token",
+			"error":   err.Error(),
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"success": true,
+		"message": "Login berhasil",
+		"data": fiber.Map{
+			"token": token,
+			"user":  user,
+		},
+	})
 }

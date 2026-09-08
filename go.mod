@@ -4,6 +4,7 @@ go 1.26.1
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.15
+	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.56.0
 	gorm.io/driver/mysql v1.6.0
