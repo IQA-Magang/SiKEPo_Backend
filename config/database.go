@@ -36,7 +36,20 @@ func ConnectDatabase() {
 	}
 
 	// Auto Migrate the models
-	database.AutoMigrate(&models.User{})
+	hasTable := database.Migrator().HasTable(&models.User{})
+
+	if !hasTable {
+		log.Println("Table 'users' belum ada. Membuat table...")
+
+		err := database.AutoMigrate(&models.User{})
+		if err != nil {
+			panic(fmt.Sprintf("Failed to migrate users table: %v", err))
+		}
+
+		log.Println("Table 'users' berhasil dibuat!")
+	} else {
+		log.Println("Table 'users' sudah ada. AutoMigrate dilewati.")
+	}
 
 	DB = database
 	log.Println("Database connected successfully!")
