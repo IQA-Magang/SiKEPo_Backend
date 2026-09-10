@@ -52,6 +52,8 @@ func main() {
 	// REPOSITORY
 	// =========================
 	userRepository := repositories.NewUserRepository(config.DB)
+	ruanganRepo := repositories.NewRuanganRepository(config.DB)
+	peralatanRepo := repositories.NewPeralatanRepository(config.DB)
 
 	// =========================
 	// CONTROLLER
@@ -59,11 +61,18 @@ func main() {
 	userController := &controllers.UserController{
 		Repository: userRepository,
 	}
+	// Removed KategoriRepository initialization as it is no longer needed
+	peralatanController := &controllers.PeralatanController{
+		Repository:         peralatanRepo,
+		RuanganRepository:  ruanganRepo,
+		UserRepository:     userRepository,
+	}
 
 	// =========================
 	// ROUTES
 	// =========================
 	routes.UserRoutes(app, userController)
+	routes.PeralatanRoutes(app, peralatanController)
 
 	// ROOT API
 	app.Get("/", func(c *fiber.Ctx) error {
