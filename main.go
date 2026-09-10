@@ -30,14 +30,16 @@ func main() {
 	app.Use(cors.New())
 
 	// =========================
-	// STATIC (simple frontend for testing)
-	// Serve files under /static (e.g. /static/login.html)
+	// STATIC
 	// =========================
 	app.Static("/static", "./public")
 
-	// expose site key for the client login page
+	// =========================
+	// RECAPTCHA SITE KEY
+	// =========================
 	app.Get("/recaptcha/sitekey", func(c *fiber.Ctx) error {
 		site := os.Getenv("SITE_KEY")
+
 		if site == "" {
 			return c.Status(500).JSON(fiber.Map{
 				"success": false,
@@ -45,43 +47,85 @@ func main() {
 			})
 		}
 
-		return c.JSON(fiber.Map{"site_key": site})
+		return c.JSON(fiber.Map{
+			"site_key": site,
+		})
 	})
 
 	// =========================
 	// REPOSITORY
 	// =========================
+
 	userRepository := repositories.NewUserRepository(config.DB)
+
 	ruanganRepo := repositories.NewRuanganRepository(config.DB)
+
 	peralatanRepo := repositories.NewPeralatanRepository(config.DB)
+
 	labsRepo := repositories.NewLabsRepository(config.DB)
+
+	// Detail Peminjaman
+	detailPeminjamanRepo := repositories.NewDetailPeminjamanRepository(config.DB)
 
 	// =========================
 	// CONTROLLER
 	// =========================
+
 	userController := &controllers.UserController{
 		Repository: userRepository,
 	}
+
 	labsController := &controllers.LabsController{
 		Repository: labsRepo,
 	}
+
 	ruanganController := &controllers.RuanganController{
 		Repository: ruanganRepo,
 	}
-	// Removed KategoriRepository initialization as it is no longer needed
+
 	peralatanController := &controllers.PeralatanController{
 		Repository: peralatanRepo,
+	}
+
+	// Detail Peminjaman
+	detailPeminjamanController := &controllers.DetailPeminjamanController{
+		Repository: detailPeminjamanRepo,
 	}
 
 	// =========================
 	// ROUTES
 	// =========================
-	routes.UserRoutes(app, userController)
-	routes.LabsRoutes(app, labsController)
-	routes.RuanganRoutes(app, ruanganController)
-	routes.PeralatanRoutes(app, peralatanController)
 
+	routes.UserRoutes(
+		app,
+		userController,
+	)
+
+	routes.LabsRoutes(
+		app,
+		labsController,
+	)
+
+	routes.RuanganRoutes(
+		app,
+		ruanganController,
+	)
+
+	routes.PeralatanRoutes(
+		app,
+		peralatanController,
+	)
+
+	// Detail Peminjaman
+	routes.DetailPeminjamanRoutes(
+		app,
+		detailPeminjamanController,
+	)
+
+	// =========================
 	// ROOT API
+	// =========================
+
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"success": true,
@@ -89,13 +133,20 @@ func main() {
 		})
 	})
 
+	// =========================
 	// PORT
+	// =========================
+
 	port := os.Getenv("APP_PORT")
 
 	if port == "" {
 		port = "5000"
 	}
+
+	// =========================
 	// RUN SERVER
+	// =========================
+
 	if err := app.Listen(":" + port); err != nil {
 		panic(err)
 	}
