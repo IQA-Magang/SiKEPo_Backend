@@ -567,6 +567,172 @@ Jika nanti di-mount ke aplikasi, maka biasanya akan tersedia dalam bentuk:
 - `PUT /api/labs/:id`
 - `DELETE /api/labs/:id`
 
+#### POST /api/labs
+Membuat data lab baru.
+
+Request body contoh:
+
+```json
+{
+  "nama_labs": "Laboratorium Kimia",
+  "kode_labs": "LAB-KIM-01",
+  "manager_id": 1
+}
+```
+
+Contoh response sukses:
+
+```json
+{
+  "success": true,
+  "message": "Lab berhasil dibuat",
+  "data": {
+    "id": 1,
+    "nama_labs": "Laboratorium Kimia",
+    "kode_labs": "LAB-KIM-01",
+    "manager_id": 1,
+    "manager": {
+      "user_id": 1,
+      "name": "Admin",
+      "email": "admin@example.com"
+    }
+  }
+}
+```
+
+Contoh response conflict:
+
+```json
+{
+  "success": false,
+  "message": "Kode lab sudah digunakan"
+}
+```
+
+#### GET /api/labs
+Menampilkan seluruh data lab.
+
+Contoh response sukses:
+
+```json
+{
+  "success": true,
+  "message": "Data labs berhasil diambil",
+  "data": [
+    {
+      "id": 1,
+      "nama_labs": "Laboratorium Kimia",
+      "kode_labs": "LAB-KIM-01",
+      "manager_id": 1,
+      "manager": {
+        "user_id": 1,
+        "name": "Admin",
+        "email": "admin@example.com"
+      }
+    }
+  ]
+}
+```
+
+#### GET /api/labs/:id
+Menampilkan detail lab berdasarkan ID.
+
+#### PUT /api/labs/:id
+Update data lab.
+
+Request body contoh:
+
+```json
+{
+  "nama_labs": "Laboratorium Kimia Baru",
+  "kode_labs": "LAB-KIM-02",
+  "manager_id": 2
+}
+```
+
+#### DELETE /api/labs/:id
+Hapus lab.
+
+Contoh response sukses:
+
+```json
+{
+  "success": true,
+  "message": "Lab berhasil dihapus"
+}
+```
+
+---
+
+### 5. Ruangan API
+Model ruangan sudah tersedia di `models/ruangan.go`, tetapi belum ada router khusus yang terdaftar di `main.go`. Artinya endpoint ruangan juga belum aktif secara default sampai dibuat route yang menghubungkan controller dan repository.
+
+#### Struktur data ruangan
+
+```json
+{
+  "id": 1,
+  "nama_ruangan": "Lab Komputer",
+  "kode_ruangan": "R-101",
+  "labs_id": 1,
+  "pic_user_id": 2,
+  "created_at": "2026-09-10T00:00:00Z",
+  "updated_at": "2026-09-10T00:00:00Z"
+}
+```
+
+#### Field utama ruangan
+
+- `id` : ID ruangan
+- `nama_ruangan` : nama ruangan
+- `kode_ruangan` : kode ruangan unik
+- `labs_id` : ID lab yang terkait
+- `pic_user_id` : ID user PIC ruangan
+
+#### Endpoint yang kemungkinan akan dibuat
+
+- `GET /api/ruangan`
+- `GET /api/ruangan/:id`
+- `POST /api/ruangan`
+- `PUT /api/ruangan/:id`
+- `DELETE /api/ruangan/:id`
+
+#### Contoh request create ruangan
+
+```json
+{
+  "nama_ruangan": "Lab Komputer",
+  "kode_ruangan": "R-101",
+  "labs_id": 1,
+  "pic_user_id": 2
+}
+```
+
+#### Contoh response sukses
+
+```json
+{
+  "success": true,
+  "message": "Ruangan berhasil dibuat",
+  "data": {
+    "id": 1,
+    "nama_ruangan": "Lab Komputer",
+    "kode_ruangan": "R-101",
+    "labs_id": 1,
+    "pic_user_id": 2
+  }
+}
+```
+
+#### Contoh response error jika kode ruangan duplikat
+
+```json
+{
+  "success": false,
+  "message": "Kode ruangan sudah digunakan"
+}
+```
+
 ---
 
 ## Middleware dan autentikasi
