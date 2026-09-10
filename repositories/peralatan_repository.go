@@ -79,4 +79,3 @@ func (r *PeralatanRepository) IsNomorAsetExists(nomorAset string, excludeID ...u
 	err := query.Count(&count).Error
 	return count > 0, err
 }
-

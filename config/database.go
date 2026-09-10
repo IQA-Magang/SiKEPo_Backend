@@ -41,20 +41,28 @@ func ConnectDatabase() {
 		panic(fmt.Sprintf("Failed to connect to database: %v", err))
 	}
 
-	// Cek apakah tabel users sudah ada
-	hasTable := database.Migrator().HasTable(&models.User{})
+	// Cek apakah tabel-tabel penting sudah ada
+	hasUserTable := database.Migrator().HasTable(&models.User{})
+	hasRuanganTable := database.Migrator().HasTable(&models.Ruangan{})
+	hasLabsTable := database.Migrator().HasTable(&models.Labs{})
+	hasPeralatanTable := database.Migrator().HasTable(&models.Peralatan{})
 
-	if !hasTable {
-		log.Println("Table 'users' belum ada. Membuat table...")
+	if !hasUserTable || !hasRuanganTable || !hasLabsTable || !hasPeralatanTable {
+		log.Println("Beberapa tabel belum ada. Membuat tabel...")
 
-		err := database.AutoMigrate(&models.User{})
+		err := database.AutoMigrate(
+			&models.User{},
+			&models.Ruangan{},
+			&models.Labs{},
+			&models.Peralatan{},
+		)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to migrate users table: %v", err))
+			panic(fmt.Sprintf("Failed to migrate database tables: %v", err))
 		}
 
-		log.Println("Table 'users' berhasil dibuat!")
+		log.Println("Semua tabel berhasil dibuat!")
 	} else {
-		log.Println("Table 'users' sudah ada. AutoMigrate dilewati.")
+		log.Println("Semua tabel sudah ada. AutoMigrate dilewati.")
 	}
 
 	DB = database

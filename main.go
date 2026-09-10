@@ -54,6 +54,7 @@ func main() {
 	userRepository := repositories.NewUserRepository(config.DB)
 	ruanganRepo := repositories.NewRuanganRepository(config.DB)
 	peralatanRepo := repositories.NewPeralatanRepository(config.DB)
+	labsRepo := repositories.NewLabsRepository(config.DB)
 
 	// =========================
 	// CONTROLLER
@@ -61,17 +62,23 @@ func main() {
 	userController := &controllers.UserController{
 		Repository: userRepository,
 	}
+	labsController := &controllers.LabsController{
+		Repository: labsRepo,
+	}
+	ruanganController := &controllers.RuanganController{
+		Repository: ruanganRepo,
+	}
 	// Removed KategoriRepository initialization as it is no longer needed
 	peralatanController := &controllers.PeralatanController{
-		Repository:         peralatanRepo,
-		RuanganRepository:  ruanganRepo,
-		UserRepository:     userRepository,
+		Repository: peralatanRepo,
 	}
 
 	// =========================
 	// ROUTES
 	// =========================
 	routes.UserRoutes(app, userController)
+	routes.LabsRoutes(app, labsController)
+	routes.RuanganRoutes(app, ruanganController)
 	routes.PeralatanRoutes(app, peralatanController)
 
 	// ROOT API
