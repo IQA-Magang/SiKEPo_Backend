@@ -15,8 +15,10 @@ import (
 var DB *gorm.DB
 
 func ConnectDatabase() {
+
 	// Load .env
 	err := godotenv.Load()
+
 	if err != nil {
 		log.Println("Error loading .env file, using default environment variables")
 	}
@@ -37,24 +39,65 @@ func ConnectDatabase() {
 	)
 
 	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+
 	if err != nil {
-		panic(fmt.Sprintf("Failed to connect to database: %v", err))
+		panic(fmt.Sprintf(
+			"Failed to connect to database: %v",
+			err,
+		))
 	}
 
-	// Cek apakah tabel users sudah ada
+	// Cek tabel users
 	hasTable := database.Migrator().HasTable(&models.User{})
 
 	if !hasTable {
+
 		log.Println("Table 'users' belum ada. Membuat table...")
 
 		err := database.AutoMigrate(&models.User{})
+
 		if err != nil {
-			panic(fmt.Sprintf("Failed to migrate users table: %v", err))
+			panic(fmt.Sprintf(
+				"Failed to migrate users table: %v",
+				err,
+			))
 		}
 
 		log.Println("Table 'users' berhasil dibuat!")
+
 	} else {
-		log.Println("Table 'users' sudah ada. AutoMigrate dilewati.")
+
+		log.Println("Table 'users' sudah ada.")
+
+		// Tambahkan kolom baru jika belum ada
+		hasPIC := database.Migrator().HasColumn(
+			&models.User{},
+			"pic",
+		)
+
+		if !hasPIC {
+
+			log.Println("Column 'pic' belum ada. Menambahkan column...")
+
+			err := database.Migrator().AddColumn(
+				&models.User{},
+				"PIC",
+			)
+
+			if err != nil {
+				panic(fmt.Sprintf(
+					"Failed to add pic column: %v",
+					err,
+				))
+			}
+
+			log.Println("Column 'pic' berhasil ditambahkan!")
+
+		} else {
+
+			log.Println("Column 'pic' sudah ada.")
+
+		}
 	}
 
 	DB = database

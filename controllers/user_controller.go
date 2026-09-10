@@ -99,6 +99,7 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		Password string `json:"password"`
 		Role     string `json:"role"`
 		Position string `json:"position"`
+		PIC      bool   `json:"pic"`
 	}
 
 	var request CreateUserRequest
@@ -110,14 +111,20 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Normalisasi
+	// ==============================
+	// NORMALISASI
+	// ==============================
+
 	request.NIP = strings.TrimSpace(request.NIP)
 	request.Name = strings.TrimSpace(request.Name)
 	request.Email = strings.TrimSpace(request.Email)
 	request.Role = strings.TrimSpace(request.Role)
 	request.Position = strings.TrimSpace(request.Position)
 
-	// Validasi
+	// ==============================
+	// VALIDASI
+	// ==============================
+
 	if request.NIP == "" {
 		return ctx.Status(400).JSON(fiber.Map{
 			"success": false,
@@ -167,16 +174,23 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Model
+	// ==============================
+	// MODEL
+	// ==============================
+
 	user := models.User{
 		NIP:      request.NIP,
 		Name:     request.Name,
 		Email:    request.Email,
 		Role:     request.Role,
 		Position: request.Position,
+		PIC:      request.PIC,
 	}
 
-	// Create
+	// ==============================
+	// CREATE
+	// ==============================
+
 	err := c.Repository.CreateUser(
 		&user,
 		request.Password,
@@ -238,6 +252,7 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		Password string `json:"password"`
 		Role     string `json:"role"`
 		Position string `json:"position"`
+		PIC      bool   `json:"pic"`
 	}
 
 	var request UpdateUserRequest
@@ -249,11 +264,19 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
+	// ==============================
+	// NORMALISASI
+	// ==============================
+
 	request.NIP = strings.TrimSpace(request.NIP)
 	request.Name = strings.TrimSpace(request.Name)
 	request.Email = strings.TrimSpace(request.Email)
 	request.Role = strings.TrimSpace(request.Role)
 	request.Position = strings.TrimSpace(request.Position)
+
+	// ==============================
+	// VALIDASI
+	// ==============================
 
 	if request.NIP == "" ||
 		request.Name == "" ||
@@ -274,13 +297,22 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
+	// ==============================
+	// MODEL
+	// ==============================
+
 	user := models.User{
 		NIP:      request.NIP,
 		Name:     request.Name,
 		Email:    request.Email,
 		Role:     request.Role,
 		Position: request.Position,
+		PIC:      request.PIC,
 	}
+
+	// ==============================
+	// UPDATE
+	// ==============================
 
 	err = c.Repository.UpdateUser(
 		id,
@@ -317,6 +349,10 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 			"error":   err.Error(),
 		})
 	}
+
+	// ==============================
+	// GET DATA TERBARU
+	// ==============================
 
 	updatedUser, err := c.Repository.GetUserByID(id)
 
@@ -384,8 +420,10 @@ func (c *UserController) DeleteUser(ctx *fiber.Ctx) error {
 func isValidRole(role string) bool {
 
 	switch role {
+
 	case "admin", "staff", "manager":
 		return true
+
 	default:
 		return false
 	}
@@ -414,15 +452,24 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 
 	req.Email = strings.TrimSpace(req.Email)
 
-	if req.Email == "" || req.Password == "" || req.RecaptchaToken == "" {
+	if req.Email == "" ||
+		req.Password == "" ||
+		req.RecaptchaToken == "" {
+
 		return ctx.Status(400).JSON(fiber.Map{
 			"success": false,
 			"message": "Email, password, dan recaptcha_token wajib diisi",
 		})
 	}
 
-	// Verify recaptcha
-	ok, err := config.VerifyRecaptcha(req.RecaptchaToken)
+	// ==============================
+	// VERIFY RECAPTCHA
+	// ==============================
+
+	ok, err := config.VerifyRecaptcha(
+		req.RecaptchaToken,
+	)
+
 	if err != nil {
 		return ctx.Status(500).JSON(fiber.Map{
 			"success": false,
@@ -438,8 +485,16 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		})
 	}
 
-	user, err := c.Repository.GetUserByEmail(req.Email)
+	// ==============================
+	// GET USER
+	// ==============================
+
+	user, err := c.Repository.GetUserByEmail(
+		req.Email,
+	)
+
 	if err != nil {
+
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ctx.Status(401).JSON(fiber.Map{
 				"success": false,
@@ -454,14 +509,27 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		})
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+	// ==============================
+	// CHECK PASSWORD
+	// ==============================
+
+	if err := bcrypt.CompareHashAndPassword(
+		[]byte(user.Password),
+		[]byte(req.Password),
+	); err != nil {
+
 		return ctx.Status(401).JSON(fiber.Map{
 			"success": false,
 			"message": "Email atau password salah",
 		})
 	}
 
+	// ==============================
+	// CREATE TOKEN
+	// ==============================
+
 	token, err := utils.CreateToken(user)
+
 	if err != nil {
 		return ctx.Status(500).JSON(fiber.Map{
 			"success": false,

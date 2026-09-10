@@ -109,7 +109,10 @@ func (r *UserRepository) CreateUser(
 	password string,
 ) error {
 
-	// Cek NIP
+	// ==============================
+	// CEK NIP
+	// ==============================
+
 	var nipCount int64
 
 	err := r.DB.
@@ -126,7 +129,10 @@ func (r *UserRepository) CreateUser(
 		return ErrNIPAlreadyExists
 	}
 
-	// Cek email
+	// ==============================
+	// CEK EMAIL
+	// ==============================
+
 	var emailCount int64
 
 	err = r.DB.
@@ -143,7 +149,10 @@ func (r *UserRepository) CreateUser(
 		return ErrEmailAlreadyExists
 	}
 
-	// Hash password
+	// ==============================
+	// HASH PASSWORD
+	// ==============================
+
 	passwordHash, err := bcrypt.GenerateFromPassword(
 		[]byte(password),
 		bcrypt.DefaultCost,
@@ -155,7 +164,10 @@ func (r *UserRepository) CreateUser(
 
 	user.Password = string(passwordHash)
 
-	// Simpan
+	// ==============================
+	// SIMPAN USER
+	// ==============================
+
 	return r.DB.Create(user).Error
 }
 
@@ -171,6 +183,10 @@ func (r *UserRepository) UpdateUser(
 
 	var existingUser models.User
 
+	// ==============================
+	// CARI USER
+	// ==============================
+
 	err := r.DB.
 		Where("user_id = ?", id).
 		First(&existingUser).
@@ -180,7 +196,10 @@ func (r *UserRepository) UpdateUser(
 		return err
 	}
 
-	// Cek NIP
+	// ==============================
+	// CEK NIP
+	// ==============================
+
 	var nipCount int64
 
 	err = r.DB.
@@ -201,7 +220,10 @@ func (r *UserRepository) UpdateUser(
 		return ErrNIPAlreadyExists
 	}
 
-	// Cek email
+	// ==============================
+	// CEK EMAIL
+	// ==============================
+
 	var emailCount int64
 
 	err = r.DB.
@@ -222,14 +244,21 @@ func (r *UserRepository) UpdateUser(
 		return ErrEmailAlreadyExists
 	}
 
-	// Update
+	// ==============================
+	// UPDATE DATA
+	// ==============================
+
 	existingUser.NIP = user.NIP
 	existingUser.Name = user.Name
 	existingUser.Email = user.Email
 	existingUser.Role = user.Role
 	existingUser.Position = user.Position
+	existingUser.PIC = user.PIC
 
-	// Update password jika diisi
+	// ==============================
+	// UPDATE PASSWORD
+	// ==============================
+
 	if password != "" {
 
 		passwordHash, err := bcrypt.GenerateFromPassword(
@@ -243,6 +272,10 @@ func (r *UserRepository) UpdateUser(
 
 		existingUser.Password = string(passwordHash)
 	}
+
+	// ==============================
+	// SIMPAN
+	// ==============================
 
 	return r.DB.Save(&existingUser).Error
 }
