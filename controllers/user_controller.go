@@ -99,6 +99,9 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		Password string `json:"password"`
 		Role     string `json:"role"`
 		Position string `json:"position"`
+
+		// PIC
+		PIC bool `json:"pic"`
 	}
 
 	var request CreateUserRequest
@@ -174,6 +177,9 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		Email:    request.Email,
 		Role:     request.Role,
 		Position: request.Position,
+
+		// PIC
+		PIC: request.PIC,
 	}
 
 	// Create
@@ -238,6 +244,9 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		Password string `json:"password"`
 		Role     string `json:"role"`
 		Position string `json:"position"`
+
+		// PIC
+		PIC bool `json:"pic"`
 	}
 
 	var request UpdateUserRequest
@@ -274,12 +283,16 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
+	// Model
 	user := models.User{
 		NIP:      request.NIP,
 		Name:     request.Name,
 		Email:    request.Email,
 		Role:     request.Role,
 		Position: request.Position,
+
+		// PIC
+		PIC: request.PIC,
 	}
 
 	err = c.Repository.UpdateUser(
@@ -386,6 +399,7 @@ func isValidRole(role string) bool {
 	switch role {
 	case "admin", "staff", "manager":
 		return true
+
 	default:
 		return false
 	}
@@ -414,7 +428,10 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 
 	req.Email = strings.TrimSpace(req.Email)
 
-	if req.Email == "" || req.Password == "" || req.RecaptchaToken == "" {
+	if req.Email == "" ||
+		req.Password == "" ||
+		req.RecaptchaToken == "" {
+
 		return ctx.Status(400).JSON(fiber.Map{
 			"success": false,
 			"message": "Email, password, dan recaptcha_token wajib diisi",
@@ -423,6 +440,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 
 	// Verify recaptcha
 	ok, err := config.VerifyRecaptcha(req.RecaptchaToken)
+
 	if err != nil {
 		return ctx.Status(500).JSON(fiber.Map{
 			"success": false,
@@ -439,7 +457,9 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 	}
 
 	user, err := c.Repository.GetUserByEmail(req.Email)
+
 	if err != nil {
+
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ctx.Status(401).JSON(fiber.Map{
 				"success": false,
@@ -454,7 +474,11 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		})
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(
+		[]byte(user.Password),
+		[]byte(req.Password),
+	); err != nil {
+
 		return ctx.Status(401).JSON(fiber.Map{
 			"success": false,
 			"message": "Email atau password salah",
@@ -462,6 +486,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 	}
 
 	token, err := utils.CreateToken(user)
+
 	if err != nil {
 		return ctx.Status(500).JSON(fiber.Map{
 			"success": false,
