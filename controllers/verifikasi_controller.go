@@ -126,12 +126,12 @@ func (c *VerifikasiController) GetByPeralatan(ctx *fiber.Ctx) error {
 func (c *VerifikasiController) CreateVerifikasi(ctx *fiber.Ctx) error {
 
 	type CreateRequest struct {
-		IDPeralatan      uint64     `json:"id_peralatan"`
+		IDPeralatan       uint64     `json:"id_peralatan"`
 		TanggalVerifikasi *time.Time `json:"tanggal_verifikasi"`
-		KodeAktivitas    string     `json:"kode_aktivitas"`
-		IDKriteria       *uint64    `json:"id_kriteria"`
-		TindakLanjut     string     `json:"tindak_lanjut"`
-		Catatan          string     `json:"catatan"`
+		KodeAktivitas     string     `json:"kode_aktivitas"`
+		IDKriteria        *uint64    `json:"id_kriteria"`
+		TindakLanjut      string     `json:"tindak_lanjut"`
+		Catatan           string     `json:"catatan"`
 
 		HasilVerifikasi struct {
 			Identitas    string `json:"identitas"`

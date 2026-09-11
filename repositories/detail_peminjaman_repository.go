@@ -132,10 +132,10 @@ func (r *DetailPeminjamanRepository) Approve(
 		Model(&models.DetailPeminjaman{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"status":             "approved",
-			"verified_by":        verifiedBy,
-			"verified_at":        now,
-			"verification_note":  note,
+			"status":            "approved",
+			"verified_by":       verifiedBy,
+			"verified_at":       now,
+			"verification_note": note,
 		}).Error
 }
 
@@ -155,10 +155,10 @@ func (r *DetailPeminjamanRepository) Reject(
 		Model(&models.DetailPeminjaman{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"status":             "rejected",
-			"verified_by":        verifiedBy,
-			"verified_at":        now,
-			"verification_note":  note,
+			"status":            "rejected",
+			"verified_by":       verifiedBy,
+			"verified_at":       now,
+			"verification_note": note,
 		}).Error
 }
 

@@ -781,7 +781,7 @@ func (c *DetailPeminjamanController) Delete(
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Gagal menghapus detail peminjaman",
-			"error": err.Error(),
+			"error":   err.Error(),
 		})
 	}
 

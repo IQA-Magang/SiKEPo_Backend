@@ -107,7 +107,7 @@ func (r *VerifikasiRepository) ApproveVerifikasi(
 		Model(&models.Verifikasi{}).
 		Where("id_verifikasi = ?", id).
 		Updates(map[string]interface{}{
-			"keputusan":  "Layak",
+			"keputusan":   "Layak",
 			"verified_by": verifiedBy,
 			"verified_at": gorm.Expr("NOW()"),
 		}).
