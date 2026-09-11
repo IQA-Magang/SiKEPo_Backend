@@ -11,67 +11,47 @@ func VerifikasiRoutes(
 	app *fiber.App,
 	controller *controllers.VerifikasiController,
 ) {
-
 	verifikasi := app.Group(
 		"/api/verifikasi",
 		middleware.RequireAuth,
 	)
 
-	// ========================================
 	// GET ALL
-	// ========================================
-
 	verifikasi.Get(
 		"/",
 		controller.GetVerifikasi,
 	)
 
-	// ========================================
 	// GET BY PERALATAN
-	// HARUS SEBELUM /:id
-	// ========================================
-
 	verifikasi.Get(
 		"/peralatan/:peralatan_id",
 		controller.GetByPeralatan,
 	)
 
-	// ========================================
 	// GET BY ID
-	// ========================================
-
 	verifikasi.Get(
 		"/:id",
 		controller.GetVerifikasiByID,
 	)
 
-	// ========================================
 	// CREATE
-	// Staff PIC
-	// ========================================
-
+	// Admin dan Staff dapat membuat verifikasi
 	verifikasi.Post(
 		"/",
-		middleware.RequireRoles("staff"),
+		middleware.RequireRoles("admin", "staff"),
 		controller.CreateVerifikasi,
 	)
 
-	// ========================================
 	// APPROVE
-	// MANAGER
-	// ========================================
-
+	// Hanya Manager
 	verifikasi.Put(
 		"/:id/approve",
 		middleware.RequireRoles("manager"),
 		controller.ApproveVerifikasi,
 	)
 
-	// ========================================
 	// DELETE
-	// Admin
-	// ========================================
-
+	// Hanya Admin
 	verifikasi.Delete(
 		"/:id",
 		middleware.RequireRoles("admin"),

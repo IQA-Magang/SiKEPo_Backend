@@ -41,7 +41,7 @@ func main() {
 		site := os.Getenv("SITE_KEY")
 
 		if site == "" {
-			return c.Status(500).JSON(fiber.Map{
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"success": false,
 				"message": "recaptcha site key not configured",
 			})
@@ -61,6 +61,8 @@ func main() {
 	ruanganRepo := repositories.NewRuanganRepository(config.DB)
 
 	peralatanRepo := repositories.NewPeralatanRepository(config.DB)
+
+	verifikasiRepo := repositories.NewVerifikasiRepository(config.DB)
 
 	labsRepo := repositories.NewLabsRepository(config.DB)
 
@@ -83,8 +85,22 @@ func main() {
 		Repository: ruanganRepo,
 	}
 
+	// =========================
+	// PERALATAN CONTROLLER
+	// =========================
 	peralatanController := &controllers.PeralatanController{
-		Repository: peralatanRepo,
+		Repository:        peralatanRepo,
+		RuanganRepository: ruanganRepo,
+		UserRepository:    userRepository,
+	}
+
+	// =========================
+	// VERIFIKASI CONTROLLER
+	// =========================
+	verifikasiController := &controllers.VerifikasiController{
+		Repository:          verifikasiRepo,
+		PeralatanRepository: peralatanRepo,
+		UserRepository:      userRepository,
 	}
 
 	// Detail Peminjaman
@@ -114,6 +130,11 @@ func main() {
 	routes.PeralatanRoutes(
 		app,
 		peralatanController,
+	)
+
+	routes.VerifikasiRoutes(
+		app,
+		verifikasiController,
 	)
 
 	// Detail Peminjaman
