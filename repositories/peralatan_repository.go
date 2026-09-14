@@ -1,81 +1,141 @@
 package repositories
 
 import (
+	"encoding/json"
+	"errors"
+
 	"backend/models"
 
 	"gorm.io/gorm"
 )
 
-type PeralatanRepository struct {
-	DB *gorm.DB
+type PeralatanRepository interface {
+	CreatePeralatan(req *models.CreatePeralatanRequest) error
+	FindByID(id uint) (*models.Peralatan, error)
 }
 
-func NewPeralatanRepository(db *gorm.DB) *PeralatanRepository {
-	return &PeralatanRepository{DB: db}
+type peralatanRepository struct {
+	db *gorm.DB
 }
 
-func (r *PeralatanRepository) Create(p *models.Peralatan) error {
-	return r.DB.Create(p).Error
+func NewPeralatanRepository(db *gorm.DB) PeralatanRepository {
+	return &peralatanRepository{db}
 }
 
-type PeralatanQueryParams struct {
-	Page            int
-	Limit           int
-	Search          string
-	RuanganID       uint64
-	PICID           uint64
-	StatusKelayakan string
-}
-
-func (r *PeralatanRepository) FindAll(params PeralatanQueryParams) ([]models.Peralatan, int64, error) {
-	var list []models.Peralatan
-	var total int64
-	query := r.DB.Model(&models.Peralatan{})
-	if params.Search != "" {
-		search := "%" + params.Search + "%"
-		query = query.Where("nama_peralatan LIKE ? OR nomor_aset LIKE ? OR merk LIKE ?", search, search, search)
-	}
-	if params.RuanganID > 0 {
-		query = query.Where("ruangan_id = ?", params.RuanganID)
-	}
-	if params.PICID > 0 {
-		query = query.Where("pic_id = ?", params.PICID)
-	}
-	if params.StatusKelayakan != "" {
-		query = query.Where("status_kelayakan = ?", params.StatusKelayakan)
-	}
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-	err := query.Preload("Ruangan").Preload("PIC").Preload("InputByUser").Preload("VerifiedByUser").
-		Order("created_at DESC").Offset((params.Page - 1) * params.Limit).Limit(params.Limit).Find(&list).Error
-	return list, total, err
-}
-
-func (r *PeralatanRepository) FindByID(id uint64) (*models.Peralatan, error) {
-	var p models.Peralatan
-	err := r.DB.Preload("Ruangan").Preload("PIC").Preload("InputByUser").Preload("VerifiedByUser").
-		Where("id = ?", id).First(&p).Error
-	if err != nil {
+func (r *peralatanRepository) FindByID(id uint) (*models.Peralatan, error) {
+	var peralatan models.Peralatan
+	if err := r.db.First(&peralatan, id).Error; err != nil {
 		return nil, err
 	}
-	return &p, nil
+
+	return &peralatan, nil
 }
 
-func (r *PeralatanRepository) Update(id uint64, updates map[string]interface{}) error {
-	return r.DB.Model(&models.Peralatan{}).Where("id = ?", id).Updates(updates).Error
-}
+func (r *peralatanRepository) CreatePeralatan(req *models.CreatePeralatanRequest) error {
+	// Memulai Database Transaction
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Mapping dan Simpan ke Tabel Master (Peralatan)
+		peralatan := models.Peralatan{
+			NomorAset:      req.NomorAset,
+			NamaPeralatan:  req.NamaPeralatan,
+			KategoriID:     req.KategoriID,
+			KelompokAsetID: req.KelompokAsetID,
+			RuanganID:      req.RuanganID,
+			PICID:          req.PICID,
+			Merek:          req.Merek,
+			TipeModel:      req.TipeModel,
+			NomorSeri:      req.NomorSeri,
+			Foto:           req.Foto,
+			StatusAlat:     req.StatusAlat, // Bisa dikirim dari frontend, atau hardcode "Karantina"
+			Keterangan:     req.Keterangan,
+		}
 
-func (r *PeralatanRepository) Delete(id uint64) error {
-	return r.DB.Delete(&models.Peralatan{}, id).Error
-}
+		if peralatan.StatusAlat == "" {
+			peralatan.StatusAlat = "Aktif" // Default value jika kosong
+		}
 
-func (r *PeralatanRepository) IsNomorAsetExists(nomorAset string, excludeID ...uint64) (bool, error) {
-	query := r.DB.Model(&models.Peralatan{}).Where("nomor_aset = ?", nomorAset)
-	if len(excludeID) > 0 {
-		query = query.Where("id != ?", excludeID[0])
-	}
-	var count int64
-	err := query.Count(&count).Error
-	return count > 0, err
+		// Insert ke tabel peralatan
+		if err := tx.Create(&peralatan).Error; err != nil {
+			return err
+		}
+
+		// Convert map[string]interface{} ke JSON bytes agar bisa di-unmarshal ke Struct spesifik
+		detailBytes, err := json.Marshal(req.Detail)
+		if err != nil {
+			return errors.New("gagal memproses data detail peralatan")
+		}
+
+		// 2. Routing Simpan ke Tabel Detail berdasarkan KategoriID
+		switch req.KategoriID {
+		case 1: // ALAT UKUR (Sheet 1)
+			var detail models.DetailAlatUkur
+			if err := json.Unmarshal(detailBytes, &detail); err != nil {
+				return err
+			}
+			detail.PeralatanID = peralatan.ID
+
+			// Hitung Tgl Jatuh Tempo jika Tgl Kalibrasi dan Interval diisi
+			if detail.TglKalibrasi != nil && detail.IntervalBulan > 0 {
+				jatuhTempo := detail.TglKalibrasi.AddDate(0, detail.IntervalBulan, 0)
+				detail.TglJatuhTempo = &jatuhTempo
+			}
+
+			if err := tx.Create(&detail).Error; err != nil {
+				return err
+			}
+
+		case 2: // ALAT BANTU (Sheet 2)
+			var detail models.DetailAlatBantu
+			if err := json.Unmarshal(detailBytes, &detail); err != nil {
+				return err
+			}
+			detail.PeralatanID = peralatan.ID
+
+			// Hitung Tgl Jatuh Tempo Pemeriksaan
+			if detail.TglPemeriksaanTerakhir != nil && detail.IntervalBulan > 0 {
+				jatuhTempo := detail.TglPemeriksaanTerakhir.AddDate(0, detail.IntervalBulan, 0)
+				detail.TglJatuhTempo = &jatuhTempo
+			}
+
+			if err := tx.Create(&detail).Error; err != nil {
+				return err
+			}
+
+		case 3: // ARTEFAK ACUAN (Sheet 3)
+			var detail models.DetailArtefakAcuan
+			if err := json.Unmarshal(detailBytes, &detail); err != nil {
+				return err
+			}
+			detail.PeralatanID = peralatan.ID
+
+			// Hitung Jadwal Ulang Karakterisasi
+			if detail.TglKarakterisasiTerakhir != nil && detail.IntervalBulan > 0 {
+				jatuhTempo := detail.TglKarakterisasiTerakhir.AddDate(0, detail.IntervalBulan, 0)
+				detail.TglJatuhTempo = &jatuhTempo
+			}
+
+			if err := tx.Create(&detail).Error; err != nil {
+				return err
+			}
+
+		case 4: // KOMPONEN PENDUKUNG (Sheet 4)
+			var detail models.DetailKomponenPendukung
+			if err := json.Unmarshal(detailBytes, &detail); err != nil {
+				return err
+			}
+			detail.PeralatanID = peralatan.ID
+
+			// Komponen pendukung menggunakan input Tgl Kedaluwarsa langsung dari user/pabrik,
+			// tidak perlu dihitung otomatis dengan interval.
+			if err := tx.Create(&detail).Error; err != nil {
+				return err
+			}
+
+		default:
+			return errors.New("kategori_id tidak valid atau tidak didukung")
+		}
+
+		// Jika semua berhasil, return nil untuk Commit transaksi
+		return nil
+	})
 }
