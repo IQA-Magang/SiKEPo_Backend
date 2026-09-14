@@ -3,7 +3,9 @@ package controllers
 import (
 	"backend/models"
 	"backend/repositories"
+	"backend/utils"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -117,7 +119,20 @@ func (c *DokumenPeralatanController) Create(ctx *fiber.Ctx) error {
 		PeralatanID uint64 `json:"peralatan_id"`
 	}
 
-	if err := ctx.BodyParser(&input); err != nil {
+	if file, err := ctx.FormFile("dokumen"); err == nil {
+		input.NamaDokumen = strings.TrimSpace(ctx.FormValue("nama_dokumen"))
+		input.PeralatanID, _ = strconv.ParseUint(ctx.FormValue("peralatan_id"), 10, 64)
+
+		path, saveErr := utils.SaveUploadedFile(file, "dokumen", fmt.Sprintf("peralatan-%d", input.PeralatanID))
+		if saveErr != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"success": false,
+				"message": "Gagal menyimpan file dokumen",
+				"error":   saveErr.Error(),
+			})
+		}
+		input.PathDokumen = path
+	} else if err := ctx.BodyParser(&input); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Format request tidak valid",
