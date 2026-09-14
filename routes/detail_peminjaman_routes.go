@@ -1,105 +1,105 @@
 package routes
 
-import (
-	"backend/controllers"
-	"backend/middleware"
+// import (
+// 	"backend/controllers"
+// 	"backend/middleware"
 
-	"github.com/gofiber/fiber/v2"
-)
+// 	"github.com/gofiber/fiber/v2"
+// )
 
-func DetailPeminjamanRoutes(
-	app *fiber.App,
-	controller *controllers.DetailPeminjamanController,
-) {
+// func DetailPeminjamanRoutes(
+// 	app *fiber.App,
+// 	controller *controllers.DetailPeminjamanController,
+// ) {
 
-	detail := app.Group(
-		"/api/detail-peminjaman",
-		middleware.RequireAuth,
-	)
+// 	detail := app.Group(
+// 		"/api/detail-peminjaman",
+// 		middleware.RequireAuth,
+// 	)
 
-	// ========================================
-	// GET
-	// ========================================
+// 	// ========================================
+// 	// GET
+// 	// ========================================
 
-	detail.Get(
-		"/",
-		controller.GetAll,
-	)
+// 	detail.Get(
+// 		"/",
+// 		controller.GetAll,
+// 	)
 
-	// HARUS DITARUH SEBELUM /:id
-	detail.Get(
-		"/peminjaman/:peminjaman_id",
-		controller.GetByPeminjamanID,
-	)
+// 	// HARUS DITARUH SEBELUM /:id
+// 	detail.Get(
+// 		"/peminjaman/:peminjaman_id",
+// 		controller.GetByPeminjamanID,
+// 	)
 
-	detail.Get(
-		"/:id",
-		controller.GetByID,
-	)
+// 	detail.Get(
+// 		"/:id",
+// 		controller.GetByID,
+// 	)
 
-	// ========================================
-	// CREATE
-	// ========================================
+// 	// ========================================
+// 	// CREATE
+// 	// ========================================
 
-	detail.Post(
-		"/",
-		middleware.RequireRoles("admin", "staff", "manager"),
-		controller.Create,
-	)
+// 	detail.Post(
+// 		"/",
+// 		middleware.RequireRoles("admin", "staff", "manager"),
+// 		controller.Create,
+// 	)
 
-	// ========================================
-	// UPDATE
-	// ========================================
+// 	// ========================================
+// 	// UPDATE
+// 	// ========================================
 
-	detail.Put(
-		"/:id",
-		middleware.RequireRoles("admin", "staff", "manager"),
-		controller.Update,
-	)
+// 	detail.Put(
+// 		"/:id",
+// 		middleware.RequireRoles("admin", "staff", "manager"),
+// 		controller.Update,
+// 	)
 
-	// ========================================
-	// APPROVAL
-	// ========================================
+// 	// ========================================
+// 	// APPROVAL
+// 	// ========================================
 
-	detail.Put(
-		"/:id/approve",
-		middleware.RequireRoles("manager", "staff"),
-		controller.Approve,
-	)
+// 	detail.Put(
+// 		"/:id/approve",
+// 		middleware.RequireRoles("manager", "staff"),
+// 		controller.Approve,
+// 	)
 
-	detail.Put(
-		"/:id/reject",
-		middleware.RequireRoles("manager", "staff"),
-		controller.Reject,
-	)
+// 	detail.Put(
+// 		"/:id/reject",
+// 		middleware.RequireRoles("manager", "staff"),
+// 		controller.Reject,
+// 	)
 
-	// ========================================
-	// KONDISI SAAT PINJAM
-	// ========================================
+// 	// ========================================
+// 	// KONDISI SAAT PINJAM
+// 	// ========================================
 
-	detail.Put(
-		"/:id/kondisi-pinjam",
-		middleware.RequireRoles("admin", "staff", "manager"),
-		controller.SetKondisiPinjam,
-	)
+// 	detail.Put(
+// 		"/:id/kondisi-pinjam",
+// 		middleware.RequireRoles("admin", "staff", "manager"),
+// 		controller.SetKondisiPinjam,
+// 	)
 
-	// ========================================
-	// KONDISI SAAT KEMBALI
-	// ========================================
+// 	// ========================================
+// 	// KONDISI SAAT KEMBALI
+// 	// ========================================
 
-	detail.Put(
-		"/:id/kondisi-kembali",
-		middleware.RequireRoles("admin", "staff", "manager"),
-		controller.SetKondisiKembali,
-	)
+// 	detail.Put(
+// 		"/:id/kondisi-kembali",
+// 		middleware.RequireRoles("admin", "staff", "manager"),
+// 		controller.SetKondisiKembali,
+// 	)
 
-	// ========================================
-	// DELETE
-	// ========================================
+// 	// ========================================
+// 	// DELETE
+// 	// ========================================
 
-	detail.Delete(
-		"/:id",
-		middleware.RequireRoles("admin", "manager"),
-		controller.Delete,
-	)
-}
+// 	detail.Delete(
+// 		"/:id",
+// 		middleware.RequireRoles("admin", "manager"),
+// 		controller.Delete,
+// 	)
+// }
