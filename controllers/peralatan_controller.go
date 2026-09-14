@@ -3,7 +3,9 @@ package controllers
 import (
 	"backend/models"
 	"backend/repositories"
+	"backend/utils"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,6 +19,23 @@ type PeralatanController struct {
 
 func NewPeralatanController(repo repositories.PeralatanRepository) *PeralatanController {
 	return &PeralatanController{Repo: repo}
+}
+
+// GetAll handles GET /api/peralatan.
+func (c *PeralatanController) GetAll(ctx *fiber.Ctx) error {
+	peralatan, err := c.Repo.FindAll()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Gagal mengambil daftar peralatan",
+			"error":   err.Error(),
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"status": "success",
+		"data":   peralatan,
+	})
 }
 
 // Create handles POST /api/peralatan
@@ -57,12 +76,21 @@ func (c *PeralatanController) Create(ctx *fiber.Ctx) error {
 			"error":   err.Error(),
 		})
 	}
+	peralatan, err := c.Repo.FindByNomorAset(nomorAset)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Peralatan berhasil dibuat tetapi gagal mengambil ID",
+			"error":   err.Error(),
+		})
+	}
 
 	// 3. Response Berhasil
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"status":     "success",
 		"message":    "Peralatan beserta detail spesifikasinya berhasil ditambahkan",
 		"nomor_aset": nomorAset,
+		"id":         peralatan.ID,
 	})
 }
 
@@ -103,4 +131,52 @@ func (c *PeralatanController) GenerateQRCode(ctx *fiber.Ctx) error {
 
 	ctx.Set(fiber.HeaderContentType, "image/png")
 	return ctx.Send(qr)
+}
+
+// UploadFoto handles POST /api/peralatan/:id/foto.
+func (c *PeralatanController) UploadFoto(ctx *fiber.Ctx) error {
+	id, err := strconv.ParseUint(ctx.Params("id"), 10, 64)
+	if err != nil || id == 0 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "ID peralatan tidak valid",
+		})
+	}
+
+	if _, err := c.Repo.FindByID(uint(id)); err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Peralatan tidak ditemukan",
+		})
+	}
+
+	file, err := ctx.FormFile("foto")
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "File foto wajib diisi",
+		})
+	}
+
+	path, err := utils.SaveUploadedFile(file, "peralatan", fmt.Sprintf("peralatan-%d", id))
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Gagal menyimpan foto",
+			"error":   err.Error(),
+		})
+	}
+
+	if err := c.Repo.UpdateFoto(uint(id), path); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Gagal menyimpan path foto",
+			"error":   err.Error(),
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"status": "success",
+		"foto":   path,
+	})
 }

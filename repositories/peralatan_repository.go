@@ -13,8 +13,11 @@ import (
 )
 
 type PeralatanRepository interface {
+	FindAll() ([]models.Peralatan, error)
 	CreatePeralatan(req *models.CreatePeralatanRequest) (string, error)
 	FindByID(id uint) (*models.Peralatan, error)
+	FindByNomorAset(nomorAset string) (*models.Peralatan, error)
+	UpdateFoto(id uint, foto string) error
 }
 
 type peralatanRepository struct {
@@ -25,6 +28,15 @@ func NewPeralatanRepository(db *gorm.DB) PeralatanRepository {
 	return &peralatanRepository{db}
 }
 
+func (r *peralatanRepository) FindAll() ([]models.Peralatan, error) {
+	var peralatan []models.Peralatan
+	if err := r.db.Order("id DESC").Find(&peralatan).Error; err != nil {
+		return nil, err
+	}
+
+	return peralatan, nil
+}
+
 func (r *peralatanRepository) FindByID(id uint) (*models.Peralatan, error) {
 	var peralatan models.Peralatan
 	if err := r.db.First(&peralatan, id).Error; err != nil {
@@ -32,6 +44,19 @@ func (r *peralatanRepository) FindByID(id uint) (*models.Peralatan, error) {
 	}
 
 	return &peralatan, nil
+}
+
+func (r *peralatanRepository) FindByNomorAset(nomorAset string) (*models.Peralatan, error) {
+	var peralatan models.Peralatan
+	if err := r.db.Where("nomor_aset = ?", nomorAset).First(&peralatan).Error; err != nil {
+		return nil, err
+	}
+
+	return &peralatan, nil
+}
+
+func (r *peralatanRepository) UpdateFoto(id uint, foto string) error {
+	return r.db.Model(&models.Peralatan{}).Where("id = ?", id).Update("foto", foto).Error
 }
 
 func (r *peralatanRepository) CreatePeralatan(req *models.CreatePeralatanRequest) (string, error) {
