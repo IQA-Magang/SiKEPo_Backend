@@ -12,7 +12,7 @@ func RuanganRoutes(
 	controller *controllers.RuanganController,
 ) {
 	// Public / authenticated routes
-	ruangan := app.Group("/api/v1/ruangan", middleware.RequireAuth)
+	ruangan := app.Group("/api/ruangan", middleware.RequireAuth)
 
 	ruangan.Get("/", controller.GetAll)
 
