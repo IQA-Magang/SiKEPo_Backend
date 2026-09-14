@@ -91,6 +91,9 @@ func main() {
 	kelompokAssetRepo :=
 		repositories.NewKelompokAssetRepository(config.DB)
 
+	dokumenPeralatanRepository :=
+		repositories.NewDokumenPeralatanRepository(config.DB)
+
 	// =========================
 	// CONTROLLER
 	// =========================
@@ -140,6 +143,11 @@ func main() {
 			UserRepository: userRepository,
 		}
 
+	dokumenPeralatanController :=
+		&controllers.DokumenPeralatanController{
+			Repository: dokumenPeralatanRepository,
+		}
+
 	// =========================
 	// ROUTES
 	// =========================
@@ -179,6 +187,11 @@ func main() {
 	routes.KelompokAssetRoutes(
 		app,
 		kelompokAssetController,
+	)
+
+	routes.DokumenPeralatanRoutes(
+		app,
+		dokumenPeralatanController,
 	)
 
 	// =========================
