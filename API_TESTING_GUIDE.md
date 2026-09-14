@@ -32,11 +32,13 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ## 2. Checklist Testing
 
 ### A. Health Check
+
 - [ ] GET /
 - [ ] GET /recaptcha/sitekey
 - [ ] GET /static/login.html
 
 ### B. User Auth
+
 - [ ] POST /api/users/login
 - [ ] GET /api/users
 - [ ] GET /api/users/:id
@@ -45,13 +47,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - [ ] DELETE /api/users/:id
 
 ### C. Peralatan
-- [ ] POST /api/v1/peralatan/
-- [ ] GET /api/v1/peralatan/
-- [ ] GET /api/v1/peralatan/:id
-- [ ] PUT /api/v1/peralatan/:id
-- [ ] DELETE /api/v1/peralatan/:id
+
+- [ ] POST /api/peralatan/
+- [ ] GET /api/peralatan/:id/qr
 
 ### D. Labs dan Ruangan
+
 - [ ] POST /api/labs
 - [ ] GET /api/labs
 - [ ] GET /api/labs/:id
@@ -339,218 +340,96 @@ Response sukses:
 
 ## 3.4 Peralatan API
 
-### POST /api/v1/peralatan/
+Semua endpoint peralatan membutuhkan header `Authorization`. Route yang tersedia saat ini adalah create peralatan dan generate QR code.
 
-Header:
+> Catatan: `foto` disimpan sebagai string URL atau path file. Endpoint create saat ini menerima JSON, bukan upload file multipart.
 
-```http
-Authorization: Bearer <token>
-Content-Type: application/json
-```
+### POST /api/peralatan/
 
 Request JSON:
 
 ```json
 {
-  "ruangan_id": 1,
-  "pic_id": 2,
   "nomor_aset": "AST-001",
   "nama_peralatan": "Laptop Lenovo",
-  "merk": "Lenovo",
-  "model": "ThinkPad T14",
+  "kategori_id": 2,
+  "kelompok_aset_id": 1,
+  "ruangan_id": 1,
+  "pic_id": 2,
+  "merek": "Lenovo",
+  "tipe_model": "ThinkPad T14",
   "nomor_seri": "SN-123",
-  "jumlah": 1,
-  "kategori_peralatan": "peralatan",
-  "kondisi": "sesuai",
-  "status_kelayakan": "pending",
-  "metode": "internal",
-  "jenis_pakai": "tidak_habis_pakai",
-  "verified_at": null,
-  "verification_note": "",
-  "verified_by": null
-}
-```
-
-```bash
-curl -X POST http://localhost:5000/api/v1/peralatan/ \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "ruangan_id": 1,
-    "pic_id": 2,
-    "nomor_aset": "AST-001",
-    "nama_peralatan": "Laptop Lenovo",
-    "merk": "Lenovo",
-    "model": "ThinkPad T14",
-    "nomor_seri": "SN-123",
-    "jumlah": 1,
-    "kategori_peralatan": "peralatan",
-    "kondisi": "sesuai",
-    "status_kelayakan": "pending",
-    "metode": "internal",
-    "jenis_pakai": "tidak_habis_pakai",
-    "verified_at": null,
-    "verification_note": "",
-    "verified_by": null
-  }'
-```
-
-Response sukses:
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "ruangan_id": 1,
-    "pic_id": 2,
-    "nomor_aset": "AST-001",
-    "nama_peralatan": "Laptop Lenovo",
-    "merk": "Lenovo",
-    "model": "ThinkPad T14",
-    "nomor_seri": "SN-123",
-    "jumlah": 1,
-    "kategori_peralatan": "peralatan",
-    "kondisi": "sesuai",
-    "status_kelayakan": "pending",
-    "metode": "internal",
-    "jenis_pakai": "tidak_habis_pakai",
-    "input_by": 1,
-    "verified_by": null,
-    "verified_at": null,
-    "verification_note": ""
+  "foto": "/uploads/peralatan/AST-001.jpg",
+  "status_alat": "Aktif",
+  "keterangan": "Laptop operasional",
+  "detail": {
+    "fungsi_kegunaan": "Pengolahan data",
+    "peranti_lunak_versi": "Windows 11",
+    "jenis_pemeriksaan_berkala": "Pemeriksaan visual",
+    "kriteria_pemeriksaan": "Menyala dan tidak rusak",
+    "interval_bulan": 6
   }
 }
 ```
 
-Response validasi error:
+PowerShell:
 
-```json
-{
-  "success": false,
-  "message": "Validasi gagal",
-  "errors": {
-    "nomor_aset": "Nomor aset wajib diisi",
-    "nama_peralatan": "Nama peralatan wajib diisi"
-  }
-}
-```
-
-### GET /api/v1/peralatan/
-
-```bash
-curl "http://localhost:5000/api/v1/peralatan?page=1&limit=10&search=laptop" \
-  -H "Authorization: Bearer <token>"
-```
-
-Response:
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "ruangan_id": 1,
-      "pic_id": 2,
-      "nomor_aset": "AST-001",
-      "nama_peralatan": "Laptop Lenovo",
-      "merk": "Lenovo",
-      "model": "ThinkPad T14",
-      "jumlah": 1,
-      "kategori_peralatan": "peralatan",
-      "kondisi": "sesuai",
-      "status_kelayakan": "pending"
+```powershell
+curl.exe -X POST "http://localhost:5000/api/peralatan/" `
+  -H "Authorization: Bearer <token>" `
+  -H "Content-Type: application/json" `
+  --data-raw '{
+    "nomor_aset": "AST-001",
+    "nama_peralatan": "Laptop Lenovo",
+    "kategori_id": 2,
+    "kelompok_aset_id": 1,
+    "ruangan_id": 1,
+    "pic_id": 2,
+    "merek": "Lenovo",
+    "tipe_model": "ThinkPad T14",
+    "nomor_seri": "SN-123",
+    "foto": "/uploads/peralatan/AST-001.jpg",
+    "status_alat": "Aktif",
+    "keterangan": "Laptop operasional",
+    "detail": {
+      "fungsi_kegunaan": "Pengolahan data",
+      "peranti_lunak_versi": "Windows 11",
+      "jenis_pemeriksaan_berkala": "Pemeriksaan visual",
+      "kriteria_pemeriksaan": "Menyala dan tidak rusak",
+      "interval_bulan": 6
     }
-  ],
-  "meta": {
-    "page": 1,
-    "limit": 10,
-    "total_data": 1
-  }
-}
-```
-
-### GET /api/v1/peralatan/:id
-
-```bash
-curl http://localhost:5000/api/v1/peralatan/1 \
-  -H "Authorization: Bearer <token>"
-```
-
-Response:
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "ruangan_id": 1,
-    "pic_id": 2,
-    "nomor_aset": "AST-001",
-    "nama_peralatan": "Laptop Lenovo",
-    "merk": "Lenovo",
-    "model": "ThinkPad T14",
-    "jumlah": 1,
-    "kategori_peralatan": "peralatan",
-    "kondisi": "sesuai",
-    "status_kelayakan": "pending"
-  }
-}
-```
-
-### PUT /api/v1/peralatan/:id
-
-Request JSON:
-
-```json
-{
-  "nama_peralatan": "Laptop ASUS",
-  "status_kelayakan": "aktif",
-  "kondisi": "sesuai"
-}
-```
-
-```bash
-curl -X PUT http://localhost:5000/api/v1/peralatan/1 \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "nama_peralatan": "Laptop ASUS",
-    "status_kelayakan": "aktif",
-    "kondisi": "sesuai"
   }'
 ```
 
-Response sukses:
+Response sukses memiliki HTTP status `201 Created`:
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": 1,
-    "nama_peralatan": "Laptop ASUS",
-    "status_kelayakan": "aktif",
-    "kondisi": "sesuai"
-  }
+  "status": "success",
+  "message": "Peralatan beserta detail spesifikasinya berhasil ditambahkan"
 }
 ```
 
-### DELETE /api/v1/peralatan/:id
+### GET /api/peralatan/:id/qr
 
-```bash
-curl -X DELETE http://localhost:5000/api/v1/peralatan/1 \
-  -H "Authorization: Bearer <token>"
+Endpoint ini mengambil `nomor_aset` dari peralatan berdasarkan ID dan mengembalikan QR code dalam format PNG berukuran 256x256 piksel. Simpan hasil response sebagai file gambar:
+
+```powershell
+curl.exe "http://localhost:5000/api/peralatan/1/qr" `
+  -H "Authorization: Bearer <token>" `
+  -o "peralatan-1.png"
 ```
 
-Response sukses:
+Buka file `peralatan-1.png` dengan QR scanner. Isi QR code adalah `nomor_aset`, misalnya `AST-001`.
 
-```json
-{
-  "success": true,
-  "message": "Peralatan berhasil dihapus"
-}
-```
+Kemungkinan response error:
+
+| HTTP status | Kondisi                                               |
+| ----------- | ----------------------------------------------------- |
+| `400`       | ID peralatan bukan angka atau bernilai 0              |
+| `401`       | Header Authorization tidak ada atau token tidak valid |
+| `404`       | Peralatan dengan ID tersebut tidak ditemukan          |
+| `500`       | Gagal mengambil data atau membuat QR code             |
 
 ---
 
@@ -794,16 +673,19 @@ Content-Type: application/json
 ## 7. Troubleshooting
 
 ### Error 401 Unauthorized
+
 - Token belum dikirim
 - Token sudah expired
 - Header tidak sesuai format `Bearer <token>`
 
 ### Error 400 Bad Request
+
 - JSON tidak valid
 - field required tidak ada
 - enum value salah
 
 ### Error 500 Internal Server Error
+
 - database tidak terhubung
 - setting `.env` salah
 - tabel belum dibuat
@@ -824,11 +706,8 @@ POST   /api/users
 PUT    /api/users/:id
 DELETE /api/users/:id
 
-POST   /api/v1/peralatan/
-GET    /api/v1/peralatan/
-GET    /api/v1/peralatan/:id
-PUT    /api/v1/peralatan/:id
-DELETE /api/v1/peralatan/:id
+POST   /api/peralatan/
+GET    /api/peralatan/:id/qr
 
 POST   /api/labs
 GET    /api/labs
