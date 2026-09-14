@@ -40,7 +40,7 @@ func (c *PeralatanController) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	if req.KategoriID < 1 || req.KategoriID > 4 {
+	if req.KategoriPeralatanID < 1 || req.KategoriPeralatanID > 4 {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Kategori ID tidak valid (harus 1 - 4)",
