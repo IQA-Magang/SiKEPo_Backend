@@ -1,18 +1,24 @@
 package routes
 
 import (
-	"github.com/gofiber/fiber/v2"
-
 	"backend/controllers"
 	"backend/middleware"
+	"backend/repositories"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
-func PeralatanRoutes(app *fiber.App, ctrl *controllers.PeralatanController) {
-	api := app.Group("/api/v1/peralatan", middleware.RequireAuth)
+// SetupPeralatanRoutes mendaftarkan endpoint untuk modul peralatan
+func SetupPeralatanRoutes(app *fiber.App, db *gorm.DB) {
+	// 1. Inisialisasi Repository dan Controller
+	peralatanRepo := repositories.NewPeralatanRepository(db)
+	peralatanController := controllers.NewPeralatanController(peralatanRepo)
 
-	api.Post("/", ctrl.Create)
-	api.Get("/", ctrl.GetAll)
-	api.Get("/:id", ctrl.GetByID)
-	api.Put("/:id", ctrl.Update)
-	api.Delete("/:id", ctrl.Delete)
+	// 2. Grouping Route API
+	api := app.Group("/api/peralatan", middleware.RequireAuth)
+
+	// 3. Daftarkan Endpoint POST
+	api.Post("/", peralatanController.Create)
+	api.Get("/:id/qr", peralatanController.GenerateQRCode)
 }
