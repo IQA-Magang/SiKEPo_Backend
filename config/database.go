@@ -55,6 +55,10 @@ func ConnectDatabase() {
 			&models.Ruangan{},
 			&models.Labs{},
 			&models.Peralatan{},
+			&models.DetailAlatUkur{},
+			&models.DetailAlatBantu{},
+			&models.DetailArtefakAcuan{},
+			&models.DetailKomponenPendukung{},
 		)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to migrate database tables: %v", err))
