@@ -4,21 +4,24 @@ import "time"
 
 // 1. TABEL MASTER
 type Peralatan struct {
-	ID             uint      `gorm:"primaryKey" json:"id"`
-	NomorAset      string    `gorm:"unique;not null;type:varchar(50)" json:"nomor_aset"`
-	NamaPeralatan  string    `gorm:"not null;type:varchar(150)" json:"nama_peralatan"`
-	KategoriID     uint      `gorm:"not null" json:"kategori_id"`
-	KelompokAsetID uint      `gorm:"not null" json:"kelompok_aset_id"`
-	RuanganID      uint      `gorm:"not null" json:"ruangan_id"`
-	PICID          uint      `gorm:"not null" json:"pic_id"`
-	Merek          string    `gorm:"type:varchar(100)" json:"merek"`
-	TipeModel      string    `gorm:"type:varchar(100)" json:"tipe_model"`
-	NomorSeri      string    `gorm:"type:varchar(100)" json:"nomor_seri"`
-	Foto           string    `gorm:"type:varchar(255)" json:"foto"`
-	StatusAlat     string    `gorm:"type:enum('Aktif','Dipinjam','Dalam Kalibrasi','Rusak','Dihapuskan');default:'Aktif'" json:"status_alat"`
-	Keterangan     string    `gorm:"type:text" json:"keterangan"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID                  uint               `gorm:"primaryKey" json:"id"`
+	NomorAset           string             `gorm:"unique;not null;type:varchar(50)" json:"nomor_aset"`
+	NamaPeralatan       string             `gorm:"not null;type:varchar(150)" json:"nama_peralatan"`
+	KategoriID          uint               `gorm:"not null" json:"kategori_id"`
+	KelompokAsetID      uint               `gorm:"not null" json:"kelompok_aset_id"`
+	RuanganID           uint               `gorm:"not null" json:"ruangan_id"`
+	PICID               uint               `gorm:"not null" json:"pic_id"`
+	Merek               string             `gorm:"type:varchar(100)" json:"merek"`
+	TipeModel           string             `gorm:"type:varchar(100)" json:"tipe_model"`
+	NomorSeri           string             `gorm:"type:varchar(100)" json:"nomor_seri"`
+	Foto                string             `gorm:"type:varchar(255)" json:"foto"`
+	StatusAlat          string             `gorm:"type:enum('Aktif','Dipinjam','Dalam Kalibrasi','Rusak','Dihapuskan');default:'Aktif'" json:"status_alat"`
+	Keterangan          string             `gorm:"type:text" json:"keterangan"`
+	KategoriPeralatanID uint               `gorm:"not null" json:"kategori_peralatan_id"`
+	KategoriPeralatan   *KategoriPeralatan `gorm:"foreignKey:KategoriPeralatanID;references:ID" json:"kategori_peralatan,omitempty"`
+	CreatedAt           time.Time          `json:"created_at"`
+	UpdatedAt           time.Time          `json:"updated_at"`
+	DeletedAt           *time.Time         `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (Peralatan) TableName() string {
@@ -108,17 +111,17 @@ func (DetailKomponenPendukung) TableName() string {
 
 // 6. PAYLOAD REQUEST: DTO
 type CreatePeralatanRequest struct {
-	NomorAset      string                 `json:"nomor_aset" validate:"required"`
-	NamaPeralatan  string                 `json:"nama_peralatan" validate:"required"`
-	KategoriID     uint                   `json:"kategori_id" validate:"required"`
-	KelompokAsetID uint                   `json:"kelompok_aset_id" validate:"required"`
-	RuanganID      uint                   `json:"ruangan_id" validate:"required"`
-	PICID          uint                   `json:"pic_id" validate:"required"`
-	Merek          string                 `json:"merek"`
-	TipeModel      string                 `json:"tipe_model"`
-	NomorSeri      string                 `json:"nomor_seri"`
-	Foto           string                 `json:"foto"`
-	StatusAlat     string                 `json:"status_alat"`
-	Keterangan     string                 `json:"keterangan"`
-	Detail         map[string]interface{} `json:"detail"`
+	NomorAset           string                 `json:"nomor_aset" validate:"required"`
+	NamaPeralatan       string                 `json:"nama_peralatan" validate:"required"`
+	KategoriPeralatanID uint                   `json:"kategori_id" validate:"required"`
+	KelompokAsetID      uint                   `json:"kelompok_aset_id" validate:"required"`
+	RuanganID           uint                   `json:"ruangan_id" validate:"required"`
+	PICID               uint                   `json:"pic_id" validate:"required"`
+	Merek               string                 `json:"merek"`
+	TipeModel           string                 `json:"tipe_model"`
+	NomorSeri           string                 `json:"nomor_seri"`
+	Foto                string                 `json:"foto"`
+	StatusAlat          string                 `json:"status_alat"`
+	Keterangan          string                 `json:"keterangan"`
+	Detail              map[string]interface{} `json:"detail"`
 }
