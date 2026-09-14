@@ -74,18 +74,15 @@ func main() {
 	ruanganRepo :=
 		repositories.NewRuanganRepository(config.DB)
 
-	peralatanRepo :=
-		repositories.NewPeralatanRepository(config.DB)
-
-	verifikasiRepo :=
-		repositories.NewVerifikasiRepository(config.DB)
+	// verifikasiRepo :=
+	// 	repositories.NewVerifikasiRepository(config.DB)
 
 	labsRepo :=
 		repositories.NewLabsRepository(config.DB)
 
 	// Detail Peminjaman
-	detailPeminjamanRepo :=
-		repositories.NewDetailPeminjamanRepository(config.DB)
+	// detailPeminjamanRepo :=
+	// 	repositories.NewDetailPeminjamanRepository(config.DB)
 
 	// =========================
 	// KELOMPOK ASSET REPOSITORY
@@ -111,33 +108,23 @@ func main() {
 	}
 
 	// =========================
-	// PERALATAN CONTROLLER
-	// =========================
-
-	peralatanController := &controllers.PeralatanController{
-		Repository:        peralatanRepo,
-		RuanganRepository: ruanganRepo,
-		UserRepository:    userRepository,
-	}
-
-	// =========================
 	// VERIFIKASI CONTROLLER
 	// =========================
 
-	verifikasiController := &controllers.VerifikasiController{
-		Repository:          verifikasiRepo,
-		PeralatanRepository: peralatanRepo,
-		UserRepository:      userRepository,
-	}
+	// verifikasiController := &controllers.VerifikasiController{
+	// 	Repository: verifikasiRepo,
+	// 	// PeralatanRepository: peralatanRepo,
+	// 	UserRepository: userRepository,
+	// }
 
 	// =========================
 	// DETAIL PEMINJAMAN
 	// =========================
 
-	detailPeminjamanController :=
-		&controllers.DetailPeminjamanController{
-			Repository: detailPeminjamanRepo,
-		}
+	// detailPeminjamanController :=
+	// 	&controllers.DetailPeminjamanController{
+	// 		Repository: detailPeminjamanRepo,
+	// 	}
 
 	// =========================
 	// KELOMPOK ASSET CONTROLLER
@@ -172,21 +159,18 @@ func main() {
 		ruanganController,
 	)
 
-	routes.PeralatanRoutes(
-		app,
-		peralatanController,
-	)
+	routes.SetupPeralatanRoutes(app, config.DB)
 
-	routes.VerifikasiRoutes(
-		app,
-		verifikasiController,
-	)
+	// routes.VerifikasiRoutes(
+	// 	app,
+	// 	verifikasiController,
+	// )
 
 	// Detail Peminjaman
-	routes.DetailPeminjamanRoutes(
-		app,
-		detailPeminjamanController,
-	)
+	// routes.DetailPeminjamanRoutes(
+	// 	app,
+	// 	detailPeminjamanController,
+	// )
 
 	// =========================
 	// KELOMPOK ASSET ROUTES
