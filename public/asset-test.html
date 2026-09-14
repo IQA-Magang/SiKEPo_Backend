@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Uji Tambah Peralatan | SiKEPo</title>
+    <style>
+      :root {
+        --ink: #17212b;
+        --muted: #66717d;
+        --line: #dbe2e8;
+        --brand: #0f766e;
+        --brand-dark: #115e59;
+        --paper: #fff;
+        --wash: #f2f7f5;
+        --danger: #b42318;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background: linear-gradient(135deg, #e8f3ef, #f7f4ea);
+        font:
+          15px/1.5 "Segoe UI",
+          sans-serif;
+      }
+      main {
+        width: min(980px, calc(100% - 32px));
+        margin: 32px auto;
+      }
+      .header {
+        margin-bottom: 20px;
+      }
+      h1 {
+        margin: 0 0 6px;
+        font-family: Georgia, serif;
+        font-size: clamp(28px, 5vw, 44px);
+        font-weight: 500;
+      }
+      .header p {
+        margin: 0;
+        color: var(--muted);
+      }
+      .panel {
+        background: var(--paper);
+        border: 1px solid rgba(23, 33, 43, 0.1);
+        box-shadow: 0 16px 40px rgba(23, 33, 43, 0.08);
+        padding: 24px;
+        margin-top: 18px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .full {
+        grid-column: 1/-1;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 11px 12px;
+        border: 1px solid var(--line);
+        background: #fcfdfd;
+        color: var(--ink);
+        font: inherit;
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 2px solid rgba(15, 118, 110, 0.22);
+        border-color: var(--brand);
+      }
+      textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+      button {
+        border: 0;
+        padding: 12px 16px;
+        background: var(--brand);
+        color: white;
+        font: 600 15px inherit;
+        cursor: pointer;
+      }
+      button:hover {
+        background: var(--brand-dark);
+      }
+      button.secondary {
+        background: #e7efed;
+        color: var(--brand-dark);
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .status {
+        margin-top: 16px;
+        padding: 12px;
+        background: var(--wash);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .status.error {
+        color: var(--danger);
+        background: #fff1f0;
+      }
+      .code {
+        font:
+          700 20px Georgia,
+          serif;
+        color: var(--brand-dark);
+      }
+      .document-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .document-row input {
+        flex: 1;
+      }
+      .document-row button {
+        padding: 8px 12px;
+        background: #e7efed;
+        color: var(--brand-dark);
+      }
+      .asset-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+      .asset-table th,
+      .asset-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: middle;
+      }
+      .asset-table th {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .qr-preview {
+        display: block;
+        width: 180px;
+        margin-top: 12px;
+        border: 1px solid var(--line);
+      }
+      @media (max-width: 650px) {
+        main {
+          width: min(100% - 20px, 980px);
+          margin: 20px auto;
+        }
+        .panel {
+          padding: 16px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .full {
+          grid-column: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="header">
+        <h1>Uji tambah peralatan</h1>
+        <p>
+          Buat nomor aset otomatis, simpan foto, dan simpan dokumen pendukung.
+        </p>
+      </header>
+
+      <section class="panel">
+        <div class="grid">
+          <div class="full">
+            <label for="token">Bearer token</label>
+            <input
+              id="token"
+              type="password"
+              placeholder="Tempel token JWT dari login"
+            />
+            <p class="hint">
+              Token disimpan di browser ini untuk pengujian. Login terlebih
+              dahulu melalui halaman login jika belum punya token.
+            </p>
+          </div>
+          <div>
+            <label for="nama">Nama peralatan</label>
+            <input
+              id="nama"
+              required
+              placeholder="Contoh: Multimeter Digital"
+            />
+          </div>
+          <div>
+            <label for="kategori">Kategori</label>
+            <select id="kategori">
+              <option value="1">Alat Ukur</option>
+              <option value="2">Alat Bantu</option>
+              <option value="3">Artefak Acuan</option>
+              <option value="4">Komponen Pendukung</option>
+            </select>
+          </div>
+          <div>
+            <label for="kelompok">Kelompok aset</label>
+            <select id="kelompok" required>
+              <option value="">Memuat...</option>
+            </select>
+          </div>
+          <div>
+            <label for="ruangan">Ruangan</label>
+            <select id="ruangan" required>
+              <option value="">Memuat...</option>
+            </select>
+          </div>
+          <div>
+            <label for="pic">PIC ID</label
+            ><input id="pic" type="number" min="1" value="1" required />
+          </div>
+          <div>
+            <label for="merek">Merek</label
+            ><input id="merek" placeholder="Opsional" />
+          </div>
+          <div>
+            <label for="model">Tipe / model</label
+            ><input id="model" placeholder="Opsional" />
+          </div>
+          <div>
+            <label for="seri">Nomor seri</label
+            ><input id="seri" placeholder="Opsional" />
+          </div>
+          <div>
+            <label for="foto">Foto peralatan</label
+            ><input id="foto" type="file" accept="image/*" />
+          </div>
+          <div>
+            <label for="dokumen">Dokumen pendukung</label>
+            <div id="documentInputs">
+              <div class="document-row">
+                <input
+                  type="file"
+                  name="dokumen[]"
+                  data-document
+                  required
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+                />
+              </div>
+              <div class="document-row">
+                <input
+                  type="file"
+                  name="dokumen[]"
+                  data-document
+                  required
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+                />
+              </div>
+            </div>
+            <button class="secondary" id="addDocument" type="button">
+              + Tambah dokumen
+            </button>
+            <p class="hint">
+              Minimal 2 dokumen wajib diisi. Anda bisa menambahkan lebih banyak.
+            </p>
+          </div>
+          <div>
+            <label for="namaDokumen">Nama dokumen (opsional)</label
+            ><input
+              id="namaDokumen"
+              placeholder="Awalan nama, contoh: Dokumen KAL"
+            />
+          </div>
+          <div class="full">
+            <label for="keterangan">Keterangan</label
+            ><textarea id="keterangan" placeholder="Opsional"></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="submit" type="button">Simpan peralatan</button
+          ><button class="secondary" id="reload" type="button">
+            Muat ulang pilihan</button
+          ><span class="hint"
+            >Nomor aset dibuat otomatis dari kode kelompok, misalnya
+            KAL-001.</span
+          >
+        </div>
+        <div id="status" class="status">Siap.</div>
+      </section>
+      <section class="panel">
+        <div class="actions" style="margin-top: 0">
+          <h2 style="margin: 0; flex: 1">Daftar peralatan</h2>
+          <button class="secondary" id="refreshAssets" type="button">
+            Muat daftar
+          </button>
+        </div>
+        <div id="assetList" class="hint">Memuat daftar peralatan...</div>
+        <div id="qrResult"></div>
+      </section>
+    </main>
+    <script>
+      const tokenInput = document.getElementById("token");
+      const statusBox = document.getElementById("status");
+      tokenInput.value = localStorage.getItem("sikepo_token") || "";
+      const auth = () => ({
+        Authorization: `Bearer ${tokenInput.value.trim()}`,
+      });
+      const setStatus = (message, error = false) => {
+        statusBox.textContent = message;
+        statusBox.className = `status${error ? " error" : ""}`;
+      };
+      async function request(url, options = {}) {
+        const response = await fetch(url, {
+          ...options,
+          headers: { ...auth(), ...(options.headers || {}) },
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok)
+          throw new Error(data.message || `Request gagal (${response.status})`);
+        return data;
+      }
+      async function loadOptions() {
+        try {
+          const [groups, rooms] = await Promise.all([
+            request("/api/kelompok-asset/"),
+            request("/api/ruangan/"),
+          ]);
+          const toList = (payload) => {
+            if (Array.isArray(payload)) return payload;
+            if (Array.isArray(payload.data)) return payload.data;
+            if (payload.data && Array.isArray(payload.data.data))
+              return payload.data.data;
+            return [];
+          };
+          const groupList = toList(groups);
+          const roomList = toList(rooms);
+          if (!groupList.length || !roomList.length) {
+            throw new Error(
+              "Data kelompok aset atau ruangan kosong. Pastikan seed database sudah dijalankan.",
+            );
+          }
+          window.assetGroups = groupList;
+          window.allRooms = roomList;
+          document.getElementById("kelompok").innerHTML = groupList
+            .map(
+              (item) =>
+                `<option value="${item.id}">${item.kode} - ${item.nama}</option>`,
+            )
+            .join("");
+          updateRooms();
+          setStatus(
+            `Pilihan berhasil dimuat: ${groupList.length} kelompok aset, ${roomList.length} ruangan.`,
+          );
+        } catch (error) {
+          setStatus(error.message, true);
+        }
+      }
+      async function loadAssets() {
+        const container = document.getElementById("assetList");
+        try {
+          const response = await request("/api/peralatan/");
+          const assets = Array.isArray(response)
+            ? response
+            : Array.isArray(response.data)
+              ? response.data
+              : [];
+          if (!assets.length) {
+            container.textContent = "Belum ada data peralatan.";
+            return;
+          }
+          container.innerHTML = `<table class="asset-table"><thead><tr><th>Nomor aset</th><th>Nama peralatan</th><th>Foto</th><th>Aksi</th></tr></thead><tbody>${assets
+            .map(
+              (asset) =>
+                `<tr><td><strong>${asset.nomor_aset || "-"}</strong></td><td>${asset.nama_peralatan || "-"}</td><td>${asset.foto ? `<a href="${asset.foto}" target="_blank">Lihat foto</a>` : "-"}</td><td><button type="button" class="show-qr" data-id="${asset.id}" data-number="${asset.nomor_aset || ""}">Lihat QR</button></td></tr>`,
+            )
+            .join("")}</tbody></table>`;
+          container.querySelectorAll(".show-qr").forEach((button) => {
+            button.addEventListener("click", () =>
+              showQr(button.dataset.id, button.dataset.number),
+            );
+          });
+        } catch (error) {
+          container.textContent = error.message;
+          container.className = "status error";
+        }
+      }
+      async function showQr(id, number) {
+        const result = document.getElementById("qrResult");
+        result.textContent = `Membuat QR ${number}...`;
+        try {
+          const response = await fetch(`/api/peralatan/${id}/qr`, {
+            headers: auth(),
+          });
+          if (!response.ok) throw new Error("QR code gagal dibuat");
+          const blob = await response.blob();
+          const imageUrl = URL.createObjectURL(blob);
+          result.innerHTML = `<p><strong>QR ${number}</strong></p><img class="qr-preview" src="${imageUrl}" alt="QR ${number}"><p><a href="${imageUrl}" download="${number || "peralatan"}.png">Download QR</a></p>`;
+        } catch (error) {
+          result.textContent = error.message;
+          result.className = "status error";
+        }
+      }
+      function updateRooms() {
+        const group = (window.assetGroups || []).find(
+          (item) =>
+            String(item.id) === document.getElementById("kelompok").value,
+        );
+        const labID = group && (group.lab_id || group.lab?.id);
+        const rooms = (window.allRooms || []).filter(
+          (item) =>
+            !labID || String(item.labs_id || item.lab_id) === String(labID),
+        );
+        document.getElementById("ruangan").innerHTML = rooms.length
+          ? rooms
+              .map(
+                (item) =>
+                  `<option value="${item.id}">${item.nama_ruangan}</option>`,
+              )
+              .join("")
+          : '<option value="">Tidak ada ruangan untuk lab ini</option>';
+      }
+      function addDocumentInput() {
+        const row = document.createElement("div");
+        row.className = "document-row";
+        row.innerHTML =
+          '<input type="file" name="dokumen[]" data-document required accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" /><button type="button" title="Hapus field">Hapus</button>';
+        row
+          .querySelector("button")
+          .addEventListener("click", () => row.remove());
+        document.getElementById("documentInputs").appendChild(row);
+      }
+      document
+        .getElementById("kelompok")
+        .addEventListener("change", updateRooms);
+      document
+        .getElementById("addDocument")
+        .addEventListener("click", addDocumentInput);
+      document.getElementById("reload").addEventListener("click", loadOptions);
+      document
+        .getElementById("refreshAssets")
+        .addEventListener("click", loadAssets);
+      document.getElementById("submit").addEventListener("click", async () => {
+        const button = document.getElementById("submit");
+        button.disabled = true;
+        try {
+          if (!tokenInput.value.trim())
+            throw new Error("Bearer token wajib diisi.");
+          const documentFiles = Array.from(
+            document.querySelectorAll("input[data-document]"),
+          )
+            .map((input) => input.files[0])
+            .filter(Boolean);
+          if (documentFiles.length < 2)
+            throw new Error(
+              "Minimal 2 dokumen wajib dipilih. Anda boleh memilih lebih banyak.",
+            );
+          if (
+            !document.getElementById("kelompok").value ||
+            !document.getElementById("ruangan").value
+          )
+            throw new Error("Kelompok aset dan ruangan wajib dipilih.");
+          localStorage.setItem("sikepo_token", tokenInput.value.trim());
+          const body = {
+            nama_peralatan: document.getElementById("nama").value.trim(),
+            kategori_id: Number(document.getElementById("kategori").value),
+            kelompok_aset_id: Number(document.getElementById("kelompok").value),
+            ruangan_id: Number(document.getElementById("ruangan").value),
+            pic_id: Number(document.getElementById("pic").value),
+            merek: document.getElementById("merek").value.trim(),
+            tipe_model: document.getElementById("model").value.trim(),
+            nomor_seri: document.getElementById("seri").value.trim(),
+            keterangan: document.getElementById("keterangan").value.trim(),
+            detail: {},
+          };
+          const created = await request("/api/peralatan/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const nomorAset = created.nomor_aset;
+          const match = String(created.message || "").match(/.*/);
+          let result = `Peralatan tersimpan dengan nomor aset ${nomorAset || "(cek response)"}.`;
+          const foto = document.getElementById("foto").files[0];
+          if (foto) {
+            const form = new FormData();
+            form.append("foto", foto);
+            const photoResult = await request(
+              `/api/peralatan/${created.id || created.data?.id}/foto`,
+              { method: "POST", body: form },
+            );
+            result += `\nFoto tersimpan: ${photoResult.foto}`;
+          }
+          if (documentFiles.length) {
+            const documentNames = [];
+            for (let index = 0; index < documentFiles.length; index += 1) {
+              const documentFile = documentFiles[index];
+              const form = new FormData();
+              form.append("dokumen", documentFile);
+              const namePrefix = document
+                .getElementById("namaDokumen")
+                .value.trim();
+              const documentName = `${namePrefix || documentFile.name}${documentFiles.length > 1 ? ` ${index + 1}` : ""}`;
+              form.append("nama_dokumen", documentName);
+              form.append(
+                "peralatan_id",
+                String(created.id || created.data?.id),
+              );
+              const documentResult = await request("/api/dokumen-peralatan/", {
+                method: "POST",
+                body: form,
+              });
+              documentNames.push(
+                documentResult.data?.nama_dokumen || documentName,
+              );
+            }
+            result += `\n${documentNames.length} dokumen tersimpan: ${documentNames.join(", ")}`;
+          }
+          setStatus(result);
+          loadAssets();
+        } catch (error) {
+          setStatus(error.message, true);
+        } finally {
+          button.disabled = false;
+        }
+      });
+      loadOptions();
+      loadAssets();
+    </script>
+  </body>
+</html>
