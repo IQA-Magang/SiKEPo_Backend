@@ -36,18 +36,18 @@ func (r *peralatanRepository) CreatePeralatan(req *models.CreatePeralatanRequest
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		// 1. Mapping dan Simpan ke Tabel Master (Peralatan)
 		peralatan := models.Peralatan{
-			NomorAset:      req.NomorAset,
-			NamaPeralatan:  req.NamaPeralatan,
-			KategoriID:     req.KategoriID,
-			KelompokAsetID: req.KelompokAsetID,
-			RuanganID:      req.RuanganID,
-			PICID:          req.PICID,
-			Merek:          req.Merek,
-			TipeModel:      req.TipeModel,
-			NomorSeri:      req.NomorSeri,
-			Foto:           req.Foto,
-			StatusAlat:     req.StatusAlat, // Bisa dikirim dari frontend, atau hardcode "Karantina"
-			Keterangan:     req.Keterangan,
+			NomorAset:           req.NomorAset,
+			NamaPeralatan:       req.NamaPeralatan,
+			KategoriPeralatanID: req.KategoriPeralatanID,
+			KelompokAsetID:      req.KelompokAsetID,
+			RuanganID:           req.RuanganID,
+			PICID:               req.PICID,
+			Merek:               req.Merek,
+			TipeModel:           req.TipeModel,
+			NomorSeri:           req.NomorSeri,
+			Foto:                req.Foto,
+			StatusAlat:          req.StatusAlat, // Bisa dikirim dari frontend, atau hardcode "Karantina"
+			Keterangan:          req.Keterangan,
 		}
 
 		if peralatan.StatusAlat == "" {
@@ -65,8 +65,8 @@ func (r *peralatanRepository) CreatePeralatan(req *models.CreatePeralatanRequest
 			return errors.New("gagal memproses data detail peralatan")
 		}
 
-		// 2. Routing Simpan ke Tabel Detail berdasarkan KategoriID
-		switch req.KategoriID {
+		// 2. Routing Simpan ke Tabel Detail berdasarkan KategoriPeralatanID
+		switch req.KategoriPeralatanID {
 		case 1: // ALAT UKUR (Sheet 1)
 			var detail models.DetailAlatUkur
 			if err := json.Unmarshal(detailBytes, &detail); err != nil {
