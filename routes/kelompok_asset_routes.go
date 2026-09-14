@@ -13,7 +13,7 @@ func KelompokAssetRoutes(
 ) {
 
 	api := app.Group(
-		"/api/v1/kelompok-asset",
+		"/api/kelompok-asset",
 		middleware.RequireAuth,
 	)
 
