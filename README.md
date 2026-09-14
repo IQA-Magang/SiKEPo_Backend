@@ -3,7 +3,6 @@
 Backend API untuk sistem SiKEPo yang dibangun dengan Go, Fiber, GORM, dan MySQL. Proyek ini menyediakan API untuk autentikasi user, pengelolaan lab, ruangan, serta data peralatan.
 
 ## Teknologi yang digunakan
-
 - Go
 - Fiber v2
 - GORM

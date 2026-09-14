@@ -5,7 +5,6 @@ Dokumen ini berisi checklist dan contoh payload JSON untuk melakukan testing API
 ## 1. Persiapan
 
 ### Base URL
-
 ```text
 http://localhost:5000
 ```
