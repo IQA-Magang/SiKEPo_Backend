@@ -46,8 +46,13 @@ func ConnectDatabase() {
 	hasRuanganTable := database.Migrator().HasTable(&models.Ruangan{})
 	hasLabsTable := database.Migrator().HasTable(&models.Labs{})
 	hasPeralatanTable := database.Migrator().HasTable(&models.Peralatan{})
+	hasDokumenPeralatanTable := database.Migrator().HasTable(&models.DokumenPeralatan{})
+	hasDetailAlatUkurTable := database.Migrator().HasTable(&models.DetailAlatUkur{})
+	hasDetailAlatBantuTable := database.Migrator().HasTable(&models.DetailAlatBantu{})
+	hasDetailArtefakAcuanTable := database.Migrator().HasTable(&models.DetailArtefakAcuan{})
+	hasDetailKomponenPendukungTable := database.Migrator().HasTable(&models.DetailKomponenPendukung{})
 
-	if !hasUserTable || !hasRuanganTable || !hasLabsTable || !hasPeralatanTable {
+	if !hasUserTable || !hasRuanganTable || !hasLabsTable || !hasPeralatanTable || !hasDokumenPeralatanTable || !hasDetailAlatUkurTable || !hasDetailAlatBantuTable || !hasDetailArtefakAcuanTable || !hasDetailKomponenPendukungTable {
 		log.Println("Beberapa tabel belum ada. Membuat tabel...")
 
 		err := database.AutoMigrate(
@@ -59,6 +64,7 @@ func ConnectDatabase() {
 			&models.DetailAlatBantu{},
 			&models.DetailArtefakAcuan{},
 			&models.DetailKomponenPendukung{},
+			&models.DokumenPeralatan{},
 		)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to migrate database tables: %v", err))
