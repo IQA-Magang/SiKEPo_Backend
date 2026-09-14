@@ -179,8 +179,10 @@ func SeedDummyData() {
 		}
 
 		labs := []models.Labs{
-			{NamaLabs: "Lab Instrumentasi", KodeLabs: "LAB-INS", ManagerID: &manager.UserID},
-			{NamaLabs: "Lab Kimia", KodeLabs: "LAB-KIM", ManagerID: &manager.UserID},
+			{NamaLabs: "Lab IQA", KodeLabs: "IQA", ManagerID: &manager.UserID},
+			{NamaLabs: "Lab DES", KodeLabs: "DES", ManagerID: &manager.UserID},
+			{NamaLabs: "Lab SSA", KodeLabs: "SSA", ManagerID: &manager.UserID},
+			{NamaLabs: "TIM", KodeLabs: "TIM", ManagerID: &manager.UserID},
 		}
 
 		if err := DB.Create(&labs).Error; err != nil {
@@ -214,10 +216,18 @@ func SeedDummyData() {
 			return
 		}
 
+		if len(labs) < 4 {
+			log.Println("Data lab belum lengkap, seed kelompok asset dilewati")
+			return
+		}
+
 		assets := []models.KelompokAsset{
-			{LabID: labs[0].ID, PICID: admin.UserID, Kode: "KA-INS", Nama: "Kelompok Instrumentasi"},
-			{LabID: labs[0].ID, PICID: admin.UserID, Kode: "KA-ENV", Nama: "Kelompok Lingkungan"},
-			{LabID: labs[1].ID, PICID: admin.UserID, Kode: "KA-KIM", Nama: "Kelompok Kimia"},
+			{LabID: labs[0].ID, PICID: admin.UserID, Kode: "FBA", Nama: "FBA"},
+			{LabID: labs[0].ID, PICID: admin.UserID, Kode: "SFT", Nama: "SFT"},
+			{LabID: labs[0].ID, PICID: admin.UserID, Kode: "ENE", Nama: "ENE"},
+			{LabID: labs[1].ID, PICID: admin.UserID, Kode: "DEV", Nama: "DEV"},
+			{LabID: labs[1].ID, PICID: admin.UserID, Kode: "TRA", Nama: "TRA"},
+			{LabID: labs[2].ID, PICID: admin.UserID, Kode: "KAL", Nama: "KAL"},
 		}
 
 		if err := DB.Create(&assets).Error; err != nil {
@@ -251,9 +261,28 @@ func SeedDummyData() {
 			return
 		}
 
+		if len(labs) < 4 {
+			log.Println("Data lab belum lengkap, seed ruangan dilewati")
+			return
+		}
+
 		ruanganList := []models.Ruangan{
-			{NamaRuangan: "Ruang Instrumen A", KodeRuangan: "R-101", LantaiRuangan: "1", LabsID: &labs[0].ID, PICUserID: &staff.UserID},
-			{NamaRuangan: "Ruang Uji Kimia", KodeRuangan: "R-205", LantaiRuangan: "2", LabsID: &labs[1].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Uji Optik", KodeRuangan: "IQA-01", LantaiRuangan: "1", LabsID: &labs[0].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Uji Mekanik", KodeRuangan: "IQA-02", LantaiRuangan: "1", LabsID: &labs[0].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Uji Lingkungan", KodeRuangan: "IQA-03", LantaiRuangan: "1", LabsID: &labs[0].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Uji Material", KodeRuangan: "IQA-04", LantaiRuangan: "1", LabsID: &labs[0].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Electrical Safety", KodeRuangan: "IQA-05", LantaiRuangan: "1", LabsID: &labs[0].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Laser Safety", KodeRuangan: "IQA-06", LantaiRuangan: "1", LabsID: &labs[0].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Energy", KodeRuangan: "IQA-07", LantaiRuangan: "1", LabsID: &labs[0].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Battery", KodeRuangan: "IQA-08", LantaiRuangan: "1", LabsID: &labs[0].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Gedung Anechoic Chamber", KodeRuangan: "IQA-09", LantaiRuangan: "1", LabsID: &labs[0].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Radio", KodeRuangan: "DES-01", LantaiRuangan: "1", LabsID: &labs[1].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Device", KodeRuangan: "DES-02", LantaiRuangan: "1", LabsID: &labs[1].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Metro", KodeRuangan: "DES-03", LantaiRuangan: "1", LabsID: &labs[1].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Transport", KodeRuangan: "DES-04", LantaiRuangan: "1", LabsID: &labs[1].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Access", KodeRuangan: "DES-05", LantaiRuangan: "1", LabsID: &labs[1].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Lab Kalibrasi", KodeRuangan: "SSA-01", LantaiRuangan: "1", LabsID: &labs[2].ID, PICUserID: &staff.UserID},
+			{NamaRuangan: "Gudang", KodeRuangan: "TIM-01", LantaiRuangan: "1", LabsID: &labs[3].ID, PICUserID: &staff.UserID},
 		}
 
 		if err := DB.Create(&ruanganList).Error; err != nil {
