@@ -33,10 +33,10 @@ func (c *PeralatanController) Create(ctx *fiber.Ctx) error {
 	}
 
 	// (Opsional) Lakukan validasi manual sederhana jika diperlukan
-	if req.NomorAset == "" || req.NamaPeralatan == "" {
+	if req.NamaPeralatan == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Nomor Aset dan Nama Peralatan wajib diisi",
+			"message": "Nama Peralatan wajib diisi",
 		})
 	}
 
@@ -48,7 +48,7 @@ func (c *PeralatanController) Create(ctx *fiber.Ctx) error {
 	}
 
 	// 2. Eksekusi Repository untuk Simpan Data
-	err := c.Repo.CreatePeralatan(req)
+	nomorAset, err := c.Repo.CreatePeralatan(req)
 	if err != nil {
 		// Pengecekan apakah error karena nomor aset duplikat (tergantung driver DB, ini error umum)
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -60,8 +60,9 @@ func (c *PeralatanController) Create(ctx *fiber.Ctx) error {
 
 	// 3. Response Berhasil
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"status":  "success",
-		"message": "Peralatan beserta detail spesifikasinya berhasil ditambahkan",
+		"status":     "success",
+		"message":    "Peralatan beserta detail spesifikasinya berhasil ditambahkan",
+		"nomor_aset": nomorAset,
 	})
 }
 
@@ -102,4 +103,4 @@ func (c *PeralatanController) GenerateQRCode(ctx *fiber.Ctx) error {
 
 	ctx.Set(fiber.HeaderContentType, "image/png")
 	return ctx.Send(qr)
-}	
+}

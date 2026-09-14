@@ -3,6 +3,9 @@ package repositories
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"regexp"
+	"strings"
 
 	"backend/models"
 
@@ -10,7 +13,7 @@ import (
 )
 
 type PeralatanRepository interface {
-	CreatePeralatan(req *models.CreatePeralatanRequest) error
+	CreatePeralatan(req *models.CreatePeralatanRequest) (string, error)
 	FindByID(id uint) (*models.Peralatan, error)
 }
 
@@ -31,12 +34,34 @@ func (r *peralatanRepository) FindByID(id uint) (*models.Peralatan, error) {
 	return &peralatan, nil
 }
 
-func (r *peralatanRepository) CreatePeralatan(req *models.CreatePeralatanRequest) error {
+func (r *peralatanRepository) CreatePeralatan(req *models.CreatePeralatanRequest) (string, error) {
 	// Memulai Database Transaction
-	return r.db.Transaction(func(tx *gorm.DB) error {
+	var nomorAset string
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		var kelompokAsset models.KelompokAsset
+		if err := tx.First(&kelompokAsset, req.KelompokAsetID).Error; err != nil {
+			return err
+		}
+
+		prefix := prefixNomorAset(kelompokAsset.Kode, kelompokAsset.Nama)
+		if prefix == "" {
+			return errors.New("kode atau nama kelompok asset harus memiliki minimal 3 huruf")
+		}
+
+		var nomorUrut int
+		if err := tx.Model(&models.Peralatan{}).
+			Where("nomor_aset LIKE ?", prefix+"-%").
+			Select("COALESCE(MAX(CAST(SUBSTRING_INDEX(nomor_aset, '-', -1) AS UNSIGNED)), 0)").
+			Scan(&nomorUrut).Error; err != nil {
+			return err
+		}
+
+		nomorUrut++
+		nomorAset = fmt.Sprintf("%s-%03d", prefix, nomorUrut)
+
 		// 1. Mapping dan Simpan ke Tabel Master (Peralatan)
 		peralatan := models.Peralatan{
-			NomorAset:           req.NomorAset,
+			NomorAset:           nomorAset,
 			NamaPeralatan:       req.NamaPeralatan,
 			KategoriPeralatanID: req.KategoriPeralatanID,
 			KelompokAsetID:      req.KelompokAsetID,
@@ -138,4 +163,20 @@ func (r *peralatanRepository) CreatePeralatan(req *models.CreatePeralatanRequest
 		// Jika semua berhasil, return nil untuk Commit transaksi
 		return nil
 	})
+	return nomorAset, err
+}
+
+func prefixNomorAset(kode, nama string) string {
+	prefix := kode
+	if strings.TrimSpace(prefix) == "" {
+		prefix = nama
+	}
+
+	prefix = strings.ToUpper(prefix)
+	prefix = regexp.MustCompile(`[^A-Z0-9]`).ReplaceAllString(prefix, "")
+	if len(prefix) < 3 {
+		return ""
+	}
+
+	return prefix[:3]
 }

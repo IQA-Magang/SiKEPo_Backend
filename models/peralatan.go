@@ -111,7 +111,6 @@ func (DetailKomponenPendukung) TableName() string {
 
 // 6. PAYLOAD REQUEST: DTO
 type CreatePeralatanRequest struct {
-	NomorAset           string                 `json:"nomor_aset" validate:"required"`
 	NamaPeralatan       string                 `json:"nama_peralatan" validate:"required"`
 	KategoriPeralatanID uint                   `json:"kategori_id" validate:"required"`
 	KelompokAsetID      uint                   `json:"kelompok_aset_id" validate:"required"`
