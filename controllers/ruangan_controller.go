@@ -144,10 +144,11 @@ func (c *RuanganController) GetByPICUserID(ctx *fiber.Ctx) error {
 // POST /ruangan
 func (c *RuanganController) Create(ctx *fiber.Ctx) error {
 	var input struct {
-		NamaRuangan string  `json:"nama_ruangan"`
-		KodeRuangan string  `json:"kode_ruangan"`
-		LabsID      *uint64 `json:"labs_id"`
-		PICUserID   *uint64 `json:"pic_user_id"`
+		NamaRuangan   string  `json:"nama_ruangan"`
+		KodeRuangan   string  `json:"kode_ruangan"`
+		LantaiRuangan string  `json:"lantai_ruangan"`
+		LabsID        *uint64 `json:"labs_id"`
+		PICUserID     *uint64 `json:"pic_user_id"`
 	}
 
 	if err := ctx.BodyParser(&input); err != nil {
@@ -159,6 +160,7 @@ func (c *RuanganController) Create(ctx *fiber.Ctx) error {
 
 	input.NamaRuangan = strings.TrimSpace(input.NamaRuangan)
 	input.KodeRuangan = strings.TrimSpace(input.KodeRuangan)
+	input.LantaiRuangan = strings.TrimSpace(input.LantaiRuangan)
 
 	if input.NamaRuangan == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -171,6 +173,13 @@ func (c *RuanganController) Create(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Kode ruangan wajib diisi",
+		})
+	}
+
+	if input.LantaiRuangan == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Lantai ruangan wajib diisi",
 		})
 	}
 
@@ -215,10 +224,11 @@ func (c *RuanganController) Create(ctx *fiber.Ctx) error {
 	}
 
 	ruangan := &models.Ruangan{
-		NamaRuangan: input.NamaRuangan,
-		KodeRuangan: input.KodeRuangan,
-		LabsID:      input.LabsID,
-		PICUserID:   input.PICUserID,
+		NamaRuangan:   input.NamaRuangan,
+		KodeRuangan:   input.KodeRuangan,
+		LantaiRuangan: input.LantaiRuangan,
+		LabsID:        input.LabsID,
+		PICUserID:     input.PICUserID,
 	}
 
 	if err := c.Repository.Create(ruangan); err != nil {
@@ -279,10 +289,11 @@ func (c *RuanganController) Update(ctx *fiber.Ctx) error {
 	}
 
 	var input struct {
-		NamaRuangan *string `json:"nama_ruangan"`
-		KodeRuangan *string `json:"kode_ruangan"`
-		LabsID      *uint64 `json:"labs_id"`
-		PICUserID   *uint64 `json:"pic_user_id"`
+		NamaRuangan   *string `json:"nama_ruangan"`
+		KodeRuangan   *string `json:"kode_ruangan"`
+		LantaiRuangan *string `json:"lantai_ruangan"`
+		LabsID        *uint64 `json:"labs_id"`
+		PICUserID     *uint64 `json:"pic_user_id"`
 	}
 
 	if err := ctx.BodyParser(&input); err != nil {
@@ -362,6 +373,19 @@ func (c *RuanganController) Update(ctx *fiber.Ctx) error {
 		}
 
 		updates["kode_ruangan"] = kodeRuangan
+	}
+
+	if input.LantaiRuangan != nil {
+		lantaiRuangan := strings.TrimSpace(*input.LantaiRuangan)
+
+		if lantaiRuangan == "" {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"success": false,
+				"message": "Lantai ruangan tidak boleh kosong",
+			})
+		}
+
+		updates["lantai_ruangan"] = lantaiRuangan
 	}
 
 	// Update lab
