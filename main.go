@@ -17,37 +17,49 @@ func main() {
 	// =========================
 	// DATABASE
 	// =========================
+
 	config.ConnectDatabase()
 
 	// =========================
 	// FIBER
 	// =========================
+
 	app := fiber.New()
 
 	// =========================
 	// CORS
 	// =========================
+
 	app.Use(cors.New())
 
 	// =========================
 	// STATIC
 	// =========================
+
 	app.Static("/static", "./public")
 
 	// =========================
 	// RECAPTCHA SITE KEY
 	// =========================
+
 	app.Get("/recaptcha/sitekey", func(c *fiber.Ctx) error {
+
 		site := os.Getenv("SITE_KEY")
 
 		if site == "" {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+
+			return c.Status(
+				fiber.StatusInternalServerError,
+			).JSON(fiber.Map{
+
 				"success": false,
+
 				"message": "recaptcha site key not configured",
 			})
 		}
 
 		return c.JSON(fiber.Map{
+
 			"site_key": site,
 		})
 	})
@@ -56,18 +68,31 @@ func main() {
 	// REPOSITORY
 	// =========================
 
-	userRepository := repositories.NewUserRepository(config.DB)
+	userRepository :=
+		repositories.NewUserRepository(config.DB)
 
-	ruanganRepo := repositories.NewRuanganRepository(config.DB)
+	ruanganRepo :=
+		repositories.NewRuanganRepository(config.DB)
 
-	peralatanRepo := repositories.NewPeralatanRepository(config.DB)
+	peralatanRepo :=
+		repositories.NewPeralatanRepository(config.DB)
 
-	verifikasiRepo := repositories.NewVerifikasiRepository(config.DB)
+	verifikasiRepo :=
+		repositories.NewVerifikasiRepository(config.DB)
 
-	labsRepo := repositories.NewLabsRepository(config.DB)
+	labsRepo :=
+		repositories.NewLabsRepository(config.DB)
 
 	// Detail Peminjaman
-	detailPeminjamanRepo := repositories.NewDetailPeminjamanRepository(config.DB)
+	detailPeminjamanRepo :=
+		repositories.NewDetailPeminjamanRepository(config.DB)
+
+	// =========================
+	// KELOMPOK ASSET REPOSITORY
+	// =========================
+
+	kelompokAssetRepo :=
+		repositories.NewKelompokAssetRepository(config.DB)
 
 	// =========================
 	// CONTROLLER
@@ -88,6 +113,7 @@ func main() {
 	// =========================
 	// PERALATAN CONTROLLER
 	// =========================
+
 	peralatanController := &controllers.PeralatanController{
 		Repository:        peralatanRepo,
 		RuanganRepository: ruanganRepo,
@@ -97,16 +123,35 @@ func main() {
 	// =========================
 	// VERIFIKASI CONTROLLER
 	// =========================
+
 	verifikasiController := &controllers.VerifikasiController{
 		Repository:          verifikasiRepo,
 		PeralatanRepository: peralatanRepo,
 		UserRepository:      userRepository,
 	}
 
-	// Detail Peminjaman
-	detailPeminjamanController := &controllers.DetailPeminjamanController{
-		Repository: detailPeminjamanRepo,
-	}
+	// =========================
+	// DETAIL PEMINJAMAN
+	// =========================
+
+	detailPeminjamanController :=
+		&controllers.DetailPeminjamanController{
+			Repository: detailPeminjamanRepo,
+		}
+
+	// =========================
+	// KELOMPOK ASSET CONTROLLER
+	// =========================
+
+	kelompokAssetController :=
+		&controllers.KelompokAssetController{
+
+			Repository: kelompokAssetRepo,
+
+			LabsRepository: labsRepo,
+
+			UserRepository: userRepository,
+		}
 
 	// =========================
 	// ROUTES
@@ -144,12 +189,24 @@ func main() {
 	)
 
 	// =========================
+	// KELOMPOK ASSET ROUTES
+	// =========================
+
+	routes.KelompokAssetRoutes(
+		app,
+		kelompokAssetController,
+	)
+
+	// =========================
 	// ROOT API
 	// =========================
 
 	app.Get("/", func(c *fiber.Ctx) error {
+
 		return c.JSON(fiber.Map{
+
 			"success": true,
+
 			"message": "Backend API Running",
 		})
 	})
