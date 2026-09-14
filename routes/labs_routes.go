@@ -12,7 +12,7 @@ func LabsRoutes(
 	controller *controllers.LabsController,
 ) {
 	// Public / authenticated routes
-	labs := app.Group("/api/v1/labs", middleware.RequireAuth)
+	labs := app.Group("/api/labs", middleware.RequireAuth)
 
 	labs.Get("/", controller.GetAll)
 	labs.Get("/:id", controller.GetByID)
