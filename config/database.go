@@ -71,6 +71,7 @@ func ConnectDatabase() {
 			&models.DokumenPeralatan{},
 			&models.KategoriPeralatan{},
 			&models.KelompokAsset{},
+			&models.Notification{},
 		)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to migrate database tables: %v", err))

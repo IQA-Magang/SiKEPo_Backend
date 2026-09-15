@@ -6,6 +6,7 @@ import (
 	"backend/utils"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,11 +15,40 @@ import (
 )
 
 type PeralatanController struct {
-	Repo repositories.PeralatanRepository
+	Repo             repositories.PeralatanRepository
+	DB               *gorm.DB
+	NotificationRepo repositories.NotificationRepository
 }
 
 func NewPeralatanController(repo repositories.PeralatanRepository) *PeralatanController {
 	return &PeralatanController{Repo: repo}
+}
+
+func (c *PeralatanController) sendManagerLabNotification(peralatan *models.Peralatan) {
+	if c.DB == nil || c.NotificationRepo == nil || peralatan == nil {
+		return
+	}
+
+	var room models.Ruangan
+	if err := c.DB.Preload("Labs").First(&room, peralatan.RuanganID).Error; err != nil {
+		log.Printf("Gagal mengambil ruangan untuk notifikasi manager lab: %v", err)
+		return
+	}
+
+	if room.Labs == nil || room.Labs.ManagerID == nil {
+		return
+	}
+
+	notification := &models.Notification{
+		UserID:  *room.Labs.ManagerID,
+		Type:    "equipment_added",
+		Title:   "Peralatan baru ditambahkan",
+		Message: fmt.Sprintf("Peralatan %s (%s) telah ditambahkan ke ruangan %s.", peralatan.NamaPeralatan, peralatan.NomorAset, room.NamaRuangan),
+	}
+
+	if err := c.NotificationRepo.Create(notification); err != nil {
+		log.Printf("Gagal mengirim notifikasi ke manager lab: %v", err)
+	}
 }
 
 // GetAll handles GET /api/peralatan.
@@ -84,6 +114,8 @@ func (c *PeralatanController) Create(ctx *fiber.Ctx) error {
 			"error":   err.Error(),
 		})
 	}
+
+	c.sendManagerLabNotification(peralatan)
 
 	// 3. Response Berhasil
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{

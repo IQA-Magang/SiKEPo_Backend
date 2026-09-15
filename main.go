@@ -94,6 +94,9 @@ func main() {
 	dokumenPeralatanRepository :=
 		repositories.NewDokumenPeralatanRepository(config.DB)
 
+	notificationRepo :=
+		repositories.NewNotificationRepository(config.DB)
+
 	// =========================
 	// CONTROLLER
 	// =========================
@@ -167,8 +170,6 @@ func main() {
 		ruanganController,
 	)
 
-	routes.SetupPeralatanRoutes(app, config.DB)
-
 	// routes.VerifikasiRoutes(
 	// 	app,
 	// 	verifikasiController,
@@ -193,6 +194,13 @@ func main() {
 		app,
 		dokumenPeralatanController,
 	)
+
+	routes.NotificationRoutes(
+		app,
+		&controllers.NotificationController{Repo: notificationRepo},
+	)
+
+	routes.SetupPeralatanRoutes(app, config.DB, notificationRepo)
 
 	// =========================
 	// ROOT API

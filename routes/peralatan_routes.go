@@ -10,10 +10,12 @@ import (
 )
 
 // SetupPeralatanRoutes mendaftarkan endpoint untuk modul peralatan
-func SetupPeralatanRoutes(app *fiber.App, db *gorm.DB) {
+func SetupPeralatanRoutes(app *fiber.App, db *gorm.DB, notificationRepo repositories.NotificationRepository) {
 	// 1. Inisialisasi Repository dan Controller
 	peralatanRepo := repositories.NewPeralatanRepository(db)
 	peralatanController := controllers.NewPeralatanController(peralatanRepo)
+	peralatanController.NotificationRepo = notificationRepo
+	peralatanController.DB = db
 
 	// 2. Grouping Route API
 	api := app.Group("/api/peralatan", middleware.RequireAuth)
