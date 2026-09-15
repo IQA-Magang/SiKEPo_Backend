@@ -162,6 +162,21 @@
         margin-top: 12px;
         border: 1px solid var(--line);
       }
+      .asset-thumb {
+        display: block;
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f8fafc;
+      }
+      .doc-link {
+        display: inline-block;
+        margin-top: 6px;
+        color: var(--brand-dark);
+        font-weight: 600;
+      }
       @media (max-width: 650px) {
         main {
           width: min(100% - 20px, 980px);
@@ -317,7 +332,12 @@
     <script>
       const tokenInput = document.getElementById("token");
       const statusBox = document.getElementById("status");
-      tokenInput.value = localStorage.getItem("sikepo_token") || "";
+
+      const storedToken = localStorage.getItem("sikepo_token");
+      if (storedToken) {
+        tokenInput.value = storedToken;
+      }
+
       const auth = () => ({
         Authorization: `Bearer ${tokenInput.value.trim()}`,
       });
@@ -384,20 +404,56 @@
             container.textContent = "Belum ada data peralatan.";
             return;
           }
-          container.innerHTML = `<table class="asset-table"><thead><tr><th>Nomor aset</th><th>Nama peralatan</th><th>Foto</th><th>Aksi</th></tr></thead><tbody>${assets
-            .map(
-              (asset) =>
-                `<tr><td><strong>${asset.nomor_aset || "-"}</strong></td><td>${asset.nama_peralatan || "-"}</td><td>${asset.foto ? `<a href="${asset.foto}" target="_blank">Lihat foto</a>` : "-"}</td><td><button type="button" class="show-qr" data-id="${asset.id}" data-number="${asset.nomor_aset || ""}">Lihat QR</button></td></tr>`,
-            )
+          container.innerHTML = `<table class="asset-table"><thead><tr><th>Nomor aset</th><th>Nama peralatan</th><th>Foto</th><th>Dokumen</th><th>Aksi</th></tr></thead><tbody>${assets
+            .map((asset) => {
+              const fotoHtml = asset.foto
+                ? `<img class="asset-thumb" src="${asset.foto}" alt="${asset.nama_peralatan || "Foto peralatan"}" /><br><a href="${asset.foto}" target="_blank" rel="noreferrer">Buka foto</a>`
+                : "Belum ada foto";
+              return `<tr><td><strong>${asset.nomor_aset || "-"}</strong></td><td>${asset.nama_peralatan || "-"}</td><td>${fotoHtml}</td><td><button type="button" class="view-docs" data-id="${asset.id}" data-name="${asset.nama_peralatan || "Peralatan"}">Lihat dokumen</button></td><td><button type="button" class="show-qr" data-id="${asset.id}" data-number="${asset.nomor_aset || ""}">Lihat QR</button></td></tr>`;
+            })
             .join("")}</tbody></table>`;
           container.querySelectorAll(".show-qr").forEach((button) => {
             button.addEventListener("click", () =>
               showQr(button.dataset.id, button.dataset.number),
             );
           });
+          container.querySelectorAll(".view-docs").forEach((button) => {
+            button.addEventListener("click", () =>
+              showDocuments(button.dataset.id, button.dataset.name),
+            );
+          });
         } catch (error) {
           container.textContent = error.message;
           container.className = "status error";
+        }
+      }
+      async function showDocuments(id, name) {
+        const result = document.getElementById("qrResult");
+        result.innerHTML = `<p><strong>Memuat dokumen ${name}...</strong></p>`;
+        try {
+          const response = await request(
+            `/api/dokumen-peralatan/peralatan/${id}`,
+          );
+          const docs = Array.isArray(response)
+            ? response
+            : Array.isArray(response.data)
+              ? response.data
+              : [];
+
+          if (!docs.length) {
+            result.innerHTML = `<p><strong>Dokumen ${name}</strong></p><p>Tidak ada dokumen yang tersimpan.</p>`;
+            return;
+          }
+
+          result.innerHTML = `<p><strong>Dokumen ${name}</strong></p><ul>${docs
+            .map(
+              (doc) =>
+                `<li><a href="${doc.path_dokumen || doc.file_path || "#"}" target="_blank" rel="noreferrer">${doc.nama_dokumen || "Dokumen"}</a></li>`,
+            )
+            .join("")}</ul>`;
+        } catch (error) {
+          result.innerHTML = `<p><strong>Dokumen ${name}</strong></p><p>${error.message}</p>`;
+          result.className = "status error";
         }
       }
       async function showQr(id, number) {
