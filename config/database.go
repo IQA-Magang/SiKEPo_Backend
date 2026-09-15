@@ -55,8 +55,9 @@ func ConnectDatabase() {
 	hasDetailKomponenPendukungTable := database.Migrator().HasTable(&models.DetailKomponenPendukung{})
 	hasKategoriPeralatanTable := database.Migrator().HasTable(&models.KategoriPeralatan{})
 	hasKelompokAssetTable := database.Migrator().HasTable(&models.KelompokAsset{})
+	hasNotificationTable := database.Migrator().HasTable(&models.Notification{})
 
-	if !hasUserTable || !hasRuanganTable || !hasLabsTable || !hasPeralatanTable || !hasDokumenPeralatanTable || !hasDetailAlatUkurTable || !hasDetailAlatBantuTable || !hasDetailArtefakAcuanTable || !hasDetailKomponenPendukungTable || !hasKategoriPeralatanTable || !hasKelompokAssetTable {
+	if !hasUserTable || !hasRuanganTable || !hasLabsTable || !hasPeralatanTable || !hasDokumenPeralatanTable || !hasDetailAlatUkurTable || !hasDetailAlatBantuTable || !hasDetailArtefakAcuanTable || !hasDetailKomponenPendukungTable || !hasKategoriPeralatanTable || !hasKelompokAssetTable || !hasNotificationTable {
 		log.Println("Beberapa tabel belum ada. Membuat tabel...")
 
 		err := database.AutoMigrate(
