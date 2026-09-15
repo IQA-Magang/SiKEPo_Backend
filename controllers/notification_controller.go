@@ -30,9 +30,9 @@ func (c *NotificationController) GetByUserID(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.JSON(fiber.Map{
-		"status":  "success",
-		"data":    notifications,
-		"count":   len(notifications),
+		"status": "success",
+		"data":   notifications,
+		"count":  len(notifications),
 	})
 }
 
