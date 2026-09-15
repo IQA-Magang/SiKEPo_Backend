@@ -36,7 +36,7 @@ func main() {
 	// STATIC
 	// =========================
 
-	app.Static("/static", "./public")
+	app.Static("/docs", "./docs")
 
 	// =========================
 	// RECAPTCHA SITE KEY

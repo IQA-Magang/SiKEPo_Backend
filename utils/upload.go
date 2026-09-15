@@ -16,7 +16,7 @@ func SaveUploadedFile(file *multipart.FileHeader, folder, prefix string) (string
 		return "", fmt.Errorf("file harus memiliki ekstensi")
 	}
 
-	directory := filepath.Join("public", "uploads", folder)
+	directory := filepath.Join("docs", "uploads", folder)
 	if err := os.MkdirAll(directory, 0755); err != nil {
 		return "", err
 	}
@@ -40,5 +40,5 @@ func SaveUploadedFile(file *multipart.FileHeader, folder, prefix string) (string
 		return "", err
 	}
 
-	return "/static/uploads/" + folder + "/" + filename, nil
+	return "/docs/uploads/" + folder + "/" + filename, nil
 }
