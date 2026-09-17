@@ -113,14 +113,20 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Normalisasi
+	// ==============================
+	// NORMALISASI
+	// ==============================
+
 	request.NIP = strings.TrimSpace(request.NIP)
 	request.Name = strings.TrimSpace(request.Name)
 	request.Email = strings.TrimSpace(request.Email)
 	request.Role = strings.TrimSpace(request.Role)
 	request.Position = strings.TrimSpace(request.Position)
 
-	// Validasi
+	// ==============================
+	// VALIDASI
+	// ==============================
+
 	if request.NIP == "" {
 		return ctx.Status(400).JSON(fiber.Map{
 			"success": false,
@@ -170,7 +176,10 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Model
+	// ==============================
+	// MODEL
+	// ==============================
+
 	user := models.User{
 		NIP:      request.NIP,
 		Name:     request.Name,
@@ -182,7 +191,10 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		PIC: request.PIC,
 	}
 
-	// Create
+	// ==============================
+	// CREATE
+	// ==============================
+
 	err := c.Repository.CreateUser(
 		&user,
 		request.Password,
@@ -258,11 +270,19 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
+	// ==============================
+	// NORMALISASI
+	// ==============================
+
 	request.NIP = strings.TrimSpace(request.NIP)
 	request.Name = strings.TrimSpace(request.Name)
 	request.Email = strings.TrimSpace(request.Email)
 	request.Role = strings.TrimSpace(request.Role)
 	request.Position = strings.TrimSpace(request.Position)
+
+	// ==============================
+	// VALIDASI
+	// ==============================
 
 	if request.NIP == "" ||
 		request.Name == "" ||
@@ -294,6 +314,10 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		// PIC
 		PIC: request.PIC,
 	}
+
+	// ==============================
+	// UPDATE
+	// ==============================
 
 	err = c.Repository.UpdateUser(
 		id,
@@ -330,6 +354,10 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 			"error":   err.Error(),
 		})
 	}
+
+	// ==============================
+	// GET DATA TERBARU
+	// ==============================
 
 	updatedUser, err := c.Repository.GetUserByID(id)
 
@@ -397,6 +425,7 @@ func (c *UserController) DeleteUser(ctx *fiber.Ctx) error {
 func isValidRole(role string) bool {
 
 	switch role {
+
 	case "admin", "staff", "manager":
 		return true
 
@@ -484,6 +513,10 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 			"message": "Email atau password salah",
 		})
 	}
+
+	// ==============================
+	// CREATE TOKEN
+	// ==============================
 
 	token, err := utils.CreateToken(user)
 

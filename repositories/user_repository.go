@@ -109,7 +109,10 @@ func (r *UserRepository) CreateUser(
 	password string,
 ) error {
 
-	// Cek NIP
+	// ==============================
+	// CEK NIP
+	// ==============================
+
 	var nipCount int64
 
 	err := r.DB.
@@ -126,7 +129,10 @@ func (r *UserRepository) CreateUser(
 		return ErrNIPAlreadyExists
 	}
 
-	// Cek email
+	// ==============================
+	// CEK EMAIL
+	// ==============================
+
 	var emailCount int64
 
 	err = r.DB.
@@ -143,7 +149,10 @@ func (r *UserRepository) CreateUser(
 		return ErrEmailAlreadyExists
 	}
 
-	// Hash password
+	// ==============================
+	// HASH PASSWORD
+	// ==============================
+
 	passwordHash, err := bcrypt.GenerateFromPassword(
 		[]byte(password),
 		bcrypt.DefaultCost,
@@ -171,6 +180,10 @@ func (r *UserRepository) UpdateUser(
 
 	var existingUser models.User
 
+	// ==============================
+	// CARI USER
+	// ==============================
+
 	err := r.DB.
 		Where("user_id = ?", id).
 		First(&existingUser).
@@ -180,7 +193,10 @@ func (r *UserRepository) UpdateUser(
 		return err
 	}
 
-	// Cek NIP
+	// ==============================
+	// CEK NIP
+	// ==============================
+
 	var nipCount int64
 
 	err = r.DB.
@@ -201,7 +217,10 @@ func (r *UserRepository) UpdateUser(
 		return ErrNIPAlreadyExists
 	}
 
-	// Cek email
+	// ==============================
+	// CEK EMAIL
+	// ==============================
+
 	var emailCount int64
 
 	err = r.DB.
@@ -228,6 +247,11 @@ func (r *UserRepository) UpdateUser(
 	existingUser.Email = user.Email
 	existingUser.Role = user.Role
 	existingUser.Position = user.Position
+	existingUser.PIC = user.PIC
+
+	// ==============================
+	// UPDATE PASSWORD
+	// ==============================
 
 	// Update PIC
 	existingUser.PIC = user.PIC
@@ -246,6 +270,10 @@ func (r *UserRepository) UpdateUser(
 
 		existingUser.Password = string(passwordHash)
 	}
+
+	// ==============================
+	// SIMPAN
+	// ==============================
 
 	return r.DB.Save(&existingUser).Error
 }
