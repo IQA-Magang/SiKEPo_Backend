@@ -422,18 +422,14 @@ func SeedDummyData() {
 
 			if err := DB.Create(&models.DetailAlatUkur{
 				PeralatanID:          created[0].ID,
-				ParameterRentangUkur: "Tegangan, Arus, Resistansi",
-				Resolusi:             "0.1 mV",
-				AkurasiSpesifikasi:   "±0.05%",
-				Satuan:               "V",
 				PerantiLunakVersi:    "1.2.0",
-				MetodeKelayakan:      "Kalibrasi referensi",
+				MetodeKelayakan:      "kalibrasi eksternal",
 				NoSertifikat:         "SER-UK-001",
 				TglKalibrasi:         &kalibrasi,
+				TglJatuhTempo:        nil,
 				IntervalBulan:        12,
-				NilaiKoreksi:         "0.02",
-				Ketidakpastian:       "0.01%",
-				JenisLabel:           "Digital",
+				FungsiSbgAlatStandar: false,
+				JenisLabel:           "calibration",
 				StatusKelayakan:      "Layak",
 			}).Error; err != nil {
 				log.Printf("Gagal membuat detail alat ukur: %v", err)
@@ -456,30 +452,29 @@ func SeedDummyData() {
 			if err := DB.Create(&models.DetailArtefakAcuan{
 				PeralatanID:                   created[2].ID,
 				JenisDeskripsi:                "Blok kalibrasi referensi",
-				KarakteristikYangDiacu:        "Tegangan dan arus stabil",
+				KarakteristikYangDiacu:        "dimension & kinerja",
 				NilaiSpesifikasiKarakterisasi: "0.05%",
 				MetodeKarakterisasi:           "Standar nasional",
 				NoLaporanKarakterisasi:        "LPK-003",
-				TglKarakterisasiTerakhir:      &karakterisasi,
+				TglKarakterisasiUlang:         &karakterisasi,
 				IntervalBulan:                 12,
 				KondisiPenyimpanan:            "Rak tertutup, suhu terkontrol",
+				Status:                        "aktif",
 			}).Error; err != nil {
 				log.Printf("Gagal membuat detail artefak acuan: %v", err)
 			}
 
 			if err := DB.Create(&models.DetailKomponenPendukung{
-				PeralatanID:               created[3].ID,
-				SubKategori:               "Komponen bobot presisi",
-				DeskripsiSpesifikasi:      "Timbangan presisi untuk sampel analitik",
-				SumberPemasok:             "PT Metrikindo",
-				NoLotBatchEdisi:           "LOT-001",
-				GradeMutu:                 "A",
-				SatuanKemasan:             "Unit",
-				TglTerimaTerbit:           &terima,
-				TglKedaluwarsa:            &kedaluwarsa,
-				KondisiPenyimpanan:        "Kering dan bersih",
-				PengaruhThdKeabsahanHasil: true,
-				StatusKetersediaan:        "Tersedia",
+				PeralatanID:          created[3].ID,
+				Kategori:             "bahan habis pakai",
+				DeskripsiSpesifikasi: "Timbangan presisi untuk sampel analitik",
+				SumberPemasok:        "PT Metrikindo",
+				NoLotBatchEdisi:      "LOT-001",
+				SatuanKemasan:        "Unit",
+				TglTerimaTerbit:      &terima,
+				TglKedaluwarsa:       &kedaluwarsa,
+				KondisiPenyimpanan:   "Kering dan bersih",
+				StatusKetersediaan:   "Tersedia",
 			}).Error; err != nil {
 				log.Printf("Gagal membuat detail komponen pendukung: %v", err)
 			}

@@ -158,12 +158,6 @@ func (r *peralatanRepository) CreatePeralatan(req *models.CreatePeralatanRequest
 			}
 			detail.PeralatanID = peralatan.ID
 
-			// Hitung Jadwal Ulang Karakterisasi
-			if detail.TglKarakterisasiTerakhir != nil && detail.IntervalBulan > 0 {
-				jatuhTempo := detail.TglKarakterisasiTerakhir.AddDate(0, detail.IntervalBulan, 0)
-				detail.TglJatuhTempo = &jatuhTempo
-			}
-
 			if err := tx.Create(&detail).Error; err != nil {
 				return err
 			}
