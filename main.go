@@ -3,222 +3,15 @@ package main
 import (
 	"os"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-
-	"backend/config"
-	"backend/controllers"
-	"backend/repositories"
-	"backend/routes"
+	"backend/app"
 )
 
 func main() {
 
-	// =========================
-	// DATABASE
-	// =========================
-
-	config.ConnectDatabase()
-
-	// =========================
-	// FIBER
-	// =========================
-
-	app := fiber.New()
-
-	// =========================
-	// CORS
-	// =========================
-
-	app.Use(cors.New())
-
-	// =========================
-	// STATIC
-	// =========================
-
-	app.Static("/docs", "./docs")
-
-	// =========================
-	// RECAPTCHA SITE KEY
-	// =========================
-
-	app.Get("/recaptcha/sitekey", func(c *fiber.Ctx) error {
-
-		site := os.Getenv("SITE_KEY")
-
-		if site == "" {
-
-			return c.Status(
-				fiber.StatusInternalServerError,
-			).JSON(fiber.Map{
-
-				"success": false,
-
-				"message": "recaptcha site key not configured",
-			})
-		}
-
-		return c.JSON(fiber.Map{
-
-			"site_key": site,
-		})
-	})
-
-	// =========================
-	// REPOSITORY
-	// =========================
-
-	userRepository :=
-		repositories.NewUserRepository(config.DB)
-
-	ruanganRepo :=
-		repositories.NewRuanganRepository(config.DB)
-
-	// verifikasiRepo :=
-	// 	repositories.NewVerifikasiRepository(config.DB)
-
-	labsRepo :=
-		repositories.NewLabsRepository(config.DB)
-
-	// Detail Peminjaman
-	// detailPeminjamanRepo :=
-	// 	repositories.NewDetailPeminjamanRepository(config.DB)
-
-	// =========================
-	// KELOMPOK ASSET REPOSITORY
-	// =========================
-
-	kelompokAssetRepo :=
-		repositories.NewKelompokAssetRepository(config.DB)
-
-	dokumenPeralatanRepository :=
-		repositories.NewDokumenPeralatanRepository(config.DB)
-
-	notificationRepo :=
-		repositories.NewNotificationRepository(config.DB)
-
-	// =========================
-	// CONTROLLER
-	// =========================
-
-	userController := &controllers.UserController{
-		Repository: userRepository,
+	server, err := app.CreateApp()
+	if err != nil {
+		panic(err)
 	}
-
-	labsController := &controllers.LabsController{
-		Repository: labsRepo,
-	}
-
-	ruanganController := &controllers.RuanganController{
-		Repository: ruanganRepo,
-	}
-
-	// =========================
-	// VERIFIKASI CONTROLLER
-	// =========================
-
-	// verifikasiController := &controllers.VerifikasiController{
-	// 	Repository: verifikasiRepo,
-	// 	// PeralatanRepository: peralatanRepo,
-	// 	UserRepository: userRepository,
-	// }
-
-	// =========================
-	// DETAIL PEMINJAMAN
-	// =========================
-
-	// detailPeminjamanController :=
-	// 	&controllers.DetailPeminjamanController{
-	// 		Repository: detailPeminjamanRepo,
-	// 	}
-
-	// =========================
-	// KELOMPOK ASSET CONTROLLER
-	// =========================
-
-	kelompokAssetController :=
-		&controllers.KelompokAssetController{
-
-			Repository: kelompokAssetRepo,
-
-			LabsRepository: labsRepo,
-
-			UserRepository: userRepository,
-		}
-
-	dokumenPeralatanController :=
-		&controllers.DokumenPeralatanController{
-			Repository: dokumenPeralatanRepository,
-		}
-
-	// =========================
-	// ROUTES
-	// =========================
-
-	routes.UserRoutes(
-		app,
-		userController,
-	)
-
-	routes.LabsRoutes(
-		app,
-		labsController,
-	)
-
-	routes.RuanganRoutes(
-		app,
-		ruanganController,
-	)
-
-	// routes.VerifikasiRoutes(
-	// 	app,
-	// 	verifikasiController,
-	// )
-
-	// Detail Peminjaman
-	// routes.DetailPeminjamanRoutes(
-	// 	app,
-	// 	detailPeminjamanController,
-	// )
-
-	// =========================
-	// KELOMPOK ASSET ROUTES
-	// =========================
-
-	routes.KelompokAssetRoutes(
-		app,
-		kelompokAssetController,
-	)
-
-	routes.DokumenPeralatanRoutes(
-		app,
-		dokumenPeralatanController,
-	)
-
-	routes.NotificationRoutes(
-		app,
-		&controllers.NotificationController{Repo: notificationRepo},
-	)
-
-	routes.SetupPeralatanRoutes(app, config.DB, notificationRepo)
-
-	// =========================
-	// ROOT API
-	// =========================
-
-	app.Get("/", func(c *fiber.Ctx) error {
-
-		return c.JSON(fiber.Map{
-
-			"success": true,
-
-			"message": "Backend API Running",
-		})
-	})
-
-	// =========================
-	// PORT
-	// =========================
 
 	port := os.Getenv("APP_PORT")
 
@@ -226,11 +19,7 @@ func main() {
 		port = "5000"
 	}
 
-	// =========================
-	// RUN SERVER
-	// =========================
-
-	if err := app.Listen(":" + port); err != nil {
+	if err := server.Listen(":" + port); err != nil {
 		panic(err)
 	}
 }

@@ -16,9 +16,10 @@ import (
 
 var DB *gorm.DB
 
-func ConnectDatabase() {
+func ConnectDatabase() error {
 	// Load .env
 	err := godotenv.Load()
+
 	if err != nil {
 		log.Println("Error loading .env file, using default environment variables")
 	}
@@ -39,8 +40,9 @@ func ConnectDatabase() {
 	)
 
 	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+
 	if err != nil {
-		panic(fmt.Sprintf("Failed to connect to database: %v", err))
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	// Cek apakah tabel-tabel penting sudah ada
@@ -75,7 +77,7 @@ func ConnectDatabase() {
 			&models.Notification{},
 		)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to migrate database tables: %v", err))
+			return fmt.Errorf("failed to migrate database tables: %w", err)
 		}
 
 		log.Println("Semua tabel berhasil dibuat!")
@@ -87,6 +89,7 @@ func ConnectDatabase() {
 	SeedDummyData()
 
 	log.Println("Database connected successfully!")
+	return nil
 }
 
 func SeedDummyData() {
