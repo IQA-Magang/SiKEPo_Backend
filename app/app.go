@@ -12,9 +12,11 @@ import (
 	"backend/routes"
 )
 
-func CreateApp() *fiber.App {
+func CreateApp() (*fiber.App, error) {
 
-	config.ConnectDatabase()
+	if err := config.ConnectDatabase(); err != nil {
+		return nil, err
+	}
 
 	app := fiber.New()
 
@@ -117,5 +119,5 @@ func CreateApp() *fiber.App {
 		})
 	})
 
-	return app
+	return app, nil
 }

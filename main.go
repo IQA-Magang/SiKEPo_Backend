@@ -8,7 +8,10 @@ import (
 
 func main() {
 
-	server := app.CreateApp()
+	server, err := app.CreateApp()
+	if err != nil {
+		panic(err)
+	}
 
 	port := os.Getenv("APP_PORT")
 
