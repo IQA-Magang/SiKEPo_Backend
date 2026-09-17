@@ -164,10 +164,7 @@ func (r *UserRepository) CreateUser(
 
 	user.Password = string(passwordHash)
 
-	// ==============================
-	// SIMPAN USER
-	// ==============================
-
+	// Simpan user termasuk PIC
 	return r.DB.Create(user).Error
 }
 
@@ -244,10 +241,7 @@ func (r *UserRepository) UpdateUser(
 		return ErrEmailAlreadyExists
 	}
 
-	// ==============================
-	// UPDATE DATA
-	// ==============================
-
+	// Update user
 	existingUser.NIP = user.NIP
 	existingUser.Name = user.Name
 	existingUser.Email = user.Email
@@ -259,6 +253,10 @@ func (r *UserRepository) UpdateUser(
 	// UPDATE PASSWORD
 	// ==============================
 
+	// Update PIC
+	existingUser.PIC = user.PIC
+
+	// Update password jika diisi
 	if password != "" {
 
 		passwordHash, err := bcrypt.GenerateFromPassword(

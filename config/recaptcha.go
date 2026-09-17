@@ -1,57 +1,82 @@
 package config
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
-	"time"
+	"strings"
 )
 
-type recaptchaResponse struct {
+type RecaptchaResponse struct {
 	Success     bool     `json:"success"`
 	ChallengeTS string   `json:"challenge_ts"`
 	Hostname    string   `json:"hostname"`
 	ErrorCodes  []string `json:"error-codes"`
 }
 
-// VerifyRecaptcha verifies a reCAPTCHA token using Google's siteverify API.
 func VerifyRecaptcha(token string) (bool, error) {
-	secret := os.Getenv("RECAPTCHA_SECRET")
-	if secret == "" {
-		return false, errors.New("recaptcha secret not configured")
+
+	token = strings.TrimSpace(token)
+
+	if token == "" {
+		return false, errors.New("recaptcha token kosong")
 	}
 
-	endpoint := "https://www.google.com/recaptcha/api/siteverify"
+	secret := strings.TrimSpace(os.Getenv("RECAPTCHA_SECRET"))
+
+	if secret == "" {
+		return false, errors.New("RECAPTCHA_SECRET tidak ditemukan di environment")
+	}
 
 	data := url.Values{}
 	data.Set("secret", secret)
 	data.Set("response", token)
 
-	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := http.PostForm(
+		"https://www.google.com/recaptcha/api/siteverify",
+		data,
+	)
 
-	resp, err := client.PostForm(endpoint, data)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf(
+			"gagal menghubungi Google reCAPTCHA: %w",
+			err,
+		)
 	}
+
 	defer resp.Body.Close()
 
-	var result recaptchaResponse
-
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
-	if err != nil {
-		return false, err
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Errorf(
+			"Google reCAPTCHA mengembalikan HTTP status %d",
+			resp.StatusCode,
+		)
 	}
 
-	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
-		return false, err
+	var result RecaptchaResponse
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return false, fmt.Errorf(
+			"gagal membaca response Google reCAPTCHA: %w",
+			err,
+		)
 	}
 
 	if !result.Success {
-		return false, errors.New("recaptcha verification failed")
+
+		if len(result.ErrorCodes) > 0 {
+			return false, fmt.Errorf(
+				"Google reCAPTCHA menolak token: %s",
+				strings.Join(result.ErrorCodes, ", "),
+			)
+		}
+
+		return false, errors.New(
+			"Google reCAPTCHA menolak token",
+		)
 	}
 
 	return true, nil

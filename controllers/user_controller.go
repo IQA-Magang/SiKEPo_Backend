@@ -99,7 +99,9 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		Password string `json:"password"`
 		Role     string `json:"role"`
 		Position string `json:"position"`
-		PIC      bool   `json:"pic"`
+
+		// PIC
+		PIC bool `json:"pic"`
 	}
 
 	var request CreateUserRequest
@@ -184,7 +186,9 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		Email:    request.Email,
 		Role:     request.Role,
 		Position: request.Position,
-		PIC:      request.PIC,
+
+		// PIC
+		PIC: request.PIC,
 	}
 
 	// ==============================
@@ -252,7 +256,9 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		Password string `json:"password"`
 		Role     string `json:"role"`
 		Position string `json:"position"`
-		PIC      bool   `json:"pic"`
+
+		// PIC
+		PIC bool `json:"pic"`
 	}
 
 	var request UpdateUserRequest
@@ -297,17 +303,16 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ==============================
-	// MODEL
-	// ==============================
-
+	// Model
 	user := models.User{
 		NIP:      request.NIP,
 		Name:     request.Name,
 		Email:    request.Email,
 		Role:     request.Role,
 		Position: request.Position,
-		PIC:      request.PIC,
+
+		// PIC
+		PIC: request.PIC,
 	}
 
 	// ==============================
@@ -462,13 +467,8 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ==============================
-	// VERIFY RECAPTCHA
-	// ==============================
-
-	ok, err := config.VerifyRecaptcha(
-		req.RecaptchaToken,
-	)
+	// Verify recaptcha
+	ok, err := config.VerifyRecaptcha(req.RecaptchaToken)
 
 	if err != nil {
 		return ctx.Status(500).JSON(fiber.Map{
@@ -485,13 +485,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ==============================
-	// GET USER
-	// ==============================
-
-	user, err := c.Repository.GetUserByEmail(
-		req.Email,
-	)
+	user, err := c.Repository.GetUserByEmail(req.Email)
 
 	if err != nil {
 
@@ -508,10 +502,6 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 			"error":   err.Error(),
 		})
 	}
-
-	// ==============================
-	// CHECK PASSWORD
-	// ==============================
 
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(user.Password),
