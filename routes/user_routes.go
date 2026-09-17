@@ -13,14 +13,14 @@ func UserRoutes(
 ) {
 
 	// Public routes
-	users := app.Group("/api/users")
+	users := app.Group("/api/users", middleware.RequireAuth)
 	users.Post("/login", controller.Login)
-	users.Get("/", controller.GetUsers)
-	users.Get(":id", controller.GetUserByID)
 
 	// Protected admin routes
 	admin := users.Group("/", middleware.RequireAuth, middleware.RequireRoles("admin"))
 	admin.Post("/", controller.CreateUser)
 	admin.Put(":id", controller.UpdateUser)
 	admin.Delete(":id", controller.DeleteUser)
+	admin.Get("/", controller.GetUsers)
+	admin.Get(":id", controller.GetUserByID)
 }
