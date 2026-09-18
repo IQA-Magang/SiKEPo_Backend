@@ -80,6 +80,9 @@ func CreateApp() (*fiber.App, error) {
 			UserRepository: userRepository,
 		}
 
+	kategoriPeralatanRepo := repositories.NewKategoriPeralatanRepository(config.DB)
+	kategoriPeralatanController := controllers.NewKategoriPeralatanController(kategoriPeralatanRepo)
+
 	dokumenPeralatanController :=
 		&controllers.DokumenPeralatanController{
 			Repository: dokumenPeralatanRepository,
@@ -88,6 +91,7 @@ func CreateApp() (*fiber.App, error) {
 	routes.UserRoutes(app, userController)
 	routes.LabsRoutes(app, labsController)
 	routes.RuanganRoutes(app, ruanganController)
+	routes.KategoriPeralatanRoutes(app, kategoriPeralatanController)
 
 	routes.KelompokAssetRoutes(
 		app,
