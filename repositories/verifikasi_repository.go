@@ -16,9 +16,9 @@ func NewVerifikasiRepository(db *gorm.DB) *VerifikasiRepository {
 	}
 }
 
-// ========================================
+// =====================================================
 // GET ALL
-// ========================================
+// =====================================================
 
 func (r *VerifikasiRepository) GetAllVerifikasi() ([]models.Verifikasi, error) {
 
@@ -26,6 +26,7 @@ func (r *VerifikasiRepository) GetAllVerifikasi() ([]models.Verifikasi, error) {
 
 	err := r.DB.
 		Preload("Peralatan").
+		Preload("PICUser").
 		Preload("VerifiedByUser").
 		Preload("HasilVerifikasi").
 		Where("verifikasi.deleted_at IS NULL").
@@ -36,9 +37,9 @@ func (r *VerifikasiRepository) GetAllVerifikasi() ([]models.Verifikasi, error) {
 	return data, err
 }
 
-// ========================================
+// =====================================================
 // GET BY ID
-// ========================================
+// =====================================================
 
 func (r *VerifikasiRepository) GetVerifikasiByID(
 	id uint64,
@@ -48,9 +49,10 @@ func (r *VerifikasiRepository) GetVerifikasiByID(
 
 	err := r.DB.
 		Preload("Peralatan").
+		Preload("PICUser").
 		Preload("VerifiedByUser").
 		Preload("HasilVerifikasi").
-		Where("id_verifikasi = ?", id).
+		Where("verifikasi.id_verifikasi = ?", id).
 		First(&data).
 		Error
 
@@ -61,9 +63,9 @@ func (r *VerifikasiRepository) GetVerifikasiByID(
 	return &data, nil
 }
 
-// ========================================
+// =====================================================
 // GET BY PERALATAN
-// ========================================
+// =====================================================
 
 func (r *VerifikasiRepository) GetByPeralatanID(
 	peralatanID uint64,
@@ -73,9 +75,11 @@ func (r *VerifikasiRepository) GetByPeralatanID(
 
 	err := r.DB.
 		Preload("Peralatan").
+		Preload("PICUser").
 		Preload("VerifiedByUser").
 		Preload("HasilVerifikasi").
 		Where("id_peralatan = ?", peralatanID).
+		Where("deleted_at IS NULL").
 		Order("tanggal_verifikasi DESC").
 		Find(&data).
 		Error
@@ -83,97 +87,126 @@ func (r *VerifikasiRepository) GetByPeralatanID(
 	return data, err
 }
 
-// ========================================
+// =====================================================
+// GET PENGAJUAN
+// =====================================================
+
+func (r *VerifikasiRepository) GetPengajuan() ([]models.Verifikasi, error) {
+
+	var data []models.Verifikasi
+
+	err := r.DB.
+		Preload("Peralatan").
+		Preload("PICUser").
+		Preload("HasilVerifikasi").
+		Where("verifikasi.status = ?", "Diajukan").
+		Where("verifikasi.deleted_at IS NULL").
+		Order("verifikasi.pic_signed_at DESC").
+		Find(&data).
+		Error
+
+	return data, err
+}
+
+// =====================================================
 // CREATE
-// ========================================
+// =====================================================
 
 func (r *VerifikasiRepository) CreateVerifikasi(
+	tx *gorm.DB,
 	data *models.Verifikasi,
 ) error {
 
-	return r.DB.Create(data).Error
+	return tx.Create(data).Error
 }
 
-// ========================================
-// APPROVE
-// ========================================
-
-func (r *VerifikasiRepository) ApproveVerifikasi(
-	id uint64,
-	verifiedBy uint64,
-) error {
-
-	return r.DB.
-		Model(&models.Verifikasi{}).
-		Where("id_verifikasi = ?", id).
-		Updates(map[string]interface{}{
-			"keputusan":   "Layak",
-			"verified_by": verifiedBy,
-			"verified_at": gorm.Expr("NOW()"),
-		}).
-		Error
-}
-
-// ========================================
-// REJECT
-// ========================================
-
-func (r *VerifikasiRepository) RejectVerifikasi(
-	id uint64,
-	verifiedBy uint64,
-	tindakLanjut string,
-	catatan string,
-) error {
-
-	return r.DB.
-		Model(&models.Verifikasi{}).
-		Where("id_verifikasi = ?", id).
-		Updates(map[string]interface{}{
-			"keputusan":     "Tidak Layak",
-			"verified_by":   verifiedBy,
-			"verified_at":   gorm.Expr("NOW()"),
-			"tindak_lanjut": tindakLanjut,
-			"catatan":       catatan,
-		}).
-		Error
-}
-
-// ========================================
-// CREATE HASIL VERIFIKASI
-// ========================================
+// =====================================================
+// CREATE HASIL
+// =====================================================
 
 func (r *VerifikasiRepository) CreateHasilVerifikasi(
+	tx *gorm.DB,
 	data *models.HasilVerifikasi,
 ) error {
 
-	return r.DB.Create(data).Error
+	return tx.Create(data).Error
 }
 
-// ========================================
-// GET HASIL BY VERIFIKASI
-// ========================================
+// =====================================================
+// SIGN PIC
+// =====================================================
 
-func (r *VerifikasiRepository) GetHasilByVerifikasiID(
+func (r *VerifikasiRepository) SignPIC(
+	tx *gorm.DB,
 	id uint64,
-) (*models.HasilVerifikasi, error) {
+	picID uint64,
+	signature string,
+) error {
 
-	var data models.HasilVerifikasi
-
-	err := r.DB.
+	return tx.
+		Model(&models.Verifikasi{}).
 		Where("id_verifikasi = ?", id).
-		First(&data).
+		Updates(map[string]interface{}{
+			"status":        "Diajukan",
+			"pic_id":        picID,
+			"pic_signature": signature,
+			"pic_signed_at": gorm.Expr("NOW()"),
+		}).
 		Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &data, nil
 }
 
-// ========================================
+// =====================================================
+// APPROVE
+// =====================================================
+
+func (r *VerifikasiRepository) ApproveVerifikasi(
+	tx *gorm.DB,
+	id uint64,
+	managerID uint64,
+	signature string,
+) error {
+
+	return tx.
+		Model(&models.Verifikasi{}).
+		Where("id_verifikasi = ?", id).
+		Updates(map[string]interface{}{
+			"status":            "Disetujui",
+			"keputusan":        "Layak",
+			"verified_by":      managerID,
+			"verified_at":      gorm.Expr("NOW()"),
+			"manager_signature": signature,
+			"manager_signed_at": gorm.Expr("NOW()"),
+		}).
+		Error
+}
+
+// =====================================================
+// REJECT
+// =====================================================
+
+func (r *VerifikasiRepository) RejectVerifikasi(
+	tx *gorm.DB,
+	id uint64,
+	managerID uint64,
+	catatan string,
+) error {
+
+	return tx.
+		Model(&models.Verifikasi{}).
+		Where("id_verifikasi = ?", id).
+		Updates(map[string]interface{}{
+			"status":       "Ditolak",
+			"keputusan":    "Tidak Layak",
+			"verified_by":  managerID,
+			"verified_at":  gorm.Expr("NOW()"),
+			"tindak_lanjut": catatan,
+		}).
+		Error
+}
+
+// =====================================================
 // DELETE
-// ========================================
+// =====================================================
 
 func (r *VerifikasiRepository) DeleteVerifikasi(
 	id uint64,
@@ -181,12 +214,11 @@ func (r *VerifikasiRepository) DeleteVerifikasi(
 
 	var data models.Verifikasi
 
-	err := r.DB.
+	if err := r.DB.
 		Where("id_verifikasi = ?", id).
 		First(&data).
-		Error
+		Error; err != nil {
 
-	if err != nil {
 		return err
 	}
 
