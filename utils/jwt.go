@@ -34,7 +34,7 @@ func CreateToken(user *models.User) (string, error) {
 		"user_id": user.UserID,
 		"email":   user.Email,
 		"role":    user.Role,
-		"exp":     now.Add(
+		"exp": now.Add(
 			time.Duration(expiryMinutes) * time.Minute,
 		).Unix(),
 		"iat": now.Unix(),

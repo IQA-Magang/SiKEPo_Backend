@@ -512,29 +512,21 @@ func (c *VerifikasiController) CreateVerifikasi(
 
 			verifikasi = models.Verifikasi{
 
-				IDPeralatan:
-					request.IDPeralatan,
+				IDPeralatan: request.IDPeralatan,
 
-				TanggalVerifikasi:
-					tanggal,
+				TanggalVerifikasi: tanggal,
 
-				KodeAktivitas:
-					request.KodeAktivitas,
+				KodeAktivitas: request.KodeAktivitas,
 
-				IDKriteria:
-					request.IDKriteria,
+				IDKriteria: request.IDKriteria,
 
-				Status:
-					"Draft",
+				Status: "Draft",
 
-				TindakLanjut:
-					request.TindakLanjut,
+				TindakLanjut: request.TindakLanjut,
 
-				PICID:
-					&picID,
+				PICID: &picID,
 
-				Catatan:
-					request.Catatan,
+				Catatan: request.Catatan,
 			}
 
 			if err :=
@@ -548,35 +540,25 @@ func (c *VerifikasiController) CreateVerifikasi(
 			hasilData :=
 				&models.HasilVerifikasi{
 
-					IDVerifikasi:
-						verifikasi.IDVerifikasi,
+					IDVerifikasi: verifikasi.IDVerifikasi,
 
-					Identitas:
-						hasil.Identitas,
+					Identitas: hasil.Identitas,
 
-					Kelengkapan:
-						hasil.Kelengkapan,
+					Kelengkapan: hasil.Kelengkapan,
 
-					Firmware:
-						hasil.Firmware,
+					Firmware: hasil.Firmware,
 
-					KondisiFisik:
-						hasil.KondisiFisik,
+					KondisiFisik: hasil.KondisiFisik,
 
-					Segel:
-						hasil.Segel,
+					Segel: hasil.Segel,
 
-					FungsiAwal:
-						hasil.FungsiAwal,
+					FungsiAwal: hasil.FungsiAwal,
 
-					Metrologi:
-						hasil.Metrologi,
+					Metrologi: hasil.Metrologi,
 
-					Sertifikat:
-						hasil.Sertifikat,
+					Sertifikat: hasil.Sertifikat,
 
-					Catatan:
-						hasil.Catatan,
+					Catatan: hasil.Catatan,
 				}
 
 			if err :=
@@ -811,11 +793,9 @@ func (c *VerifikasiController) SignPIC(
 
 					UserID: managerID,
 
-					Type:
-						"verification_submitted",
+					Type: "verification_submitted",
 
-					Title:
-						"Verifikasi peralatan diajukan",
+					Title: "Verifikasi peralatan diajukan",
 
 					Message: fmt.Sprintf(
 						"Verifikasi peralatan %s (%s) telah ditandatangani PIC dan diajukan untuk ditinjau.",
@@ -1190,23 +1170,17 @@ func (c *VerifikasiController) RejectVerifikasi(
 			logData :=
 				&models.LogPeninjauanPeralatan{
 
-					IDPeralatan:
-						data.IDPeralatan,
+					IDPeralatan: data.IDPeralatan,
 
-					IDVerifikasi:
-						data.IDVerifikasi,
+					IDVerifikasi: data.IDVerifikasi,
 
-					IDManager:
-						managerID,
+					IDManager: managerID,
 
-					Status:
-						"Ditolak",
+					Status: "Ditolak",
 
-					Alasan:
-						request.Alasan,
+					Alasan: request.Alasan,
 
-					Catatan:
-						request.Catatan,
+					Catatan: request.Catatan,
 				}
 
 			return c.LogPeninjauanRepository.Create(
@@ -1336,8 +1310,7 @@ func (c *VerifikasiController) DeleteVerifikasi(
 	}
 
 	if err :=
-		c.Repository.DeleteVerifikasi(id);
-		err != nil {
+		c.Repository.DeleteVerifikasi(id); err != nil {
 
 		return ctx.Status(
 			fiber.StatusBadRequest,

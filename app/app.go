@@ -14,16 +14,32 @@ import (
 
 func CreateApp() (*fiber.App, error) {
 
+	// =====================================================
+	// DATABASE
+	// =====================================================
+
 	if err := config.ConnectDatabase(); err != nil {
 		return nil, err
 	}
+
+	// =====================================================
+	// FIBER
+	// =====================================================
 
 	app := fiber.New()
 
 	app.Use(cors.New())
 
+	// =====================================================
+	// STATIC FILE
+	// =====================================================
+
 	app.Static("/docs", "./docs")
 	app.Static("/static", "./public")
+
+	// =====================================================
+	// RECAPTCHA
+	// =====================================================
 
 	app.Get("/recaptcha/sitekey", func(c *fiber.Ctx) error {
 
@@ -88,6 +104,14 @@ func CreateApp() (*fiber.App, error) {
 			UserRepository: userRepository,
 		}
 
+	kategoriPeralatanRepo :=
+		repositories.NewKategoriPeralatanRepository(config.DB)
+
+	kategoriPeralatanController :=
+		controllers.NewKategoriPeralatanController(
+			kategoriPeralatanRepo,
+		)
+
 	dokumenPeralatanController :=
 		&controllers.DokumenPeralatanController{
 			Repository: dokumenPeralatanRepository,
@@ -110,6 +134,11 @@ func CreateApp() (*fiber.App, error) {
 	routes.RuanganRoutes(
 		app,
 		ruanganController,
+	)
+
+	routes.KategoriPeralatanRoutes(
+		app,
+		kategoriPeralatanController,
 	)
 
 	routes.KelompokAssetRoutes(
@@ -140,6 +169,7 @@ func CreateApp() (*fiber.App, error) {
 		config.DB,
 		notificationRepo,
 	)
+
 	// =====================================================
 	// ROOT
 	// =====================================================

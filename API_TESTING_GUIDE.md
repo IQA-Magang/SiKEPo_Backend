@@ -242,7 +242,111 @@ Admin only.
 
 ---
 
-## 8. Kelompok Asset
+## 8. Notifikasi
+
+Base route: `/api/notifications`
+
+### A. Login sebagai manager
+
+```bash
+curl -X POST http://localhost:5000/api/users/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "manager@sikepo.local",
+    "password": "password123"
+  }'
+```
+
+### B. Ambil semua notifikasi manager
+
+```bash
+curl http://localhost:5000/api/notifications/user/2 \
+  -H "Authorization: Bearer <token>"
+```
+
+Contoh response:
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "user_id": 2,
+      "type": "peralatan_verification_updated",
+      "title": "Status verifikasi peralatan berubah",
+      "message": "Status verifikasi peralatan Multimeter Digital (AST-001) berubah menjadi Layak.",
+      "is_read": false
+    }
+  ],
+  "count": 1
+}
+```
+
+### C. Tandai notifikasi sudah dibaca
+
+```bash
+curl -X PATCH http://localhost:5000/api/notifications/1/read \
+  -H "Authorization: Bearer <token>"
+```
+
+### D. Test flow notifikasi PIC + manager
+
+#### 1) Buat peralatan baru dengan PIC
+
+```bash
+curl -X POST http://localhost:5000/api/peralatan \
+  -H "Authorization: Bearer <token_staff>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nama_peralatan": "Multimeter Digital",
+    "kategori_id": 1,
+    "kelompok_aset_id": 1,
+    "ruangan_id": 1,
+    "pic_id": 3,
+    "merek": "Fluke",
+    "tipe_model": "87V",
+    "nomor_seri": "FLK-001",
+    "status_alat": "Aktif",
+    "keterangan": "Untuk pengukuran listrik",
+    "detail": {
+      "peranti_lunak_versi": "1.0.0",
+      "metode_kelayakan": "kalibrasi internal",
+      "no_sertifikat": "SRT-001",
+      "tgl_kalibrasi": "2026-09-01T00:00:00Z",
+      "interval_bulan": 6,
+      "fungsi_sbg_alat_standar": false,
+      "jenis_label": "calibration",
+      "status_kelayakan": "Layak"
+    }
+  }'
+```
+
+Ekspektasi:
+- peralatan berhasil dibuat
+- notifikasi tipe `peralatan_created` disimpan untuk PIC
+
+#### 2) Ubah status verifikasi peralatan
+
+Pada handler verifikasi, panggil helper:
+
+```go
+c.NotifyVerificationStatusChanged(peralatan, "Layak")
+```
+
+atau:
+
+```go
+utils.NotifyManagerOnVerificationStatusChange(db, peralatan, "Layak")
+```
+
+Ekspektasi:
+- manager menerima notifikasi tipe `peralatan_verification_updated`
+- isi notifikasi berisi status baru yang dipilih
+
+---
+
+## 9. Kelompok Asset
 
 Base route: `/api/kelompok-asset`
 
@@ -323,7 +427,7 @@ Request body contoh:
   "detail": {
     "parameter_rentang_ukur": "Tegangan, Arus, Resistansi",
     "resolusi": "0.1 mV",
-    "akurasi_spesifikasi": "±0.05%",
+    "akurasi_spesifikasi": "ï¿½0.05%",
     "satuan": "V",
     "peranti_lunak_versi": "1.2.0",
     "metode_kelayakan": "Kalibrasi referensi",
@@ -361,7 +465,7 @@ curl -X POST http://localhost:5000/api/peralatan/ \
     "detail": {
       "parameter_rentang_ukur": "Tegangan, Arus, Resistansi",
       "resolusi": "0.1 mV",
-      "akurasi_spesifikasi": "±0.05%",
+      "akurasi_spesifikasi": "ï¿½0.05%",
       "satuan": "V",
       "peranti_lunak_versi": "1.2.0",
       "metode_kelayakan": "Kalibrasi referensi",

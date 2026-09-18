@@ -171,9 +171,9 @@ func (r *VerifikasiRepository) ApproveVerifikasi(
 		Where("id_verifikasi = ?", id).
 		Updates(map[string]interface{}{
 			"status":            "Disetujui",
-			"keputusan":        "Layak",
-			"verified_by":      managerID,
-			"verified_at":      gorm.Expr("NOW()"),
+			"keputusan":         "Layak",
+			"verified_by":       managerID,
+			"verified_at":       gorm.Expr("NOW()"),
 			"manager_signature": signature,
 			"manager_signed_at": gorm.Expr("NOW()"),
 		}).
@@ -195,10 +195,10 @@ func (r *VerifikasiRepository) RejectVerifikasi(
 		Model(&models.Verifikasi{}).
 		Where("id_verifikasi = ?", id).
 		Updates(map[string]interface{}{
-			"status":       "Ditolak",
-			"keputusan":    "Tidak Layak",
-			"verified_by":  managerID,
-			"verified_at":  gorm.Expr("NOW()"),
+			"status":        "Ditolak",
+			"keputusan":     "Tidak Layak",
+			"verified_by":   managerID,
+			"verified_at":   gorm.Expr("NOW()"),
 			"tindak_lanjut": catatan,
 		}).
 		Error
