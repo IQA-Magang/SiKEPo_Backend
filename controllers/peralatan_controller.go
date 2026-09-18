@@ -24,8 +24,18 @@ func NewPeralatanController(repo repositories.PeralatanRepository) *PeralatanCon
 	return &PeralatanController{Repo: repo}
 }
 
+func (c *PeralatanController) sendPICPeralatanNotification(peralatan *models.Peralatan) {
+	if c.DB == nil || peralatan == nil {
+		return
+	}
+
+	if err := utils.NotifyNewPeralatanCreated(c.DB, peralatan); err != nil {
+		log.Printf("Gagal mengirim notifikasi ke PIC peralatan: %v", err)
+	}
+}
+
 func (c *PeralatanController) sendManagerLabNotification(peralatan *models.Peralatan) {
-	if c.DB == nil || c.NotificationRepo == nil || peralatan == nil {
+	if c.DB == nil || peralatan == nil {
 		return
 	}
 
@@ -39,15 +49,18 @@ func (c *PeralatanController) sendManagerLabNotification(peralatan *models.Peral
 		return
 	}
 
-	notification := &models.Notification{
-		UserID:  *room.Labs.ManagerID,
-		Type:    "equipment_added",
-		Title:   "Peralatan baru ditambahkan",
-		Message: fmt.Sprintf("Peralatan %s (%s) telah ditambahkan ke ruangan %s.", peralatan.NamaPeralatan, peralatan.NomorAset, room.NamaRuangan),
+	if err := utils.NotifyManagerOnVerificationStatusChange(c.DB, peralatan, "menunggu verifikasi"); err != nil {
+		log.Printf("Gagal mengirim notifikasi ke manager lab: %v", err)
+	}
+}
+
+func (c *PeralatanController) NotifyVerificationStatusChanged(peralatan *models.Peralatan, status string) {
+	if c.DB == nil || peralatan == nil {
+		return
 	}
 
-	if err := c.NotificationRepo.Create(notification); err != nil {
-		log.Printf("Gagal mengirim notifikasi ke manager lab: %v", err)
+	if err := utils.NotifyManagerOnVerificationStatusChange(c.DB, peralatan, status); err != nil {
+		log.Printf("Gagal mengirim notifikasi status verifikasi ke manager: %v", err)
 	}
 }
 
@@ -115,7 +128,7 @@ func (c *PeralatanController) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	c.sendManagerLabNotification(peralatan)
+	c.sendPICPeralatanNotification(peralatan)
 
 	// 3. Response Berhasil
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
