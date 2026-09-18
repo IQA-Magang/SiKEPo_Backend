@@ -1,0 +1,7445 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>SiKEPO - Verifikasi Peralatan</title>
+
+
+    <style>
+
+        /* =========================================================
+           RESET
+        ========================================================= */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background: #f4f6f9;
+
+            color: #1f2937;
+
+            min-height: 100vh;
+        }
+
+
+        button,
+        input,
+        textarea,
+        select {
+            font-family: inherit;
+        }
+
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+        .header {
+
+            min-height: 70px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #dc2626,
+                    #b91c1c
+                );
+
+            color: white;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding:
+                12px 32px;
+
+            box-shadow:
+                0 3px 12px
+                rgba(0, 0, 0, 0.15);
+
+            gap: 20px;
+
+        }
+
+
+        .brand {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+        }
+
+
+        .brand-logo {
+
+            width: 43px;
+
+            height: 43px;
+
+            border-radius: 10px;
+
+            background: white;
+
+            color: #dc2626;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 18px;
+
+            font-weight: 800;
+
+        }
+
+
+        .brand-text h1 {
+
+            font-size: 21px;
+
+            font-weight: 800;
+
+            margin-bottom: 2px;
+
+        }
+
+
+        .brand-text span {
+
+            font-size: 11px;
+
+            opacity: 0.85;
+
+        }
+
+
+        .role-switch {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+        }
+
+
+        .role-switch label {
+
+            font-size: 12px;
+
+            font-weight: 600;
+
+        }
+
+
+        .role-switch select {
+
+            min-width: 160px;
+
+            padding:
+                9px 12px;
+
+            border: none;
+
+            outline: none;
+
+            border-radius: 8px;
+
+            color: #111827;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+        }
+
+
+        /* =========================================================
+           CONTAINER
+        ========================================================= */
+
+        .container {
+
+            max-width: 1250px;
+
+            margin:
+                30px auto;
+
+            padding:
+                0 20px;
+
+        }
+
+
+        .page-title {
+
+            margin-bottom: 22px;
+
+        }
+
+
+        .page-title h2 {
+
+            font-size: 26px;
+
+            color: #111827;
+
+            margin-bottom: 6px;
+
+        }
+
+
+        .page-title p {
+
+            color: #6b7280;
+
+            font-size: 13px;
+
+            line-height: 1.5;
+
+        }
+
+
+        /* =========================================================
+           CARD
+        ========================================================= */
+
+        .card {
+
+            background: white;
+
+            border:
+                1px solid #e5e7eb;
+
+            border-radius: 14px;
+
+            box-shadow:
+                0 3px 12px
+                rgba(0, 0, 0, 0.05);
+
+            overflow: hidden;
+
+            margin-bottom: 22px;
+
+        }
+
+
+        .card-header {
+
+            padding:
+                17px 22px;
+
+            border-bottom:
+                1px solid #e5e7eb;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+        }
+
+
+        .card-header h3 {
+
+            font-size: 16px;
+
+            color: #111827;
+
+        }
+
+
+        .card-body {
+
+            padding: 22px;
+
+        }
+
+
+        /* =========================================================
+           STATUS
+        ========================================================= */
+
+        .status {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            gap: 5px;
+
+            padding:
+                6px 11px;
+
+            border-radius: 20px;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            white-space: nowrap;
+
+        }
+
+
+        .status.pending {
+
+            background: #fff7ed;
+
+            color: #c2410c;
+
+        }
+
+
+        .status.approved {
+
+            background: #ecfdf5;
+
+            color: #047857;
+
+        }
+
+
+        .status.rejected {
+
+            background: #fef2f2;
+
+            color: #b91c1c;
+
+        }
+
+
+        /* =========================================================
+           EQUIPMENT INFORMATION
+        ========================================================= */
+
+        .equipment-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 14px;
+
+        }
+
+
+        .info-box {
+
+            background: #fafafa;
+
+            border:
+                1px solid #e5e7eb;
+
+            border-radius: 9px;
+
+            padding: 13px;
+
+        }
+
+
+        .info-label {
+
+            font-size: 10px;
+
+            color: #6b7280;
+
+            font-weight: 700;
+
+            text-transform: uppercase;
+
+            margin-bottom: 6px;
+
+        }
+
+
+        .info-value {
+
+            color: #111827;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            line-height: 1.4;
+
+        }
+
+
+        /* =========================================================
+           SECTION TITLE
+        ========================================================= */
+
+        .section-title {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            gap: 10px;
+
+            margin-bottom: 13px;
+
+        }
+
+
+        .section-title h4 {
+
+            font-size: 14px;
+
+            color: #111827;
+
+        }
+
+
+        .section-count {
+
+            display: inline-block;
+
+            padding:
+                4px 9px;
+
+            background: #f3f4f6;
+
+            color: #4b5563;
+
+            border-radius: 20px;
+
+            font-size: 10px;
+
+            font-weight: 700;
+
+        }
+
+
+        /* =========================================================
+           ALERT
+        ========================================================= */
+
+        .alert {
+
+            padding:
+                12px 14px;
+
+            border-radius: 9px;
+
+            font-size: 12px;
+
+            line-height: 1.6;
+
+            margin-bottom: 15px;
+
+        }
+
+
+        .alert-info {
+
+            background: #eff6ff;
+
+            border:
+                1px solid #bfdbfe;
+
+            color: #1d4ed8;
+
+        }
+
+
+        .alert-warning {
+
+            background: #fffbeb;
+
+            border:
+                1px solid #fde68a;
+
+            color: #92400e;
+
+        }
+
+
+        .alert-success {
+
+            background: #ecfdf5;
+
+            border:
+                1px solid #a7f3d0;
+
+            color: #047857;
+
+        }
+
+
+        .alert-danger {
+
+            background: #fef2f2;
+
+            border:
+                1px solid #fecaca;
+
+            color: #b91c1c;
+
+        }
+
+
+        /* =========================================================
+           DOCUMENT
+        ========================================================= */
+
+        .document-list {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 10px;
+
+        }
+
+
+        .document-item {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+            padding:
+                12px 14px;
+
+            border:
+                1px solid #e5e7eb;
+
+            border-radius: 10px;
+
+            background: white;
+
+            transition: 0.2s;
+
+        }
+
+
+        .document-item:hover {
+
+            border-color: #d1d5db;
+
+            background: #fafafa;
+
+        }
+
+
+        .document-left {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+            min-width: 0;
+
+        }
+
+
+        .document-icon {
+
+            width: 42px;
+
+            height: 42px;
+
+            min-width: 42px;
+
+            border-radius: 9px;
+
+            background: #fee2e2;
+
+            color: #dc2626;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 19px;
+
+        }
+
+
+        .document-info {
+
+            min-width: 0;
+
+        }
+
+
+        .document-name {
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            color: #111827;
+
+            margin-bottom: 4px;
+
+            word-break: break-word;
+
+        }
+
+
+        .document-meta {
+
+            font-size: 10px;
+
+            color: #6b7280;
+
+        }
+
+
+        .document-badge {
+
+            display: inline-block;
+
+            margin-top: 5px;
+
+            padding:
+                3px 7px;
+
+            border-radius: 5px;
+
+            background: #f3f4f6;
+
+            color: #4b5563;
+
+            font-size: 9px;
+
+            font-weight: 700;
+
+        }
+
+
+        .document-actions {
+
+            display: flex;
+
+            gap: 7px;
+
+            flex-shrink: 0;
+
+        }
+
+
+        /* =========================================================
+           EMPTY STATE
+        ========================================================= */
+
+        .empty-state {
+
+            padding: 25px;
+
+            text-align: center;
+
+            border:
+                1px dashed #d1d5db;
+
+            border-radius: 10px;
+
+            background: #fafafa;
+
+            color: #6b7280;
+
+        }
+
+
+        .empty-state .empty-icon {
+
+            font-size: 28px;
+
+            margin-bottom: 8px;
+
+        }
+
+
+        .empty-state strong {
+
+            display: block;
+
+            color: #374151;
+
+            font-size: 13px;
+
+            margin-bottom: 5px;
+
+        }
+
+
+        .empty-state span {
+
+            font-size: 11px;
+
+        }
+
+
+        /* =========================================================
+           CHECKLIST
+        ========================================================= */
+
+        .checklist {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 10px;
+
+        }
+
+
+        .check-item {
+
+            display: grid;
+
+            grid-template-columns: 1fr auto;
+
+            align-items: center;
+
+            gap: 15px;
+
+            padding:
+                13px 15px;
+
+            border:
+                1px solid #e5e7eb;
+
+            border-radius: 9px;
+
+        }
+
+
+        .check-text {
+
+            font-size: 12px;
+
+            line-height: 1.6;
+
+            color: #374151;
+
+        }
+
+
+        .check-options {
+
+            display: flex;
+
+            gap: 6px;
+
+        }
+
+
+        .check-option input {
+
+            display: none;
+
+        }
+
+
+        .check-option label {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            min-width: 42px;
+
+            padding:
+                7px 9px;
+
+            border:
+                1px solid #d1d5db;
+
+            border-radius: 7px;
+
+            color: #6b7280;
+
+            font-size: 10px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+
+        }
+
+
+        .check-option label:hover {
+
+            border-color: #dc2626;
+
+            color: #dc2626;
+
+        }
+
+
+        .check-option input:checked + label {
+
+            background: #dc2626;
+
+            border-color: #dc2626;
+
+            color: white;
+
+        }
+
+
+        /* =========================================================
+           FORM
+        ========================================================= */
+
+        .form-group {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 7px;
+
+        }
+
+
+        .form-group label {
+
+            font-size: 12px;
+
+            font-weight: 700;
+
+            color: #374151;
+
+        }
+
+
+        .form-control {
+
+            width: 100%;
+
+            padding:
+                11px 12px;
+
+            border:
+                1px solid #d1d5db;
+
+            border-radius: 8px;
+
+            outline: none;
+
+            font-size: 12px;
+
+            color: #111827;
+
+            background: white;
+
+        }
+
+
+        .form-control:focus {
+
+            border-color: #dc2626;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(220, 38, 38, 0.1);
+
+        }
+
+
+        textarea.form-control {
+
+            min-height: 100px;
+
+            resize: vertical;
+
+        }
+
+
+        /* =========================================================
+           UPLOAD
+        ========================================================= */
+
+        .upload-box {
+
+            display: block;
+
+            padding: 25px;
+
+            text-align: center;
+
+            border:
+                2px dashed #d1d5db;
+
+            border-radius: 10px;
+
+            background: #fafafa;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+
+        }
+
+
+        .upload-box:hover {
+
+            border-color: #dc2626;
+
+            background: #fffafa;
+
+        }
+
+
+        .upload-icon {
+
+            font-size: 30px;
+
+            margin-bottom: 7px;
+
+        }
+
+
+        .upload-box strong {
+
+            display: block;
+
+            font-size: 13px;
+
+            color: #374151;
+
+            margin-bottom: 5px;
+
+        }
+
+
+        .upload-box span {
+
+            color: #6b7280;
+
+            font-size: 10px;
+
+        }
+
+
+        #additionalFileInput {
+
+            display: none;
+
+        }
+
+
+        .optional-note {
+
+            color: #6b7280;
+
+            font-size: 10px;
+
+            margin-top: 8px;
+
+        }
+
+
+        /* =========================================================
+           SIGNATURE
+        ========================================================= */
+
+        .signature-wrapper {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, 1fr);
+
+            gap: 25px;
+
+        }
+
+
+        .signature-box {
+
+            border:
+                1px solid #d1d5db;
+
+            border-radius: 10px;
+
+            background: #fafafa;
+
+            padding: 15px;
+
+        }
+
+
+        .signature-title {
+
+            text-align: center;
+
+            font-size: 13px;
+
+            font-weight: 800;
+
+            color: #111827;
+
+            margin-bottom: 10px;
+
+        }
+
+
+        .signature-canvas {
+
+            width: 100%;
+
+            height: 170px;
+
+            display: block;
+
+            background: white;
+
+            border:
+                1px dashed #9ca3af;
+
+            border-radius: 8px;
+
+            cursor: crosshair;
+
+            touch-action: none;
+
+        }
+
+
+        .signature-help {
+
+            margin-top: 7px;
+
+            text-align: center;
+
+            font-size: 10px;
+
+            color: #9ca3af;
+
+        }
+
+
+        .signature-actions {
+
+            display: flex;
+
+            justify-content: center;
+
+            margin-top: 9px;
+
+        }
+
+
+        .signature-line {
+
+            width: 80%;
+
+            margin:
+                17px auto 8px;
+
+            border-bottom:
+                1px solid #111827;
+
+        }
+
+
+        .signature-name {
+
+            text-align: center;
+
+            font-size: 12px;
+
+            font-weight: 700;
+
+            color: #111827;
+
+        }
+
+
+        .signature-date {
+
+            text-align: center;
+
+            font-size: 10px;
+
+            color: #6b7280;
+
+            margin-top: 5px;
+
+        }
+
+
+        .signature-status {
+
+            margin-top: 10px;
+
+            text-align: center;
+
+            font-size: 10px;
+
+            font-weight: 700;
+
+        }
+
+
+        .signature-status.signed {
+
+            color: #047857;
+
+        }
+
+
+        .signature-status.not-signed {
+
+            color: #b91c1c;
+
+        }
+
+
+        /* =========================================================
+           VERIFICATION DOCUMENT
+        ========================================================= */
+
+        .verification-document {
+
+            border:
+                1px solid #d1d5db;
+
+            background: white;
+
+            padding: 35px;
+
+        }
+
+
+        .document-header {
+
+            text-align: center;
+
+            border-bottom:
+                2px solid #111827;
+
+            padding-bottom: 15px;
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .document-header h2 {
+
+            font-size: 18px;
+
+            color: #111827;
+
+            margin-bottom: 5px;
+
+        }
+
+
+        .document-header p {
+
+            font-size: 11px;
+
+            color: #6b7280;
+
+        }
+
+
+        .verification-table {
+
+            width: 100%;
+
+            border-collapse: collapse;
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .verification-table th,
+        .verification-table td {
+
+            border:
+                1px solid #d1d5db;
+
+            padding:
+                8px 10px;
+
+            font-size: 11px;
+
+            text-align: left;
+
+            vertical-align: top;
+
+        }
+
+
+        .verification-table th {
+
+            background: #f3f4f6;
+
+            font-weight: 700;
+
+        }
+
+
+        .document-signatures {
+
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 50px;
+
+            margin-top: 50px;
+
+        }
+
+
+        .document-signature {
+
+            text-align: center;
+
+            min-height: 190px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: flex-end;
+
+        }
+
+
+        .document-signature-title {
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            margin-bottom: 7px;
+
+        }
+
+
+        .document-signature-image {
+
+            width: 180px;
+
+            height: 100px;
+
+            object-fit: contain;
+
+            display: block;
+
+            margin:
+                0 auto 5px;
+
+        }
+
+
+        .document-signature-placeholder {
+
+            height: 100px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: #9ca3af;
+
+            font-size: 11px;
+
+            font-style: italic;
+
+        }
+
+
+        .document-signature-line {
+
+            width: 80%;
+
+            margin:
+                0 auto 6px;
+
+            border-bottom:
+                1px solid #111827;
+
+        }
+
+
+        .document-signature-name {
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+        }
+
+
+        .document-signature-date {
+
+            margin-top: 4px;
+
+            font-size: 10px;
+
+            color: #6b7280;
+
+        }
+
+
+        /* =========================================================
+           MANAGER SUBMISSION LIST
+        ========================================================= */
+
+        .submission-card {
+
+            border:
+                1px solid #e5e7eb;
+
+            border-radius: 10px;
+
+            padding: 15px;
+
+            margin-bottom: 10px;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+
+        }
+
+
+        .submission-card:hover {
+
+            border-color: #dc2626;
+
+            box-shadow:
+                0 3px 10px
+                rgba(0, 0, 0, 0.05);
+
+        }
+
+
+        .submission-top {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-start;
+
+            gap: 15px;
+
+        }
+
+
+        .submission-name {
+
+            font-size: 14px;
+
+            font-weight: 800;
+
+            color: #111827;
+
+        }
+
+
+        .submission-number {
+
+            margin-top: 4px;
+
+            font-size: 10px;
+
+            color: #6b7280;
+
+        }
+
+
+        .submission-bottom {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            gap: 15px;
+
+            border-top:
+                1px solid #f0f0f0;
+
+            padding-top: 11px;
+
+            margin-top: 11px;
+
+        }
+
+
+        .submission-info {
+
+            color: #6b7280;
+
+            font-size: 10px;
+
+            line-height: 1.7;
+
+        }
+
+
+        /* =========================================================
+           ACTION
+        ========================================================= */
+
+        .action-bar {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: flex-end;
+
+            gap: 9px;
+
+            padding-top: 20px;
+
+            margin-top: 22px;
+
+            border-top:
+                1px solid #e5e7eb;
+
+        }
+
+
+        .btn {
+
+            border: none;
+
+            outline: none;
+
+            padding:
+                10px 15px;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            transition: 0.2s;
+
+        }
+
+
+        .btn:hover {
+
+            transform: translateY(-1px);
+
+        }
+
+
+        .btn-primary {
+
+            background: #dc2626;
+
+            color: white;
+
+        }
+
+
+        .btn-primary:hover {
+
+            background: #b91c1c;
+
+        }
+
+
+        .btn-success {
+
+            background: #059669;
+
+            color: white;
+
+        }
+
+
+        .btn-success:hover {
+
+            background: #047857;
+
+        }
+
+
+        .btn-danger {
+
+            background: #dc2626;
+
+            color: white;
+
+        }
+
+
+        .btn-danger:hover {
+
+            background: #b91c1c;
+
+        }
+
+
+        .btn-secondary {
+
+            background: #f3f4f6;
+
+            color: #374151;
+
+        }
+
+
+        .btn-secondary:hover {
+
+            background: #e5e7eb;
+
+        }
+
+
+        .btn-sm {
+
+            padding:
+                7px 10px;
+
+            font-size: 10px;
+
+        }
+
+
+        /* =========================================================
+           DIVIDER
+        ========================================================= */
+
+        .divider {
+
+            border: 0;
+
+            border-top:
+                1px solid #e5e7eb;
+
+            margin:
+                22px 0;
+
+        }
+
+
+        /* =========================================================
+           MODAL
+        ========================================================= */
+
+        .modal-overlay {
+
+            position: fixed;
+
+            inset: 0;
+
+            background:
+                rgba(0, 0, 0, 0.55);
+
+            display: none;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 20px;
+
+            z-index: 1000;
+
+        }
+
+
+        .modal-overlay.active {
+
+            display: flex;
+
+        }
+
+
+        .modal {
+
+            width: 100%;
+
+            max-width: 700px;
+
+            max-height: 90vh;
+
+            overflow-y: auto;
+
+            background: white;
+
+            border-radius: 14px;
+
+            box-shadow:
+                0 15px 50px
+                rgba(0, 0, 0, 0.25);
+
+        }
+
+
+        .modal-header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding:
+                17px 20px;
+
+            border-bottom:
+                1px solid #e5e7eb;
+
+        }
+
+
+        .modal-header h3 {
+
+            font-size: 15px;
+
+        }
+
+
+        .modal-close {
+
+            width: 30px;
+
+            height: 30px;
+
+            border: none;
+
+            border-radius: 50%;
+
+            background: #f3f4f6;
+
+            cursor: pointer;
+
+            font-size: 17px;
+
+        }
+
+
+        .modal-body {
+
+            padding: 20px;
+
+        }
+
+
+        .modal-footer {
+
+            display: flex;
+
+            justify-content: flex-end;
+
+            padding:
+                15px 20px;
+
+            border-top:
+                1px solid #e5e7eb;
+
+        }
+
+
+        .document-preview {
+
+            min-height: 320px;
+
+            border:
+                1px solid #e5e7eb;
+
+            border-radius: 9px;
+
+            background: #f9fafb;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 8px;
+
+        }
+
+
+        .preview-icon {
+
+            font-size: 50px;
+
+        }
+
+
+        .preview-name {
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            color: #111827;
+
+            text-align: center;
+
+        }
+
+
+        .preview-meta {
+
+            font-size: 10px;
+
+            color: #6b7280;
+
+        }
+
+
+        /* =========================================================
+           TOAST
+        ========================================================= */
+
+        .toast {
+
+            position: fixed;
+
+            right: 25px;
+
+            bottom: 25px;
+
+            z-index: 3000;
+
+            padding:
+                12px 16px;
+
+            background: #111827;
+
+            color: white;
+
+            border-radius: 8px;
+
+            font-size: 11px;
+
+            box-shadow:
+                0 8px 30px
+                rgba(0, 0, 0, 0.2);
+
+            transform:
+                translateY(100px);
+
+            opacity: 0;
+
+            pointer-events: none;
+
+            transition: 0.3s;
+
+        }
+
+
+        .toast.show {
+
+            transform:
+                translateY(0);
+
+            opacity: 1;
+
+        }
+
+
+        /* =========================================================
+           UTILITY
+        ========================================================= */
+
+        .hidden {
+
+            display: none !important;
+
+        }
+
+
+        .mt-15 {
+
+            margin-top: 15px;
+
+        }
+
+
+        /* =========================================================
+           RESPONSIVE
+        ========================================================= */
+
+        @media (max-width: 900px) {
+
+            .equipment-grid {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+            }
+
+        }
+
+
+        @media (max-width: 700px) {
+
+            .header {
+
+                flex-direction: column;
+
+                align-items: flex-start;
+
+            }
+
+
+            .role-switch {
+
+                width: 100%;
+
+            }
+
+
+            .role-switch select {
+
+                flex: 1;
+
+            }
+
+
+            .equipment-grid {
+
+                grid-template-columns: 1fr;
+
+            }
+
+
+            .signature-wrapper {
+
+                grid-template-columns: 1fr;
+
+            }
+
+
+            .document-signatures {
+
+                grid-template-columns: 1fr;
+
+                gap: 20px;
+
+            }
+
+
+            .check-item {
+
+                grid-template-columns: 1fr;
+
+            }
+
+
+            .document-item {
+
+                align-items: flex-start;
+
+            }
+
+
+            .document-actions {
+
+                flex-direction: column;
+
+            }
+
+
+            .submission-top,
+            .submission-bottom {
+
+                flex-direction: column;
+
+                align-items: flex-start;
+
+            }
+
+
+            .verification-document {
+
+                padding: 15px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =============================================================
+     HEADER
+============================================================= -->
+
+<header class="header">
+
+    <div class="brand">
+
+        <div class="brand-logo">
+            SK
+        </div>
+
+        <div class="brand-text">
+
+            <h1>
+                SiKEPO
+            </h1>
+
+            <span>
+                Sistem Informasi Kelola Peralatan
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="role-switch">
+
+        <label for="roleSelect">
+            Simulasi Login:
+        </label>
+
+        <select
+            id="roleSelect"
+            onchange="switchRole()">
+
+            <option value="pic">
+                PIC Lab
+            </option>
+
+            <option value="manager">
+                Manager Lab
+            </option>
+
+        </select>
+
+    </div>
+
+</header>
+
+
+
+<!-- =============================================================
+     MAIN
+============================================================= -->
+
+<main class="container">
+
+
+    <!-- =========================================================
+         PIC VIEW
+    ========================================================== -->
+
+    <section id="picView">
+
+        <div class="page-title">
+
+            <h2>
+                Verifikasi Peralatan
+            </h2>
+
+            <p>
+                PIC melakukan pemeriksaan peralatan dan mengajukan
+                hasil verifikasi kepada Manager Lab.
+            </p>
+
+        </div>
+
+
+        <!-- =====================================================
+             INFORMASI PERALATAN
+        ====================================================== -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h3>
+                    Informasi Peralatan
+                </h3>
+
+                <span
+                    id="picStatus"
+                    class="status pending">
+
+                    ● Menunggu Verifikasi
+
+                </span>
+
+            </div>
+
+
+            <div class="card-body">
+
+                <div class="equipment-grid">
+
+
+                    <div class="info-box">
+
+                        <div class="info-label">
+                            Nomor Aset
+                        </div>
+
+                        <div class="info-value">
+                            OTDR-001
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-box">
+
+                        <div class="info-label">
+                            Nama Peralatan
+                        </div>
+
+                        <div class="info-value">
+                            Optical Time Domain Reflectometer
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-box">
+
+                        <div class="info-label">
+                            Merek
+                        </div>
+
+                        <div class="info-value">
+                            EXFO
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-box">
+
+                        <div class="info-label">
+                            Tipe / Model
+                        </div>
+
+                        <div class="info-value">
+                            FTB-720C
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-box">
+
+                        <div class="info-label">
+                            Nomor Seri
+                        </div>
+
+                        <div class="info-value">
+                            EXFO720C001
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-box">
+
+                        <div class="info-label">
+                            Ruangan
+                        </div>
+
+                        <div class="info-value">
+                            Lab Fiber Optik
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-box">
+
+                        <div class="info-label">
+                            PIC
+                        </div>
+
+                        <div class="info-value">
+                            PIC Lab Fiber
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-box">
+
+                        <div class="info-label">
+                            Status Alat
+                        </div>
+
+                        <div class="info-value">
+                            Aktif
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             DOKUMEN PERALATAN
+        ====================================================== -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h3>
+                    Dokumen Peralatan
+                </h3>
+
+                <span
+                    id="picExistingCount"
+                    class="section-count">
+                    2 Dokumen
+                </span>
+
+            </div>
+
+
+            <div class="card-body">
+
+                <div class="alert alert-info">
+
+                    <strong>
+                        Dokumen sudah tersedia.
+                    </strong>
+
+                    Dokumen berikut merupakan dokumen yang
+                    sudah terhubung dengan peralatan sejak
+                    proses input peralatan.
+
+                    PIC tidak perlu meng-upload ulang dokumen ini.
+
+                </div>
+
+
+                <div
+                    id="existingDocumentsPIC"
+                    class="document-list">
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             CHECKLIST
+        ====================================================== -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h3>
+                    Checklist Verifikasi
+                </h3>
+
+                <span class="section-count">
+                    5 Pemeriksaan
+                </span>
+
+            </div>
+
+
+            <div class="card-body">
+
+                <div class="checklist">
+
+
+                    <!-- CHECK 1 -->
+
+                    <div class="check-item">
+
+                        <div class="check-text">
+
+                            <strong>
+                                1.
+                            </strong>
+
+                            Identitas dan nomor aset peralatan
+                            sesuai dengan data yang tercatat.
+
+                        </div>
+
+
+                        <div class="check-options">
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check1"
+                                    id="check1S"
+                                    value="S"
+                                >
+
+                                <label for="check1S">
+                                    S
+                                </label>
+
+                            </div>
+
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check1"
+                                    id="check1TS"
+                                    value="TS"
+                                >
+
+                                <label for="check1TS">
+                                    TS
+                                </label>
+
+                            </div>
+
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check1"
+                                    id="check1TB"
+                                    value="TB"
+                                >
+
+                                <label for="check1TB">
+                                    TB
+                                </label>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- CHECK 2 -->
+
+                    <div class="check-item">
+
+                        <div class="check-text">
+
+                            <strong>
+                                2.
+                            </strong>
+
+                            Kondisi fisik peralatan sesuai
+                            dengan kondisi yang tercatat.
+
+                        </div>
+
+
+                        <div class="check-options">
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check2"
+                                    id="check2S"
+                                    value="S"
+                                >
+
+                                <label for="check2S">
+                                    S
+                                </label>
+
+                            </div>
+
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check2"
+                                    id="check2TS"
+                                    value="TS"
+                                >
+
+                                <label for="check2TS">
+                                    TS
+                                </label>
+
+                            </div>
+
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check2"
+                                    id="check2TB"
+                                    value="TB"
+                                >
+
+                                <label for="check2TB">
+                                    TB
+                                </label>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- CHECK 3 -->
+
+                    <div class="check-item">
+
+                        <div class="check-text">
+
+                            <strong>
+                                3.
+                            </strong>
+
+                            Sertifikat kalibrasi atau dokumen
+                            terkait tersedia dan dapat diperiksa.
+
+                        </div>
+
+
+                        <div class="check-options">
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check3"
+                                    id="check3S"
+                                    value="S"
+                                >
+
+                                <label for="check3S">
+                                    S
+                                </label>
+
+                            </div>
+
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check3"
+                                    id="check3TS"
+                                    value="TS"
+                                >
+
+                                <label for="check3TS">
+                                    TS
+                                </label>
+
+                            </div>
+
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check3"
+                                    id="check3TB"
+                                    value="TB"
+                                >
+
+                                <label for="check3TB">
+                                    TB
+                                </label>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- CHECK 4 -->
+
+                    <div class="check-item">
+
+                        <div class="check-text">
+
+                            <strong>
+                                4.
+                            </strong>
+
+                            Fungsi utama peralatan dapat digunakan
+                            sesuai kebutuhan.
+
+                        </div>
+
+
+                        <div class="check-options">
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check4"
+                                    id="check4S"
+                                    value="S"
+                                >
+
+                                <label for="check4S">
+                                    S
+                                </label>
+
+                            </div>
+
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check4"
+                                    id="check4TS"
+                                    value="TS"
+                                >
+
+                                <label for="check4TS">
+                                    TS
+                                </label>
+
+                            </div>
+
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check4"
+                                    id="check4TB"
+                                    value="TB"
+                                >
+
+                                <label for="check4TB">
+                                    TB
+                                </label>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- CHECK 5 -->
+
+                    <div class="check-item">
+
+                        <div class="check-text">
+
+                            <strong>
+                                5.
+                            </strong>
+
+                            Dokumen dan kondisi peralatan telah
+                            diperiksa oleh PIC.
+
+                        </div>
+
+
+                        <div class="check-options">
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check5"
+                                    id="check5S"
+                                    value="S"
+                                >
+
+                                <label for="check5S">
+                                    S
+                                </label>
+
+                            </div>
+
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check5"
+                                    id="check5TS"
+                                    value="TS"
+                                >
+
+                                <label for="check5TS">
+                                    TS
+                                </label>
+
+                            </div>
+
+
+                            <div class="check-option">
+
+                                <input
+                                    type="radio"
+                                    name="check5"
+                                    id="check5TB"
+                                    value="TB"
+                                >
+
+                                <label for="check5TB">
+                                    TB
+                                </label>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             DOKUMEN TAMBAHAN
+        ====================================================== -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h3>
+                    Dokumen Pendukung dari PIC
+                </h3>
+
+                <span class="section-count">
+                    Opsional
+                </span>
+
+            </div>
+
+
+            <div class="card-body">
+
+                <div class="alert alert-warning">
+
+                    <strong>
+                        Upload tambahan bersifat opsional.
+                    </strong>
+
+                    Dokumen yang sudah ada pada peralatan
+                    tidak perlu di-upload kembali.
+
+                    PIC hanya meng-upload dokumen tambahan
+                    apabila diperlukan.
+
+                </div>
+
+
+                <label
+                    for="additionalFileInput"
+                    class="upload-box">
+
+                    <div class="upload-icon">
+                        📎
+                    </div>
+
+                    <strong>
+                        Pilih dokumen tambahan
+                    </strong>
+
+                    <span>
+                        PDF, DOC, DOCX, XLS, XLSX
+                        — maksimal 10 MB per file
+                    </span>
+
+                </label>
+
+
+                <input
+                    type="file"
+                    id="additionalFileInput"
+                    multiple
+                    accept=".pdf,.doc,.docx,.xls,.xlsx"
+                    onchange="handleAdditionalFiles(event)"
+                >
+
+
+                <div class="optional-note">
+
+                    Dapat memilih beberapa file sekaligus.
+
+                </div>
+
+
+                <div
+                    id="additionalDocumentsPIC"
+                    class="mt-15">
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             CATATAN PIC
+        ====================================================== -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h3>
+                    Catatan Verifikasi
+                </h3>
+
+            </div>
+
+
+            <div class="card-body">
+
+                <div class="form-group">
+
+                    <label for="picNote">
+                        Catatan PIC
+                    </label>
+
+                    <textarea
+                        id="picNote"
+                        class="form-control"
+                        placeholder="Masukkan catatan hasil pemeriksaan..."
+                    ></textarea>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             TANDA TANGAN PIC
+        ====================================================== -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h3>
+                    Tanda Tangan PIC
+                </h3>
+
+                <span class="section-count">
+                    Wajib
+                </span>
+
+            </div>
+
+
+            <div class="card-body">
+
+                <div class="alert alert-info">
+
+                    PIC wajib membubuhkan tanda tangan sebagai
+                    pihak yang melakukan pemeriksaan sebelum
+                    pengajuan dikirim kepada Manager Lab.
+
+                </div>
+
+
+                <div class="signature-wrapper">
+
+
+                    <div class="signature-box">
+
+                        <div class="signature-title">
+                            PIC Lab
+                        </div>
+
+
+                        <canvas
+                            id="picSignatureCanvas"
+                            class="signature-canvas">
+                        </canvas>
+
+
+                        <div class="signature-help">
+                            Gambar tanda tangan pada area di atas.
+                        </div>
+
+
+                        <div class="signature-actions">
+
+                            <button
+                                type="button"
+                                class="btn btn-secondary btn-sm"
+                                onclick="clearSignature('pic')">
+
+                                Hapus Tanda Tangan
+
+                            </button>
+
+                        </div>
+
+
+                        <div
+                            id="picSignatureStatus"
+                            class="signature-status not-signed">
+
+                            Belum ditandatangani
+
+                        </div>
+
+
+                        <div class="signature-line"></div>
+
+
+                        <div class="signature-name">
+                            PIC Lab Fiber
+                        </div>
+
+
+                        <div class="signature-date">
+
+                            Tanggal:
+                            <span id="picSignatureDate">
+                                -
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             PIC ACTION
+        ====================================================== -->
+
+        <div class="card">
+
+            <div class="card-body">
+
+                <div class="action-bar">
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        onclick="resetPICForm()">
+
+                        Reset
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="submitVerification()">
+
+                        Ajukan Verifikasi ke Manager
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================================================
+         MANAGER VIEW
+    ========================================================== -->
+
+    <section
+        id="managerView"
+        class="hidden">
+
+
+        <div class="page-title">
+
+            <h2>
+                Verifikasi Manager Lab
+            </h2>
+
+            <p>
+                Manager Lab memeriksa hasil verifikasi PIC,
+                dokumen peralatan, dokumen pendukung dan
+                memberikan keputusan.
+            </p>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             MANAGER LIST
+        ====================================================== -->
+
+        <div
+            id="managerListView">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h3>
+                        Pengajuan Verifikasi
+                    </h3>
+
+                    <span
+                        id="submissionCount"
+                        class="section-count">
+
+                        0 Pengajuan
+
+                    </span>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <div
+                        id="submissionList">
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             MANAGER DETAIL
+        ====================================================== -->
+
+        <div
+            id="managerDetailView"
+            class="hidden">
+
+
+            <!-- =================================================
+                 DETAIL PERALATAN
+            ================================================== -->
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <div class="submission-top">
+
+                        <div>
+
+                            <div class="submission-name">
+
+                                Optical Time Domain Reflectometer
+
+                            </div>
+
+                            <div class="submission-number">
+
+                                Nomor Aset:
+                                OTDR-001
+
+                                ·
+
+                                EXFO FTB-720C
+
+                            </div>
+
+                        </div>
+
+
+                        <span
+                            id="managerStatus"
+                            class="status pending">
+
+                            ● Menunggu Verifikasi
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 INFORMASI PERALATAN
+            ================================================== -->
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h3>
+                        Informasi Peralatan
+                    </h3>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <div class="equipment-grid">
+
+
+                        <div class="info-box">
+
+                            <div class="info-label">
+                                Nomor Aset
+                            </div>
+
+                            <div class="info-value">
+                                OTDR-001
+                            </div>
+
+                        </div>
+
+
+                        <div class="info-box">
+
+                            <div class="info-label">
+                                Nama Peralatan
+                            </div>
+
+                            <div class="info-value">
+                                Optical Time Domain Reflectometer
+                            </div>
+
+                        </div>
+
+
+                        <div class="info-box">
+
+                            <div class="info-label">
+                                Merek
+                            </div>
+
+                            <div class="info-value">
+                                EXFO
+                            </div>
+
+                        </div>
+
+
+                        <div class="info-box">
+
+                            <div class="info-label">
+                                Tipe / Model
+                            </div>
+
+                            <div class="info-value">
+                                FTB-720C
+                            </div>
+
+                        </div>
+
+
+                        <div class="info-box">
+
+                            <div class="info-label">
+                                Nomor Seri
+                            </div>
+
+                            <div class="info-value">
+                                EXFO720C001
+                            </div>
+
+                        </div>
+
+
+                        <div class="info-box">
+
+                            <div class="info-label">
+                                Ruangan
+                            </div>
+
+                            <div class="info-value">
+                                Lab Fiber Optik
+                            </div>
+
+                        </div>
+
+
+                        <div class="info-box">
+
+                            <div class="info-label">
+                                PIC
+                            </div>
+
+                            <div class="info-value">
+                                PIC Lab Fiber
+                            </div>
+
+                        </div>
+
+
+                        <div class="info-box">
+
+                            <div class="info-label">
+                                Status Alat
+                            </div>
+
+                            <div class="info-value">
+                                Aktif
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 CHECKLIST MANAGER
+            ================================================== -->
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h3>
+                        Hasil Checklist PIC
+                    </h3>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <div
+                        id="managerChecklist">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 DOKUMEN PERALATAN
+            ================================================== -->
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h3>
+                        Dokumen Peralatan
+                    </h3>
+
+                    <span
+                        id="existingDocumentCount"
+                        class="section-count">
+
+                        2 Dokumen
+
+                    </span>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <div class="alert alert-info">
+
+                        Dokumen ini sudah melekat pada data
+                        peralatan sejak proses input peralatan.
+
+                        Manager dapat memeriksa dokumen ini
+                        sebagai bagian dari proses verifikasi.
+
+                    </div>
+
+
+                    <div
+                        id="existingDocumentsManager"
+                        class="document-list">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 DOKUMEN TAMBAHAN PIC
+            ================================================== -->
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h3>
+                        Dokumen Pendukung dari PIC
+                    </h3>
+
+                    <span
+                        id="additionalDocumentCount"
+                        class="section-count">
+
+                        0 Dokumen
+
+                    </span>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <div
+                        id="additionalDocumentsManager">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 CATATAN PIC
+            ================================================== -->
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h3>
+                        Catatan dari PIC
+                    </h3>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <div
+                        id="managerPICNote"
+                        class="alert alert-info">
+
+                        Belum ada catatan dari PIC.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 TANDA TANGAN PIC YANG SUDAH TERSIMPAN
+            ================================================== -->
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h3>
+                        Tanda Tangan PIC
+                    </h3>
+
+                    <span class="section-count">
+                        Hasil Pengajuan
+                    </span>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <div class="signature-wrapper">
+
+                        <div class="signature-box">
+
+                            <div class="signature-title">
+                                PIC Lab
+                            </div>
+
+
+                            <div
+                                id="managerPICSignaturePreview"
+                                style="
+                                    height:170px;
+                                    display:flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    background:white;
+                                    border:1px dashed #d1d5db;
+                                    border-radius:8px;
+                                ">
+
+                                Belum ada tanda tangan
+
+                            </div>
+
+
+                            <div class="signature-line"></div>
+
+
+                            <div class="signature-name">
+                                PIC Lab Fiber
+                            </div>
+
+
+                            <div class="signature-date">
+
+                                Tanggal:
+                                <span id="managerPICSignatureDate">
+                                    -
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 CATATAN MANAGER
+            ================================================== -->
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h3>
+                        Catatan Manager Lab
+                    </h3>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <div class="form-group">
+
+                        <label for="managerNote">
+
+                            Catatan / hasil pemeriksaan Manager
+
+                        </label>
+
+
+                        <textarea
+                            id="managerNote"
+                            class="form-control"
+                            placeholder="Masukkan catatan hasil pemeriksaan Manager Lab..."
+                        ></textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 TANDA TANGAN MANAGER
+            ================================================== -->
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <h3>
+                        Tanda Tangan Manager Lab
+                    </h3>
+
+                    <span class="section-count">
+                        Wajib
+                    </span>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <div class="alert alert-info">
+
+                        Manager Lab membubuhkan tanda tangan
+                        setelah memeriksa seluruh data,
+                        checklist dan dokumen.
+
+                    </div>
+
+
+                    <div class="signature-wrapper">
+
+
+                        <div class="signature-box">
+
+                            <div class="signature-title">
+                                Manager Lab
+                            </div>
+
+
+                            <canvas
+                                id="managerSignatureCanvas"
+                                class="signature-canvas">
+                            </canvas>
+
+
+                            <div class="signature-help">
+                                Gambar tanda tangan pada area di atas.
+                            </div>
+
+
+                            <div class="signature-actions">
+
+                                <button
+                                    type="button"
+                                    class="btn btn-secondary btn-sm"
+                                    onclick="clearSignature('manager')">
+
+                                    Hapus Tanda Tangan
+
+                                </button>
+
+                            </div>
+
+
+                            <div
+                                id="managerSignatureStatus"
+                                class="signature-status not-signed">
+
+                                Belum ditandatangani
+
+                            </div>
+
+
+                            <div class="signature-line"></div>
+
+
+                            <div class="signature-name">
+                                Manager Lab
+                            </div>
+
+
+                            <div class="signature-date">
+
+                                Tanggal:
+                                <span id="managerSignatureDate">
+                                    -
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 MANAGER ACTION
+            ================================================== -->
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <div class="action-bar">
+
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            onclick="backToManagerList()">
+
+                            ← Kembali
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="btn btn-danger"
+                            onclick="managerDecision('Ditolak')">
+
+                            Tolak
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="btn btn-success"
+                            onclick="managerDecision('Disetujui')">
+
+                            Setujui
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 DOKUMEN VERIFIKASI AKHIR
+            ================================================== -->
+
+            <div
+                id="finalVerificationDocumentCard"
+                class="card hidden">
+
+                <div class="card-header">
+
+                    <h3>
+                        Dokumen Verifikasi
+                    </h3>
+
+                    <span
+                        id="finalDocumentStatus"
+                        class="status approved">
+
+                        ● Selesai
+
+                    </span>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <div
+                        id="finalVerificationDocument">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </section>
+
+</main>
+
+
+
+<!-- =============================================================
+     DOCUMENT PREVIEW MODAL
+============================================================= -->
+
+<div
+    id="documentModal"
+    class="modal-overlay"
+    onclick="handleModalOverlayClick(event)">
+
+    <div class="modal">
+
+
+        <div class="modal-header">
+
+            <h3 id="modalDocumentTitle">
+                Preview Dokumen
+            </h3>
+
+
+            <button
+                class="modal-close"
+                onclick="closeDocumentModal()">
+
+                ×
+
+            </button>
+
+        </div>
+
+
+        <div class="modal-body">
+
+            <div class="document-preview">
+
+                <div
+                    id="modalDocumentIcon"
+                    class="preview-icon">
+
+                    📄
+
+                </div>
+
+
+                <div
+                    id="modalDocumentName"
+                    class="preview-name">
+
+                    -
+
+                </div>
+
+
+                <div
+                    id="modalDocumentMeta"
+                    class="preview-meta">
+
+                    -
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="btn btn-primary mt-15"
+                    onclick="simulateOpenDocument()">
+
+                    Buka Dokumen
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div class="modal-footer">
+
+            <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="closeDocumentModal()">
+
+                Tutup
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =============================================================
+     TOAST
+============================================================= -->
+
+<div
+    id="toast"
+    class="toast">
+</div>
+
+
+
+<script>
+
+/* ================================================================
+   DATA PERALATAN
+================================================================ */
+
+const equipment = {
+
+    id: 1,
+
+    nomor_aset: "OTDR-001",
+
+    nama_peralatan:
+        "Optical Time Domain Reflectometer",
+
+    merek: "EXFO",
+
+    tipe_model: "FTB-720C",
+
+    nomor_seri: "EXFO720C001",
+
+    ruangan: "Lab Fiber Optik",
+
+    pic: "PIC Lab Fiber",
+
+    status_alat: "Aktif"
+
+};
+
+
+/* ================================================================
+   DOKUMEN BAWAAN PERALATAN
+================================================================ */
+
+/*
+ * DOKUMEN INI SUDAH ADA SEJAK PERALATAN DIBUAT.
+ *
+ * PIC TIDAK PERLU MENG-UPLOAD ULANG.
+ */
+
+const equipmentDocuments = [
+
+    {
+
+        id: 1,
+
+        nama_dokumen:
+            "Sertifikat Kalibrasi",
+
+        file_name:
+            "Sertifikat_Kalibrasi_OTDR_2026.pdf",
+
+        type:
+            "application/pdf",
+
+        size:
+            1842000,
+
+        source:
+            "Dokumen Peralatan"
+
+    },
+
+
+    {
+
+        id: 2,
+
+        nama_dokumen:
+            "Manual Peralatan",
+
+        file_name:
+            "Manual_EXFO_FTB720C.pdf",
+
+        type:
+            "application/pdf",
+
+        size:
+            5240000,
+
+        source:
+            "Dokumen Peralatan"
+
+    }
+
+];
+
+
+/* ================================================================
+   DOKUMEN TAMBAHAN PIC
+================================================================ */
+
+let additionalDocuments = [];
+
+
+/* ================================================================
+   DATA PENGAJUAN
+================================================================ */
+
+let verificationRequest = null;
+
+
+/* ================================================================
+   SIGNATURE PAD STATE
+================================================================ */
+
+const signaturePads = {
+
+    pic: {
+
+        canvas: null,
+
+        ctx: null,
+
+        drawing: false,
+
+        hasSignature: false
+
+    },
+
+
+    manager: {
+
+        canvas: null,
+
+        ctx: null,
+
+        drawing: false,
+
+        hasSignature: false
+
+    }
+
+};
+
+
+/* ================================================================
+   CURRENT DOCUMENT
+================================================================ */
+
+let currentDocument = null;
+
+
+/* ================================================================
+   INIT
+================================================================ */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        renderExistingDocumentsPIC();
+
+        renderAdditionalDocumentsPIC();
+
+        renderExistingDocumentsManager();
+
+        renderAdditionalDocumentsManager();
+
+        initializeSignaturePad("pic");
+
+        initializeSignaturePad("manager");
+
+        setCurrentDate(
+            "picSignatureDate"
+        );
+
+        setCurrentDate(
+            "managerSignatureDate"
+        );
+
+        renderSubmissionList();
+
+        window.addEventListener(
+            "resize",
+            function () {
+
+                resizeSignatureCanvas("pic");
+
+                resizeSignatureCanvas("manager");
+
+            }
+        );
+
+    }
+);
+
+
+/* ================================================================
+   ROLE SWITCH
+================================================================ */
+
+function switchRole() {
+
+    const role =
+        document.getElementById(
+            "roleSelect"
+        ).value;
+
+
+    const picView =
+        document.getElementById(
+            "picView"
+        );
+
+
+    const managerView =
+        document.getElementById(
+            "managerView"
+        );
+
+
+    if (role === "pic") {
+
+        picView.classList.remove(
+            "hidden"
+        );
+
+        managerView.classList.add(
+            "hidden"
+        );
+
+
+        setTimeout(
+            function () {
+
+                resizeSignatureCanvas(
+                    "pic"
+                );
+
+            },
+            50
+        );
+
+    } else {
+
+        picView.classList.add(
+            "hidden"
+        );
+
+        managerView.classList.remove(
+            "hidden"
+        );
+
+
+        setTimeout(
+            function () {
+
+                resizeSignatureCanvas(
+                    "manager"
+                );
+
+            },
+            50
+        );
+
+
+        renderSubmissionList();
+
+    }
+
+}
+
+
+/* ================================================================
+   INITIALIZE SIGNATURE PAD
+================================================================ */
+
+function initializeSignaturePad(type) {
+
+    const canvasId =
+        type === "pic"
+            ? "picSignatureCanvas"
+            : "managerSignatureCanvas";
+
+
+    const canvas =
+        document.getElementById(
+            canvasId
+        );
+
+
+    if (!canvas) {
+        return;
+    }
+
+
+    const ctx =
+        canvas.getContext(
+            "2d"
+        );
+
+
+    signaturePads[type].canvas =
+        canvas;
+
+
+    signaturePads[type].ctx =
+        ctx;
+
+
+    resizeSignatureCanvas(
+        type
+    );
+
+
+    canvas.addEventListener(
+        "pointerdown",
+        function (event) {
+
+            startSignature(
+                type,
+                event
+            );
+
+        }
+    );
+
+
+    canvas.addEventListener(
+        "pointermove",
+        function (event) {
+
+            drawSignature(
+                type,
+                event
+            );
+
+        }
+    );
+
+
+    canvas.addEventListener(
+        "pointerup",
+        function () {
+
+            endSignature(
+                type
+            );
+
+        }
+    );
+
+
+    canvas.addEventListener(
+        "pointerleave",
+        function () {
+
+            endSignature(
+                type
+            );
+
+        }
+    );
+
+
+    canvas.addEventListener(
+        "pointercancel",
+        function () {
+
+            endSignature(
+                type
+            );
+
+        }
+    );
+
+}
+
+
+/* ================================================================
+   RESIZE SIGNATURE CANVAS
+================================================================ */
+
+function resizeSignatureCanvas(type) {
+
+    const pad =
+        signaturePads[type];
+
+
+    if (!pad.canvas) {
+        return;
+    }
+
+
+    const canvas =
+        pad.canvas;
+
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+
+    if (
+        rect.width === 0 ||
+        rect.height === 0
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+     * SIMPAN SIGNATURE LAMA
+     */
+
+    let oldImage = null;
+
+
+    if (pad.hasSignature) {
+
+        try {
+
+            oldImage =
+                canvas.toDataURL(
+                    "image/png"
+                );
+
+        } catch (error) {
+
+            oldImage = null;
+
+        }
+
+    }
+
+
+    const ratio =
+        window.devicePixelRatio || 1;
+
+
+    canvas.width =
+        rect.width * ratio;
+
+
+    canvas.height =
+        rect.height * ratio;
+
+
+    pad.ctx.setTransform(
+        ratio,
+        0,
+        0,
+        ratio,
+        0,
+        0
+    );
+
+
+    pad.ctx.lineWidth = 2;
+
+    pad.ctx.lineCap =
+        "round";
+
+    pad.ctx.lineJoin =
+        "round";
+
+    pad.ctx.strokeStyle =
+        "#111827";
+
+
+    /*
+     * RESTORE SIGNATURE
+     */
+
+    if (oldImage) {
+
+        const image =
+            new Image();
+
+
+        image.onload =
+            function () {
+
+                pad.ctx.drawImage(
+                    image,
+                    0,
+                    0,
+                    rect.width,
+                    rect.height
+                );
+
+            };
+
+
+        image.src =
+            oldImage;
+
+    }
+
+}
+
+
+/* ================================================================
+   START SIGNATURE
+================================================================ */
+
+function startSignature(
+    type,
+    event
+) {
+
+    const pad =
+        signaturePads[type];
+
+
+    if (!pad.canvas) {
+        return;
+    }
+
+
+    pad.drawing = true;
+
+    pad.hasSignature = true;
+
+
+    updateSignatureStatus(
+        type
+    );
+
+
+    const rect =
+        pad.canvas.getBoundingClientRect();
+
+
+    const x =
+        event.clientX -
+        rect.left;
+
+
+    const y =
+        event.clientY -
+        rect.top;
+
+
+    pad.ctx.beginPath();
+
+    pad.ctx.moveTo(
+        x,
+        y
+    );
+
+}
+
+
+/* ================================================================
+   DRAW SIGNATURE
+================================================================ */
+
+function drawSignature(
+    type,
+    event
+) {
+
+    const pad =
+        signaturePads[type];
+
+
+    if (!pad.drawing) {
+        return;
+    }
+
+
+    const rect =
+        pad.canvas.getBoundingClientRect();
+
+
+    const x =
+        event.clientX -
+        rect.left;
+
+
+    const y =
+        event.clientY -
+        rect.top;
+
+
+    pad.ctx.lineTo(
+        x,
+        y
+    );
+
+
+    pad.ctx.stroke();
+
+}
+
+
+/* ================================================================
+   END SIGNATURE
+================================================================ */
+
+function endSignature(type) {
+
+    signaturePads[type].drawing =
+        false;
+
+}
+
+
+/* ================================================================
+   UPDATE SIGNATURE STATUS
+================================================================ */
+
+function updateSignatureStatus(type) {
+
+    const elementId =
+        type === "pic"
+            ? "picSignatureStatus"
+            : "managerSignatureStatus";
+
+
+    const element =
+        document.getElementById(
+            elementId
+        );
+
+
+    if (!element) {
+        return;
+    }
+
+
+    if (
+        signaturePads[type]
+            .hasSignature
+    ) {
+
+        element.className =
+            "signature-status signed";
+
+        element.textContent =
+            "✓ Sudah ditandatangani";
+
+    } else {
+
+        element.className =
+            "signature-status not-signed";
+
+        element.textContent =
+            "Belum ditandatangani";
+
+    }
+
+}
+
+
+/* ================================================================
+   CLEAR SIGNATURE
+================================================================ */
+
+function clearSignature(type) {
+
+    const pad =
+        signaturePads[type];
+
+
+    if (!pad.canvas) {
+        return;
+    }
+
+
+    const rect =
+        pad.canvas.getBoundingClientRect();
+
+
+    pad.ctx.clearRect(
+        0,
+        0,
+        rect.width,
+        rect.height
+    );
+
+
+    pad.hasSignature =
+        false;
+
+
+    updateSignatureStatus(
+        type
+    );
+
+
+    showToast(
+        type === "pic"
+            ? "Tanda tangan PIC dihapus."
+            : "Tanda tangan Manager dihapus."
+    );
+
+}
+
+
+/* ================================================================
+   GET SIGNATURE
+================================================================ */
+
+function getSignature(type) {
+
+    const pad =
+        signaturePads[type];
+
+
+    if (
+        !pad.canvas ||
+        !pad.hasSignature
+    ) {
+
+        return null;
+
+    }
+
+
+    return pad.canvas.toDataURL(
+        "image/png"
+    );
+
+}
+
+
+/* ================================================================
+   EXISTING DOCUMENTS - PIC
+================================================================ */
+
+function renderExistingDocumentsPIC() {
+
+    const container =
+        document.getElementById(
+            "existingDocumentsPIC"
+        );
+
+
+    document.getElementById(
+        "picExistingCount"
+    ).textContent =
+        `${equipmentDocuments.length} Dokumen`;
+
+
+    if (
+        equipmentDocuments.length === 0
+    ) {
+
+        container.innerHTML =
+            emptyDocumentHTML(
+                "Belum ada dokumen peralatan",
+                "Tidak terdapat dokumen yang terhubung dengan peralatan."
+            );
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        equipmentDocuments
+            .map(
+                function (doc, index) {
+
+                    return documentItemHTML(
+                        doc,
+                        `
+                        <button
+                            type="button"
+                            class="btn btn-secondary btn-sm"
+                            onclick="previewDocument(
+                                equipmentDocuments[${index}]
+                            )">
+
+                            Lihat
+
+                        </button>
+                        `,
+                        "Dokumen Peralatan"
+                    );
+
+                }
+            )
+            .join("");
+
+}
+
+
+/* ================================================================
+   ADDITIONAL FILES
+================================================================ */
+
+function handleAdditionalFiles(
+    event
+) {
+
+    const files =
+        Array.from(
+            event.target.files
+        );
+
+
+    if (
+        files.length === 0
+    ) {
+
+        return;
+
+    }
+
+
+    const allowedExtensions = [
+
+        "pdf",
+        "doc",
+        "docx",
+        "xls",
+        "xlsx"
+
+    ];
+
+
+    files.forEach(
+        function (file) {
+
+            const extension =
+                file.name
+                    .split(".")
+                    .pop()
+                    .toLowerCase();
+
+
+            /*
+             * EXTENSION
+             */
+
+            if (
+                !allowedExtensions
+                    .includes(extension)
+            ) {
+
+                showToast(
+                    `File "${file.name}" tidak didukung.`
+                );
+
+                return;
+
+            }
+
+
+            /*
+             * SIZE
+             */
+
+            if (
+                file.size >
+                10 * 1024 * 1024
+            ) {
+
+                showToast(
+                    `File "${file.name}" lebih dari 10 MB.`
+                );
+
+                return;
+
+            }
+
+
+            /*
+             * DUPLICATE
+             */
+
+            const duplicate =
+                additionalDocuments.some(
+                    function (existing) {
+
+                        return (
+                            existing.name ===
+                                file.name
+                            &&
+                            existing.size ===
+                                file.size
+                        );
+
+                    }
+                );
+
+
+            if (duplicate) {
+
+                showToast(
+                    `File "${file.name}" sudah dipilih.`
+                );
+
+                return;
+
+            }
+
+
+            additionalDocuments.push(
+                file
+            );
+
+        }
+    );
+
+
+    event.target.value = "";
+
+
+    renderAdditionalDocumentsPIC();
+
+}
+
+
+/* ================================================================
+   RENDER ADDITIONAL PIC
+================================================================ */
+
+function renderAdditionalDocumentsPIC() {
+
+    const container =
+        document.getElementById(
+            "additionalDocumentsPIC"
+        );
+
+
+    if (
+        additionalDocuments.length === 0
+    ) {
+
+        container.innerHTML = `
+
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    📎
+                </div>
+
+                <strong>
+                    Tidak ada dokumen tambahan
+                </strong>
+
+                <span>
+                    Upload tambahan bersifat opsional.
+                </span>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        additionalDocuments
+            .map(
+                function (file, index) {
+
+                    return documentItemHTML(
+                        {
+
+                            nama_dokumen:
+                                file.name,
+
+                            file_name:
+                                file.name,
+
+                            type:
+                                file.type,
+
+                            size:
+                                file.size
+
+                        },
+
+                        `
+
+                        <button
+                            type="button"
+                            class="btn btn-secondary btn-sm"
+                            onclick="previewUploadedDocument(${index})">
+
+                            Lihat
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="btn btn-danger btn-sm"
+                            onclick="removeAdditionalDocument(${index})">
+
+                            Hapus
+
+                        </button>
+
+                        `,
+
+                        "Dokumen Pendukung PIC"
+                    );
+
+                }
+            )
+            .join("");
+
+}
+
+
+/* ================================================================
+   REMOVE ADDITIONAL DOCUMENT
+================================================================ */
+
+function removeAdditionalDocument(
+    index
+) {
+
+    const file =
+        additionalDocuments[index];
+
+
+    if (!file) {
+        return;
+    }
+
+
+    additionalDocuments.splice(
+        index,
+        1
+    );
+
+
+    renderAdditionalDocumentsPIC();
+
+
+    showToast(
+        `Dokumen "${file.name}" dihapus.`
+    );
+
+}
+
+
+/* ================================================================
+   EXISTING DOCUMENTS - MANAGER
+================================================================ */
+
+function renderExistingDocumentsManager() {
+
+    const container =
+        document.getElementById(
+            "existingDocumentsManager"
+        );
+
+
+    if (
+        equipmentDocuments.length === 0
+    ) {
+
+        container.innerHTML =
+            emptyDocumentHTML(
+                "Tidak ada dokumen peralatan",
+                "Peralatan belum memiliki dokumen."
+            );
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        equipmentDocuments
+            .map(
+                function (doc, index) {
+
+                    return documentItemHTML(
+                        doc,
+
+                        `
+
+                        <button
+                            type="button"
+                            class="btn btn-secondary btn-sm"
+                            onclick="previewDocument(
+                                equipmentDocuments[${index}]
+                            )">
+
+                            Lihat Dokumen
+
+                        </button>
+
+                        `,
+
+                        "Dokumen Peralatan"
+                    );
+
+                }
+            )
+            .join("");
+
+}
+
+
+/* ================================================================
+   ADDITIONAL DOCUMENTS - MANAGER
+================================================================ */
+
+function renderAdditionalDocumentsManager() {
+
+    const container =
+        document.getElementById(
+            "additionalDocumentsManager"
+        );
+
+
+    document.getElementById(
+        "additionalDocumentCount"
+    ).textContent =
+        `${additionalDocuments.length} Dokumen`;
+
+
+    if (
+        additionalDocuments.length === 0
+    ) {
+
+        container.innerHTML = `
+
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    📎
+                </div>
+
+                <strong>
+                    Tidak ada dokumen tambahan
+                </strong>
+
+                <span>
+                    PIC tidak mengunggah dokumen tambahan.
+                    Upload tambahan bersifat opsional.
+                </span>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        additionalDocuments
+            .map(
+                function (file, index) {
+
+                    return documentItemHTML(
+                        {
+
+                            nama_dokumen:
+                                file.name,
+
+                            file_name:
+                                file.name,
+
+                            type:
+                                file.type,
+
+                            size:
+                                file.size
+
+                        },
+
+                        `
+
+                        <button
+                            type="button"
+                            class="btn btn-secondary btn-sm"
+                            onclick="previewUploadedDocument(${index})">
+
+                            Lihat Dokumen
+
+                        </button>
+
+                        `,
+
+                        "Diunggah oleh PIC"
+                    );
+
+                }
+            )
+            .join("");
+
+}
+
+
+/* ================================================================
+   GENERATE DOCUMENT ITEM
+================================================================ */
+
+function documentItemHTML(
+    doc,
+    actions,
+    badge
+) {
+
+    return `
+
+        <div class="document-item">
+
+            <div class="document-left">
+
+                <div class="document-icon">
+
+                    ${getFileIcon(
+                        doc.file_name
+                    )}
+
+                </div>
+
+
+                <div class="document-info">
+
+                    <div class="document-name">
+
+                        ${escapeHtml(
+                            doc.nama_dokumen ||
+                            doc.file_name
+                        )}
+
+                    </div>
+
+
+                    <div class="document-meta">
+
+                        ${escapeHtml(
+                            doc.file_name
+                        )}
+
+                        ·
+
+                        ${formatFileSize(
+                            doc.size || 0
+                        )}
+
+                    </div>
+
+
+                    <span class="document-badge">
+
+                        ${escapeHtml(
+                            badge
+                        )}
+
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="document-actions">
+
+                ${actions}
+
+            </div>
+
+        </div>
+
+    `;
+
+}
+
+
+/* ================================================================
+   EMPTY DOCUMENT
+================================================================ */
+
+function emptyDocumentHTML(
+    title,
+    description
+) {
+
+    return `
+
+        <div class="empty-state">
+
+            <div class="empty-icon">
+                📂
+            </div>
+
+            <strong>
+                ${escapeHtml(title)}
+            </strong>
+
+            <span>
+                ${escapeHtml(description)}
+            </span>
+
+        </div>
+
+    `;
+
+}
+
+
+/* ================================================================
+   FILE ICON
+================================================================ */
+
+function getFileIcon(
+    fileName
+) {
+
+    const extension =
+        fileName
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+
+    if (
+        extension === "pdf"
+    ) {
+
+        return "📕";
+
+    }
+
+
+    if (
+        extension === "doc" ||
+        extension === "docx"
+    ) {
+
+        return "📘";
+
+    }
+
+
+    if (
+        extension === "xls" ||
+        extension === "xlsx"
+    ) {
+
+        return "📗";
+
+    }
+
+
+    return "📄";
+
+}
+
+
+/* ================================================================
+   FORMAT FILE SIZE
+================================================================ */
+
+function formatFileSize(
+    bytes
+) {
+
+    if (
+        !bytes ||
+        bytes === 0
+    ) {
+
+        return "0 Bytes";
+
+    }
+
+
+    const units = [
+
+        "Bytes",
+        "KB",
+        "MB",
+        "GB"
+
+    ];
+
+
+    const index =
+        Math.floor(
+            Math.log(bytes) /
+            Math.log(1024)
+        );
+
+
+    return (
+        parseFloat(
+            (
+                bytes /
+                Math.pow(
+                    1024,
+                    index
+                )
+            ).toFixed(2)
+        )
+        +
+        " "
+        +
+        units[index]
+    );
+
+}
+
+
+/* ================================================================
+   PREVIEW UPLOADED DOCUMENT
+================================================================ */
+
+function previewUploadedDocument(
+    index
+) {
+
+    const file =
+        additionalDocuments[index];
+
+
+    if (!file) {
+        return;
+    }
+
+
+    previewDocument({
+
+        nama_dokumen:
+            file.name,
+
+        file_name:
+            file.name,
+
+        type:
+            file.type,
+
+        size:
+            file.size,
+
+        source:
+            "Dokumen Pendukung dari PIC"
+
+    });
+
+}
+
+
+/* ================================================================
+   PREVIEW DOCUMENT
+================================================================ */
+
+function previewDocument(
+    doc
+) {
+
+    if (!doc) {
+        return;
+    }
+
+
+    currentDocument =
+        doc;
+
+
+    document.getElementById(
+        "modalDocumentTitle"
+    ).textContent =
+        doc.nama_dokumen ||
+        doc.file_name;
+
+
+    document.getElementById(
+        "modalDocumentName"
+    ).textContent =
+        doc.file_name ||
+        "-";
+
+
+    document.getElementById(
+        "modalDocumentMeta"
+    ).textContent =
+        `${formatFileSize(
+            doc.size || 0
+        )} · ${
+            doc.source ||
+            "Dokumen"
+        }`;
+
+
+    document.getElementById(
+        "modalDocumentIcon"
+    ).textContent =
+        getFileIcon(
+            doc.file_name ||
+            ""
+        );
+
+
+    document.getElementById(
+        "documentModal"
+    ).classList.add(
+        "active"
+    );
+
+}
+
+
+/* ================================================================
+   CLOSE MODAL
+================================================================ */
+
+function closeDocumentModal() {
+
+    document.getElementById(
+        "documentModal"
+    ).classList.remove(
+        "active"
+    );
+
+
+    currentDocument =
+        null;
+
+}
+
+
+/* ================================================================
+   MODAL OVERLAY
+================================================================ */
+
+function handleModalOverlayClick(
+    event
+) {
+
+    if (
+        event.target ===
+        document.getElementById(
+            "documentModal"
+        )
+    ) {
+
+        closeDocumentModal();
+
+    }
+
+}
+
+
+/* ================================================================
+   SIMULATE OPEN
+================================================================ */
+
+function simulateOpenDocument() {
+
+    if (!currentDocument) {
+        return;
+    }
+
+
+    showToast(
+        `Demo: membuka "${currentDocument.file_name}".`
+    );
+
+}
+
+
+/* ================================================================
+   SUBMIT PIC VERIFICATION
+================================================================ */
+
+function submitVerification() {
+
+    /*
+     * VALIDASI CHECKLIST
+     */
+
+    const checklistNames = [
+
+        "check1",
+        "check2",
+        "check3",
+        "check4",
+        "check5"
+
+    ];
+
+
+    for (
+        const name of checklistNames
+    ) {
+
+        const selected =
+            document.querySelector(
+                `input[name="${name}"]:checked`
+            );
+
+
+        if (!selected) {
+
+            showToast(
+                "Semua checklist harus diisi terlebih dahulu."
+            );
+
+            return;
+
+        }
+
+    }
+
+
+    /*
+     * VALIDASI TTD PIC
+     */
+
+    if (
+        !signaturePads.pic
+            .hasSignature
+    ) {
+
+        showToast(
+            "PIC wajib membubuhkan tanda tangan terlebih dahulu."
+        );
+
+        return;
+
+    }
+
+
+    /*
+     * CHECKLIST
+     */
+
+    const checklist = {};
+
+
+    checklistNames.forEach(
+        function (name) {
+
+            const selected =
+                document.querySelector(
+                    `input[name="${name}"]:checked`
+                );
+
+
+            checklist[name] =
+                selected.value;
+
+        }
+    );
+
+
+    /*
+     * CATATAN
+     */
+
+    const picNote =
+        document
+            .getElementById(
+                "picNote"
+            )
+            .value
+            .trim();
+
+
+    /*
+     * DATA PENGAJUAN
+     */
+
+    verificationRequest = {
+
+        id: 1,
+
+        peralatan_id:
+            equipment.id,
+
+        nomor_aset:
+            equipment.nomor_aset,
+
+        nama_peralatan:
+            equipment.nama_peralatan,
+
+        pic:
+            equipment.pic,
+
+        status_verifikasi:
+            "Menunggu",
+
+        submitted_at:
+            new Date()
+                .toISOString(),
+
+        checklist:
+            checklist,
+
+        pic_note:
+            picNote,
+
+        documents: {
+
+            /*
+             * DOKUMEN BAWAAN
+             */
+
+            existing:
+                equipmentDocuments.map(
+                    function (doc) {
+
+                        return {
+                            ...doc
+                        };
+
+                    }
+                ),
+
+
+            /*
+             * DOKUMEN TAMBAHAN
+             *
+             * Bisa kosong.
+             */
+
+            additional:
+                additionalDocuments.map(
+                    function (
+                        file,
+                        index
+                    ) {
+
+                        return {
+
+                            id:
+                                `PIC-${index + 1}`,
+
+                            nama_dokumen:
+                                file.name,
+
+                            file_name:
+                                file.name,
+
+                            type:
+                                file.type,
+
+                            size:
+                                file.size,
+
+                            source:
+                                "Dokumen Pendukung dari PIC"
+
+                        };
+
+                    }
+                )
+
+        },
+
+
+        /*
+         * TANDA TANGAN
+         */
+
+        signatures: {
+
+            pic: {
+
+                name:
+                    equipment.pic,
+
+                signature:
+                    getSignature(
+                        "pic"
+                    ),
+
+                signed_at:
+                    new Date()
+                        .toISOString()
+
+            },
+
+            manager: null
+
+        }
+
+    };
+
+
+    /*
+     * UPDATE STATUS PIC
+     */
+
+    updatePICStatus(
+        "Menunggu"
+    );
+
+
+    /*
+     * UPDATE MANAGER
+     */
+
+    renderSubmissionList();
+
+    renderAdditionalDocumentsManager();
+
+    renderManagerDocumentsFromRequest();
+
+
+    showToast(
+        "Pengajuan verifikasi berhasil dikirim ke Manager Lab."
+    );
+
+}
+
+
+/* ================================================================
+   UPDATE PIC STATUS
+================================================================ */
+
+function updatePICStatus(
+    status
+) {
+
+    const element =
+        document.getElementById(
+            "picStatus"
+        );
+
+
+    if (
+        status === "Disetujui"
+    ) {
+
+        element.className =
+            "status approved";
+
+        element.textContent =
+            "● Disetujui Manager Lab";
+
+    }
+
+    else if (
+        status === "Ditolak"
+    ) {
+
+        element.className =
+            "status rejected";
+
+        element.textContent =
+            "● Ditolak Manager Lab";
+
+    }
+
+    else {
+
+        element.className =
+            "status pending";
+
+        element.textContent =
+            "● Menunggu Verifikasi Manager";
+
+    }
+
+}
+
+
+/* ================================================================
+   MANAGER SUBMISSION LIST
+================================================================ */
+
+function renderSubmissionList() {
+
+    const container =
+        document.getElementById(
+            "submissionList"
+        );
+
+
+    const count =
+        document.getElementById(
+            "submissionCount"
+        );
+
+
+    if (!verificationRequest) {
+
+        count.textContent =
+            "0 Pengajuan";
+
+
+        container.innerHTML = `
+
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    📥
+                </div>
+
+                <strong>
+                    Belum ada pengajuan verifikasi
+                </strong>
+
+                <span>
+                    Pengajuan dari PIC akan muncul di sini.
+                </span>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    count.textContent =
+        "1 Pengajuan";
+
+
+    let statusClass =
+        "pending";
+
+
+    let statusText =
+        "Menunggu Verifikasi";
+
+
+    if (
+        verificationRequest
+            .status_verifikasi ===
+        "Disetujui"
+    ) {
+
+        statusClass =
+            "approved";
+
+        statusText =
+            "Disetujui";
+
+    }
+
+
+    else if (
+        verificationRequest
+            .status_verifikasi ===
+        "Ditolak"
+    ) {
+
+        statusClass =
+            "rejected";
+
+        statusText =
+            "Ditolak";
+
+    }
+
+
+    const additionalCount =
+        verificationRequest
+            .documents
+            .additional
+            .length;
+
+
+    container.innerHTML = `
+
+        <div
+            class="submission-card"
+            onclick="openManagerDetail()">
+
+
+            <div class="submission-top">
+
+                <div>
+
+                    <div class="submission-name">
+
+                        ${escapeHtml(
+                            verificationRequest
+                                .nama_peralatan
+                        )}
+
+                    </div>
+
+
+                    <div class="submission-number">
+
+                        Nomor Aset:
+                        ${escapeHtml(
+                            verificationRequest
+                                .nomor_aset
+                        )}
+
+                    </div>
+
+                </div>
+
+
+                <span
+                    class="status ${statusClass}">
+
+                    ● ${statusText}
+
+                </span>
+
+            </div>
+
+
+            <div class="submission-bottom">
+
+                <div class="submission-info">
+
+                    Diajukan oleh:
+                    <strong>
+                        ${escapeHtml(
+                            verificationRequest.pic
+                        )}
+                    </strong>
+
+                    <br>
+
+                    Dokumen peralatan:
+                    <strong>
+                        ${
+                            verificationRequest
+                                .documents
+                                .existing
+                                .length
+                        }
+                    </strong>
+
+                    ·
+
+                    Dokumen tambahan PIC:
+                    <strong>
+                        ${additionalCount}
+                    </strong>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    onclick="
+                        event.stopPropagation();
+                        openManagerDetail();
+                    ">
+
+                    Periksa Pengajuan
+
+                </button>
+
+            </div>
+
+
+        </div>
+
+    `;
+
+}
+
+
+/* ================================================================
+   OPEN MANAGER DETAIL
+================================================================ */
+
+function openManagerDetail() {
+
+    if (!verificationRequest) {
+
+        showToast(
+            "Belum ada pengajuan dari PIC."
+        );
+
+        return;
+
+    }
+
+
+    document.getElementById(
+        "managerListView"
+    ).classList.add(
+        "hidden"
+    );
+
+
+    document.getElementById(
+        "managerDetailView"
+    ).classList.remove(
+        "hidden"
+    );
+
+
+    renderManagerDocumentsFromRequest();
+
+    renderManagerChecklist();
+
+    renderManagerPICNote();
+
+    renderManagerPICSignature();
+
+    updateManagerStatus();
+
+
+    /*
+     * Manager canvas baru terlihat.
+     *
+     * Resize setelah display aktif.
+     */
+
+    setTimeout(
+        function () {
+
+            resizeSignatureCanvas(
+                "manager"
+            );
+
+        },
+        50
+    );
+
+}
+
+
+/* ================================================================
+   RENDER MANAGER DOCUMENTS
+================================================================ */
+
+function renderManagerDocumentsFromRequest() {
+
+    if (!verificationRequest) {
+        return;
+    }
+
+
+    const existing =
+        verificationRequest
+            .documents
+            .existing;
+
+
+    const additional =
+        verificationRequest
+            .documents
+            .additional;
+
+
+    const existingContainer =
+        document.getElementById(
+            "existingDocumentsManager"
+        );
+
+
+    const additionalContainer =
+        document.getElementById(
+            "additionalDocumentsManager"
+        );
+
+
+    /*
+     * EXISTING DOCUMENTS
+     */
+
+    document.getElementById(
+        "existingDocumentCount"
+    ).textContent =
+        `${existing.length} Dokumen`;
+
+
+    if (
+        existing.length === 0
+    ) {
+
+        existingContainer.innerHTML =
+            emptyDocumentHTML(
+                "Tidak ada dokumen peralatan",
+                "Tidak terdapat dokumen bawaan."
+            );
+
+    } else {
+
+        existingContainer.innerHTML =
+            existing
+                .map(
+                    function (doc, index) {
+
+                        return documentItemHTML(
+                            doc,
+
+                            `
+
+                            <button
+                                type="button"
+                                class="btn btn-secondary btn-sm"
+                                onclick="
+                                    previewRequestDocument(
+                                        'existing',
+                                        ${index}
+                                    )
+                                ">
+
+                                Lihat Dokumen
+
+                            </button>
+
+                            `,
+
+                            "Dokumen Peralatan"
+                        );
+
+                    }
+                )
+                .join("");
+
+    }
+
+
+    /*
+     * ADDITIONAL
+     */
+
+    document.getElementById(
+        "additionalDocumentCount"
+    ).textContent =
+        `${additional.length} Dokumen`;
+
+
+    if (
+        additional.length === 0
+    ) {
+
+        additionalContainer.innerHTML = `
+
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    📎
+                </div>
+
+                <strong>
+                    Tidak ada dokumen tambahan
+                </strong>
+
+                <span>
+                    PIC tidak mengunggah dokumen tambahan.
+                    Upload tambahan bersifat opsional.
+                </span>
+
+            </div>
+
+        `;
+
+    } else {
+
+        additionalContainer.innerHTML =
+            additional
+                .map(
+                    function (doc, index) {
+
+                        return documentItemHTML(
+                            doc,
+
+                            `
+
+                            <button
+                                type="button"
+                                class="btn btn-secondary btn-sm"
+                                onclick="
+                                    previewRequestDocument(
+                                        'additional',
+                                        ${index}
+                                    )
+                                ">
+
+                                Lihat Dokumen
+
+                            </button>
+
+                            `,
+
+                            "Diunggah oleh PIC"
+                        );
+
+                    }
+                )
+                .join("");
+
+    }
+
+}
+
+
+/* ================================================================
+   MANAGER CHECKLIST
+================================================================ */
+
+function renderManagerChecklist() {
+
+    const container =
+        document.getElementById(
+            "managerChecklist"
+        );
+
+
+    if (!verificationRequest) {
+
+        container.innerHTML =
+            "";
+
+        return;
+
+    }
+
+
+    const labels = {
+
+        check1:
+            "Identitas dan nomor aset peralatan sesuai dengan data yang tercatat.",
+
+        check2:
+            "Kondisi fisik peralatan sesuai dengan kondisi yang tercatat.",
+
+        check3:
+            "Sertifikat kalibrasi atau dokumen terkait tersedia dan dapat diperiksa.",
+
+        check4:
+            "Fungsi utama peralatan dapat digunakan sesuai kebutuhan.",
+
+        check5:
+            "Dokumen dan kondisi peralatan telah diperiksa oleh PIC."
+
+    };
+
+
+    container.innerHTML = `
+
+        <div class="checklist">
+
+            ${
+                Object.keys(
+                    labels
+                )
+                .map(
+                    function (key, index) {
+
+                        const result =
+                            verificationRequest
+                                .checklist[key] ||
+                            "-";
+
+
+                        return `
+
+                            <div class="check-item">
+
+                                <div class="check-text">
+
+                                    <strong>
+                                        ${index + 1}.
+                                    </strong>
+
+                                    ${escapeHtml(
+                                        labels[key]
+                                    )}
+
+                                </div>
+
+
+                                <div>
+
+                                    <span
+                                        class="status ${
+                                            result === "S"
+                                                ? "approved"
+                                                : result === "TS"
+                                                    ? "rejected"
+                                                    : "pending"
+                                        }">
+
+                                        ${escapeHtml(
+                                            result
+                                        )}
+
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        `;
+
+                    }
+                )
+                .join("")
+            }
+
+        </div>
+
+    `;
+
+}
+
+
+/* ================================================================
+   MANAGER PIC NOTE
+================================================================ */
+
+function renderManagerPICNote() {
+
+    const container =
+        document.getElementById(
+            "managerPICNote"
+        );
+
+
+    if (!verificationRequest) {
+
+        container.textContent =
+            "Belum ada catatan dari PIC.";
+
+        return;
+
+    }
+
+
+    if (
+        verificationRequest
+            .pic_note
+    ) {
+
+        container.innerHTML = `
+
+            <strong>
+                Catatan PIC:
+            </strong>
+
+            <br>
+
+            ${escapeHtml(
+                verificationRequest.pic_note
+            )}
+
+        `;
+
+    } else {
+
+        container.textContent =
+            "Tidak ada catatan dari PIC.";
+
+    }
+
+}
+
+
+/* ================================================================
+   MANAGER PIC SIGNATURE
+================================================================ */
+
+function renderManagerPICSignature() {
+
+    const container =
+        document.getElementById(
+            "managerPICSignaturePreview"
+        );
+
+
+    const dateElement =
+        document.getElementById(
+            "managerPICSignatureDate"
+        );
+
+
+    if (
+        !verificationRequest ||
+        !verificationRequest
+            .signatures
+            .pic
+    ) {
+
+        container.innerHTML =
+            "Belum ada tanda tangan";
+
+
+        dateElement.textContent =
+            "-";
+
+
+        return;
+
+    }
+
+
+    const signature =
+        verificationRequest
+            .signatures
+            .pic;
+
+
+    container.innerHTML = `
+
+        <img
+            src="${signature.signature}"
+            alt="Tanda tangan PIC"
+            style="
+                max-width:90%;
+                max-height:150px;
+                object-fit:contain;
+            "
+        >
+
+    `;
+
+
+    dateElement.textContent =
+        formatDate(
+            signature.signed_at
+        );
+
+}
+
+
+/* ================================================================
+   MANAGER STATUS
+================================================================ */
+
+function updateManagerStatus() {
+
+    const element =
+        document.getElementById(
+            "managerStatus"
+        );
+
+
+    if (!verificationRequest) {
+        return;
+    }
+
+
+    const status =
+        verificationRequest
+            .status_verifikasi;
+
+
+    if (
+        status === "Disetujui"
+    ) {
+
+        element.className =
+            "status approved";
+
+        element.textContent =
+            "● Disetujui";
+
+    }
+
+
+    else if (
+        status === "Ditolak"
+    ) {
+
+        element.className =
+            "status rejected";
+
+        element.textContent =
+            "● Ditolak";
+
+    }
+
+
+    else {
+
+        element.className =
+            "status pending";
+
+        element.textContent =
+            "● Menunggu Verifikasi";
+
+    }
+
+}
+
+
+/* ================================================================
+   MANAGER DECISION
+================================================================ */
+
+function managerDecision(
+    status
+) {
+
+    if (!verificationRequest) {
+
+        showToast(
+            "Tidak ada pengajuan yang dapat diproses."
+        );
+
+        return;
+
+    }
+
+
+    /*
+     * CEK TTD MANAGER
+     */
+
+    if (
+        !signaturePads.manager
+            .hasSignature
+    ) {
+
+        showToast(
+            "Manager Lab wajib membubuhkan tanda tangan terlebih dahulu."
+        );
+
+        return;
+
+    }
+
+
+    /*
+     * CATATAN MANAGER
+     */
+
+    const managerNote =
+        document
+            .getElementById(
+                "managerNote"
+            )
+            .value
+            .trim();
+
+
+    /*
+     * JIKA DITOLAK,
+     * CATATAN WAJIB.
+     */
+
+    if (
+        status === "Ditolak" &&
+        !managerNote
+    ) {
+
+        showToast(
+            "Masukkan alasan penolakan terlebih dahulu."
+        );
+
+        return;
+
+    }
+
+
+    /*
+     * SIMPAN STATUS
+     */
+
+    verificationRequest
+        .status_verifikasi =
+            status;
+
+
+    verificationRequest
+        .manager_note =
+            managerNote;
+
+
+    verificationRequest
+        .verified_at =
+            new Date()
+                .toISOString();
+
+
+    verificationRequest
+        .verified_by =
+            "Manager Lab";
+
+
+    /*
+     * SIMPAN TTD MANAGER
+     */
+
+    verificationRequest
+        .signatures
+        .manager = {
+
+            name:
+                "Manager Lab",
+
+            signature:
+                getSignature(
+                    "manager"
+                ),
+
+            signed_at:
+                new Date()
+                    .toISOString()
+
+        };
+
+
+    /*
+     * UPDATE PIC
+     */
+
+    updatePICStatus(
+        status
+    );
+
+
+    /*
+     * UPDATE MANAGER
+     */
+
+    updateManagerStatus();
+
+
+    /*
+     * RENDER LIST
+     */
+
+    renderSubmissionList();
+
+
+    /*
+     * RENDER DOKUMEN FINAL
+     */
+
+    renderFinalVerificationDocument();
+
+
+    /*
+     * TAMPILKAN DOKUMEN FINAL
+     */
+
+    document
+        .getElementById(
+            "finalVerificationDocumentCard"
+        )
+        .classList.remove(
+            "hidden"
+        );
+
+
+    /*
+     * SCROLL KE DOKUMEN
+     */
+
+    setTimeout(
+        function () {
+
+            document
+                .getElementById(
+                    "finalVerificationDocumentCard"
+                )
+                .scrollIntoView({
+                    behavior: "smooth"
+                });
+
+        },
+        100
+    );
+
+
+    showToast(
+
+        status === "Disetujui"
+
+            ? "Verifikasi berhasil disetujui."
+
+            : "Verifikasi berhasil ditolak."
+
+    );
+
+}
+
+
+/* ================================================================
+   FINAL VERIFICATION DOCUMENT
+================================================================ */
+
+function renderFinalVerificationDocument() {
+
+    const container =
+        document.getElementById(
+            "finalVerificationDocument"
+        );
+
+
+    if (!verificationRequest) {
+
+        container.innerHTML =
+            "";
+
+        return;
+
+    }
+
+
+    const status =
+        verificationRequest
+            .status_verifikasi;
+
+
+    const statusLabel =
+        status === "Disetujui"
+            ? "DISETUJUI"
+            : "DITOLAK";
+
+
+    const statusClass =
+        status === "Disetujui"
+            ? "approved"
+            : "rejected";
+
+
+    const checklist =
+        verificationRequest
+            .checklist;
+
+
+    const manager =
+        verificationRequest
+            .signatures
+            .manager;
+
+
+    const pic =
+        verificationRequest
+            .signatures
+            .pic;
+
+
+    const additionalDocuments =
+        verificationRequest
+            .documents
+            .additional;
+
+
+    container.innerHTML = `
+
+        <div class="verification-document">
+
+
+            <!-- HEADER DOKUMEN -->
+
+            <div class="document-header">
+
+                <h2>
+                    LEMBAR VERIFIKASI PERALATAN
+                </h2>
+
+                <p>
+                    SiKEPO - Sistem Informasi Kelola Peralatan
+                </p>
+
+                <div style="margin-top:10px;">
+
+                    <span class="status ${statusClass}">
+
+                        ● ${statusLabel}
+
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- INFORMASI -->
+
+            <table class="verification-table">
+
+                <tr>
+
+                    <th style="width:25%;">
+                        Nomor Aset
+                    </th>
+
+                    <td>
+                        ${escapeHtml(
+                            equipment.nomor_aset
+                        )}
+                    </td>
+
+                    <th style="width:25%;">
+                        Nama Peralatan
+                    </th>
+
+                    <td>
+                        ${escapeHtml(
+                            equipment.nama_peralatan
+                        )}
+                    </td>
+
+                </tr>
+
+
+                <tr>
+
+                    <th>
+                        Merek
+                    </th>
+
+                    <td>
+                        ${escapeHtml(
+                            equipment.merek
+                        )}
+                    </td>
+
+                    <th>
+                        Tipe / Model
+                    </th>
+
+                    <td>
+                        ${escapeHtml(
+                            equipment.tipe_model
+                        )}
+                    </td>
+
+                </tr>
+
+
+                <tr>
+
+                    <th>
+                        Nomor Seri
+                    </th>
+
+                    <td>
+                        ${escapeHtml(
+                            equipment.nomor_seri
+                        )}
+                    </td>
+
+                    <th>
+                        Ruangan
+                    </th>
+
+                    <td>
+                        ${escapeHtml(
+                            equipment.ruangan
+                        )}
+                    </td>
+
+                </tr>
+
+
+                <tr>
+
+                    <th>
+                        PIC
+                    </th>
+
+                    <td>
+                        ${escapeHtml(
+                            equipment.pic
+                        )}
+                    </td>
+
+                    <th>
+                        Status Verifikasi
+                    </th>
+
+                    <td>
+                        <strong>
+                            ${statusLabel}
+                        </strong>
+                    </td>
+
+                </tr>
+
+            </table>
+
+
+            <!-- CHECKLIST -->
+
+            <h4 style="margin-bottom:10px;">
+                Hasil Verifikasi
+            </h4>
+
+
+            <table class="verification-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            No.
+                        </th>
+
+                        <th>
+                            Pemeriksaan
+                        </th>
+
+                        <th style="width:80px;">
+                            Hasil
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                    <tr>
+
+                        <td>
+                            1
+                        </td>
+
+                        <td>
+                            Identitas dan nomor aset peralatan
+                            sesuai dengan data yang tercatat.
+                        </td>
+
+                        <td>
+                            <strong>
+                                ${checklist.check1}
+                            </strong>
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td>
+                            2
+                        </td>
+
+                        <td>
+                            Kondisi fisik peralatan sesuai
+                            dengan kondisi yang tercatat.
+                        </td>
+
+                        <td>
+                            <strong>
+                                ${checklist.check2}
+                            </strong>
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td>
+                            3
+                        </td>
+
+                        <td>
+                            Sertifikat kalibrasi atau dokumen
+                            terkait tersedia dan dapat diperiksa.
+                        </td>
+
+                        <td>
+                            <strong>
+                                ${checklist.check3}
+                            </strong>
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td>
+                            4
+                        </td>
+
+                        <td>
+                            Fungsi utama peralatan dapat digunakan
+                            sesuai kebutuhan.
+                        </td>
+
+                        <td>
+                            <strong>
+                                ${checklist.check4}
+                            </strong>
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td>
+                            5
+                        </td>
+
+                        <td>
+                            Dokumen dan kondisi peralatan telah
+                            diperiksa oleh PIC.
+                        </td>
+
+                        <td>
+                            <strong>
+                                ${checklist.check5}
+                            </strong>
+                        </td>
+
+                    </tr>
+
+
+                </tbody>
+
+            </table>
+
+
+            <!-- DOKUMEN -->
+
+            <h4 style="margin-bottom:10px;">
+                Dokumen Terlampir
+            </h4>
+
+
+            <table class="verification-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            No.
+                        </th>
+
+                        <th>
+                            Dokumen
+                        </th>
+
+                        <th>
+                            Sumber
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                    ${
+                        verificationRequest
+                            .documents
+                            .existing
+                            .map(
+                                function (
+                                    doc,
+                                    index
+                                ) {
+
+                                    return `
+
+                                        <tr>
+
+                                            <td>
+                                                ${index + 1}
+                                            </td>
+
+                                            <td>
+                                                ${escapeHtml(
+                                                    doc.file_name
+                                                )}
+                                            </td>
+
+                                            <td>
+                                                Dokumen Peralatan
+                                            </td>
+
+                                        </tr>
+
+                                    `;
+
+                                }
+                            )
+                            .join("")
+                    }
+
+
+                    ${
+                        additionalDocuments
+                            .map(
+                                function (
+                                    doc,
+                                    index
+                                ) {
+
+                                    return `
+
+                                        <tr>
+
+                                            <td>
+                                                ${
+                                                    verificationRequest
+                                                        .documents
+                                                        .existing
+                                                        .length
+                                                    +
+                                                    index
+                                                    +
+                                                    1
+                                                }
+                                            </td>
+
+                                            <td>
+                                                ${escapeHtml(
+                                                    doc.nama_dokumen
+                                                )}
+                                            </td>
+
+                                            <td>
+                                                Dokumen Pendukung PIC
+                                            </td>
+
+                                        </tr>
+
+                                    `;
+
+                                }
+                            )
+                            .join("")
+                    }
+
+
+                    ${
+                        additionalDocuments.length === 0
+                            ? `
+
+                                <tr>
+
+                                    <td colspan="3">
+
+                                        Tidak ada dokumen tambahan
+                                        dari PIC.
+
+                                    </td>
+
+                                </tr>
+
+                            `
+                            : ""
+                    }
+
+
+                </tbody>
+
+            </table>
+
+
+            <!-- CATATAN -->
+
+            <h4 style="margin-bottom:10px;">
+                Catatan
+            </h4>
+
+
+            <table class="verification-table">
+
+                <tr>
+
+                    <th style="width:25%;">
+                        Catatan PIC
+                    </th>
+
+                    <td>
+
+                        ${
+                            verificationRequest
+                                .pic_note
+                                ? escapeHtml(
+                                    verificationRequest
+                                        .pic_note
+                                )
+                                : "Tidak ada catatan."
+                        }
+
+                    </td>
+
+                </tr>
+
+
+                <tr>
+
+                    <th>
+                        Catatan Manager Lab
+                    </th>
+
+                    <td>
+
+                        ${
+                            verificationRequest
+                                .manager_note
+                                ? escapeHtml(
+                                    verificationRequest
+                                        .manager_note
+                                )
+                                : "Tidak ada catatan."
+                        }
+
+                    </td>
+
+                </tr>
+
+            </table>
+
+
+            <!-- =================================================
+                 TANDA TANGAN
+                 
+                 PIC = KIRI
+                 MANAGER = KANAN
+            ================================================== -->
+
+            <div class="document-signatures">
+
+
+                <!-- PIC -->
+
+                <div class="document-signature">
+
+                    <div class="document-signature-title">
+
+                        PIC Lab
+
+                    </div>
+
+
+                    ${
+                        pic &&
+                        pic.signature
+
+                            ? `
+
+                                <img
+                                    class="document-signature-image"
+                                    src="${pic.signature}"
+                                    alt="Tanda tangan PIC"
+                                >
+
+                            `
+
+                            : `
+
+                                <div class="document-signature-placeholder">
+
+                                    Belum ada tanda tangan PIC
+
+                                </div>
+
+                            `
+                    }
+
+
+                    <div class="document-signature-line"></div>
+
+
+                    <div class="document-signature-name">
+
+                        ${escapeHtml(
+                            pic
+                                ? pic.name
+                                : equipment.pic
+                        )}
+
+                    </div>
+
+
+                    <div class="document-signature-date">
+
+                        Tanggal:
+                        ${
+                            pic
+                                ? formatDate(
+                                    pic.signed_at
+                                )
+                                : "-"
+                        }
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- MANAGER -->
+
+                <div class="document-signature">
+
+                    <div class="document-signature-title">
+
+                        Manager Lab
+
+                    </div>
+
+
+                    ${
+                        manager &&
+                        manager.signature
+
+                            ? `
+
+                                <img
+                                    class="document-signature-image"
+                                    src="${manager.signature}"
+                                    alt="Tanda tangan Manager Lab"
+                                >
+
+                            `
+
+                            : `
+
+                                <div class="document-signature-placeholder">
+
+                                    Belum ada tanda tangan Manager Lab
+
+                                </div>
+
+                            `
+                    }
+
+
+                    <div class="document-signature-line"></div>
+
+
+                    <div class="document-signature-name">
+
+                        ${
+                            manager
+                                ? escapeHtml(
+                                    manager.name
+                                )
+                                : "Manager Lab"
+                        }
+
+                    </div>
+
+
+                    <div class="document-signature-date">
+
+                        Tanggal:
+                        ${
+                            manager
+                                ? formatDate(
+                                    manager.signed_at
+                                )
+                                : "-"
+                        }
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+    `;
+
+
+    /*
+     * STATUS FINAL
+     */
+
+    const finalStatus =
+        document.getElementById(
+            "finalDocumentStatus"
+        );
+
+
+    if (
+        status === "Disetujui"
+    ) {
+
+        finalStatus.className =
+            "status approved";
+
+        finalStatus.textContent =
+            "● Disetujui";
+
+    } else {
+
+        finalStatus.className =
+            "status rejected";
+
+        finalStatus.textContent =
+            "● Ditolak";
+
+    }
+
+}
+
+
+/* ================================================================
+   REQUEST DOCUMENT PREVIEW
+================================================================ */
+
+function previewRequestDocument(
+    type,
+    index
+) {
+
+    if (!verificationRequest) {
+        return;
+    }
+
+
+    const documents =
+        verificationRequest
+            .documents[type];
+
+
+    if (!documents) {
+        return;
+    }
+
+
+    const doc =
+        documents[index];
+
+
+    if (!doc) {
+        return;
+    }
+
+
+    previewDocument(
+        doc
+    );
+
+}
+
+
+/* ================================================================
+   BACK TO MANAGER LIST
+================================================================ */
+
+function backToManagerList() {
+
+    document.getElementById(
+        "managerDetailView"
+    ).classList.add(
+        "hidden"
+    );
+
+
+    document.getElementById(
+        "managerListView"
+    ).classList.remove(
+        "hidden"
+    );
+
+
+    renderSubmissionList();
+
+}
+
+
+/* ================================================================
+   RESET PIC FORM
+================================================================ */
+
+function resetPICForm() {
+
+    /*
+     * Checklist
+     */
+
+    document
+        .querySelectorAll(
+            'input[type="radio"]'
+        )
+        .forEach(
+            function (input) {
+
+                input.checked =
+                    false;
+
+            }
+        );
+
+
+    /*
+     * Catatan
+     */
+
+    document.getElementById(
+        "picNote"
+    ).value =
+        "";
+
+
+    /*
+     * Dokumen tambahan
+     */
+
+    additionalDocuments =
+        [];
+
+
+    renderAdditionalDocumentsPIC();
+
+
+    /*
+     * Signature
+     */
+
+    clearSignature(
+        "pic"
+    );
+
+
+    /*
+     * Status
+     */
+
+    if (
+        verificationRequest &&
+        verificationRequest
+            .status_verifikasi ===
+            "Menunggu"
+    ) {
+
+        updatePICStatus(
+            "Menunggu"
+        );
+
+    }
+
+
+    showToast(
+        "Form PIC berhasil di-reset."
+    );
+
+}
+
+
+/* ================================================================
+   DATE
+================================================================ */
+
+function setCurrentDate(
+    elementId
+) {
+
+    const element =
+        document.getElementById(
+            elementId
+        );
+
+
+    if (!element) {
+        return;
+    }
+
+
+    element.textContent =
+        new Date()
+            .toLocaleDateString(
+                "id-ID",
+                {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric"
+                }
+            );
+
+}
+
+
+/* ================================================================
+   FORMAT DATE
+================================================================ */
+
+function formatDate(
+    value
+) {
+
+    if (!value) {
+        return "-";
+    }
+
+
+    return new Date(
+        value
+    ).toLocaleDateString(
+        "id-ID",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+        }
+    );
+
+}
+
+
+/* ================================================================
+   ESCAPE HTML
+================================================================ */
+
+function escapeHtml(
+    value
+) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+
+        return "";
+
+    }
+
+
+    return String(value)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* ================================================================
+   TOAST
+================================================================ */
+
+function showToast(
+    message
+) {
+
+    const toast =
+        document.getElementById(
+            "toast"
+        );
+
+
+    toast.textContent =
+        message;
+
+
+    toast.classList.add(
+        "show"
+    );
+
+
+    clearTimeout(
+        window.toastTimeout
+    );
+
+
+    window.toastTimeout =
+        setTimeout(
+            function () {
+
+                toast.classList.remove(
+                    "show"
+                );
+
+            },
+            3000
+        );
+
+}
+
+</script>
+
+
+</body>
+
+</html>
