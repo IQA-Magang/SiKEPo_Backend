@@ -18,11 +18,11 @@ func SetupPeralatanRoutes(app *fiber.App, db *gorm.DB, notificationRepo reposito
 	peralatanController.DB = db
 
 	// 2. Grouping Route API
-	api := app.Group("/api/peralatan", middleware.RequireAuth, middleware.RequireRoles("admin"))
+	api := app.Group("/api/peralatan", middleware.RequireAuth)
 
 	// 3. Daftarkan Endpoint POST
 	api.Get("/", peralatanController.GetAll)
-	api.Post("/", peralatanController.Create)
+	api.Post("/", peralatanController.Create, middleware.RequireRoles("admin"))
 	api.Post("/:id/foto", peralatanController.UploadFoto)
 	api.Get("/:id/qr", peralatanController.GenerateQRCode)
 }
