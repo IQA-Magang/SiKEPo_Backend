@@ -58,8 +58,11 @@ func ConnectDatabase() error {
 	hasKategoriPeralatanTable := database.Migrator().HasTable(&models.KategoriPeralatan{})
 	hasKelompokAssetTable := database.Migrator().HasTable(&models.KelompokAsset{})
 	hasNotificationTable := database.Migrator().HasTable(&models.Notification{})
+	hasVerifikasiTable := database.Migrator().HasTable(&models.Verifikasi{})
+	hasLogPeninjauanPeralatanTable := database.Migrator().HasTable(&models.LogPeninjauanPeralatan{})
+	hasHasilVerifikasiTable := database.Migrator().HasTable(&models.HasilVerifikasi{})
 
-	if !hasUserTable || !hasRuanganTable || !hasLabsTable || !hasPeralatanTable || !hasDokumenPeralatanTable || !hasDetailAlatUkurTable || !hasDetailAlatBantuTable || !hasDetailArtefakAcuanTable || !hasDetailKomponenPendukungTable || !hasKategoriPeralatanTable || !hasKelompokAssetTable || !hasNotificationTable {
+	if !hasUserTable || !hasRuanganTable || !hasLabsTable || !hasPeralatanTable || !hasDokumenPeralatanTable || !hasDetailAlatUkurTable || !hasDetailAlatBantuTable || !hasDetailArtefakAcuanTable || !hasDetailKomponenPendukungTable || !hasKategoriPeralatanTable || !hasKelompokAssetTable || !hasNotificationTable || !hasVerifikasiTable || !hasLogPeninjauanPeralatanTable || !hasHasilVerifikasiTable {
 		log.Println("Beberapa tabel belum ada. Membuat tabel...")
 
 		err := database.AutoMigrate(
@@ -75,6 +78,9 @@ func ConnectDatabase() error {
 			&models.KategoriPeralatan{},
 			&models.KelompokAsset{},
 			&models.Notification{},
+			&models.Verifikasi{},
+			&models.LogPeninjauanPeralatan{},
+			&models.HasilVerifikasi{},
 		)
 		if err != nil {
 			return fmt.Errorf("failed to migrate database tables: %w", err)
