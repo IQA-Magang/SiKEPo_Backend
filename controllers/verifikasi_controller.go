@@ -155,6 +155,83 @@ func getAuthenticatedUserID(
 }
 
 // =====================================================
+// CEK AKSES ADMIN / MANAGER
+// =====================================================
+
+func (c *VerifikasiController) isAdminOrManager(
+	ctx *fiber.Ctx,
+) bool {
+
+	userID, err := getAuthenticatedUserID(ctx)
+	if err != nil {
+		return false
+	}
+
+	var user models.User
+
+	err = c.Repository.DB.
+		Where("user_id = ?", userID).
+		First(&user).
+		Error
+
+	if err != nil {
+		return false
+	}
+
+	return user.Role == "admin" || user.Role == "manager"
+}
+
+// =====================================================
+// VALIDASI AKSES VERIFIKASI
+// =====================================================
+
+func (c *VerifikasiController) canAccessVerifikasi(
+	ctx *fiber.Ctx,
+	data *models.Verifikasi,
+) bool {
+
+	if c.isAdminOrManager(ctx) {
+		return true
+	}
+
+	userID, err := getAuthenticatedUserID(ctx)
+	if err != nil {
+		return false
+	}
+
+	if data == nil || data.PICID == nil {
+		return false
+	}
+
+	return *data.PICID == userID
+}
+
+// =====================================================
+// VALIDASI AKSES PERALATAN BERDASARKAN PIC
+// =====================================================
+
+func (c *VerifikasiController) canAccessPeralatan(
+	ctx *fiber.Ctx,
+	peralatan *models.Peralatan,
+) bool {
+
+	if c.isAdminOrManager(ctx) {
+		return true
+	}
+
+	userID, err := getAuthenticatedUserID(ctx)
+	if err != nil {
+		return false
+	}
+
+	if peralatan == nil || peralatan.PICID == 0 {
+		return false
+	}
+
+	return peralatan.PICID == uint(userID)
+}
+
+// =====================================================
 // PARSE TANGGAL
 // =====================================================
 
@@ -230,14 +307,36 @@ func (c *VerifikasiController) GetVerifikasi(
 	ctx *fiber.Ctx,
 ) error {
 
-	data, err :=
-		c.Repository.GetAllVerifikasi()
+	userID, err := getAuthenticatedUserID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": err.Error(),
+		})
+	}
+
+	query := c.Repository.DB.
+		Preload("Peralatan").
+		Preload("PICUser").
+		Preload("VerifiedByUser").
+		Preload("HasilVerifikasi").
+		Where("verifikasi.deleted_at IS NULL")
+
+	// Admin dan Manager dapat melihat seluruh data.
+	// Selain itu, user hanya dapat melihat verifikasi yang PIC-nya dirinya sendiri.
+	if !c.isAdminOrManager(ctx) {
+		query = query.Where("verifikasi.pic_id = ?", userID)
+	}
+
+	var data []models.Verifikasi
+
+	err = query.
+		Order("verifikasi.id_verifikasi DESC").
+		Find(&data).
+		Error
 
 	if err != nil {
-
-		return ctx.Status(
-			fiber.StatusInternalServerError,
-		).JSON(fiber.Map{
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Gagal mengambil data verifikasi",
 			"error":   err.Error(),
@@ -258,14 +357,36 @@ func (c *VerifikasiController) GetPengajuan(
 	ctx *fiber.Ctx,
 ) error {
 
-	data, err :=
-		c.Repository.GetPengajuan()
+	userID, err := getAuthenticatedUserID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": err.Error(),
+		})
+	}
+
+	query := c.Repository.DB.
+		Preload("Peralatan").
+		Preload("PICUser").
+		Preload("HasilVerifikasi").
+		Where("verifikasi.status = ?", "Diajukan").
+		Where("verifikasi.deleted_at IS NULL")
+
+	// Admin dan Manager dapat melihat seluruh pengajuan.
+	// PIC hanya dapat melihat pengajuan miliknya sendiri.
+	if !c.isAdminOrManager(ctx) {
+		query = query.Where("verifikasi.pic_id = ?", userID)
+	}
+
+	var data []models.Verifikasi
+
+	err = query.
+		Order("verifikasi.pic_signed_at DESC").
+		Find(&data).
+		Error
 
 	if err != nil {
-
-		return ctx.Status(
-			fiber.StatusInternalServerError,
-		).JSON(fiber.Map{
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Gagal mengambil pengajuan",
 			"error":   err.Error(),
@@ -329,6 +450,13 @@ func (c *VerifikasiController) GetVerifikasiByID(
 		})
 	}
 
+	if !c.canAccessVerifikasi(ctx, data) {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "Anda tidak memiliki akses ke verifikasi ini",
+		})
+	}
+
 	return ctx.JSON(fiber.Map{
 		"success": true,
 		"data":    data,
@@ -350,25 +478,30 @@ func (c *VerifikasiController) GetByPeralatan(
 	)
 
 	if err != nil || peralatanID == 0 {
-
-		return ctx.Status(
-			fiber.StatusBadRequest,
-		).JSON(fiber.Map{
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "ID peralatan tidak valid",
 		})
 	}
 
-	data, err :=
-		c.Repository.GetByPeralatanID(
-			peralatanID,
-		)
+	peralatan, err := c.PeralatanRepository.FindByID(uint(peralatanID))
+	if err != nil || peralatan == nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"success": false,
+			"message": "Peralatan tidak ditemukan",
+		})
+	}
 
+	if !c.canAccessPeralatan(ctx, peralatan) {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "Anda bukan PIC dari peralatan ini",
+		})
+	}
+
+	data, err := c.Repository.GetByPeralatanID(peralatanID)
 	if err != nil {
-
-		return ctx.Status(
-			fiber.StatusInternalServerError,
-		).JSON(fiber.Map{
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Gagal mengambil riwayat verifikasi",
 			"error":   err.Error(),
@@ -440,6 +573,43 @@ func (c *VerifikasiController) CreateVerifikasi(
 		).JSON(fiber.Map{
 			"success": false,
 			"message": "Peralatan tidak ditemukan",
+		})
+	}
+
+	// =====================================================
+	// VALIDASI PIC YANG DITETAPKAN ADMIN
+	// =====================================================
+
+	if peralatan.PICID == 0 {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "Peralatan belum memiliki PIC",
+		})
+	}
+
+	if peralatan.PICID != uint(picID) {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "Anda bukan PIC yang ditetapkan untuk peralatan ini",
+		})
+	}
+
+	// Pastikan user yang ditetapkan memang masih berstatus PIC.
+	var picUser models.User
+	if err := c.Repository.DB.
+		Where("user_id = ?", picID).
+		First(&picUser).
+		Error; err != nil {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "Data PIC tidak ditemukan",
+		})
+	}
+
+	if !picUser.PIC {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "User yang ditetapkan bukan PIC aktif",
 		})
 	}
 
@@ -1260,6 +1430,21 @@ func (c *VerifikasiController) GetLogByPeralatan(
 		).JSON(fiber.Map{
 			"success": false,
 			"message": "ID peralatan tidak valid",
+		})
+	}
+
+	peralatan, err := c.PeralatanRepository.FindByID(uint(peralatanID))
+	if err != nil || peralatan == nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"success": false,
+			"message": "Peralatan tidak ditemukan",
+		})
+	}
+
+	if !c.canAccessPeralatan(ctx, peralatan) {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "Anda bukan PIC dari peralatan ini",
 		})
 	}
 
