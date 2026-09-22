@@ -6,9 +6,27 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
+
+// UploadRoot returns the filesystem root shared by upload and static serving.
+func UploadRoot() string {
+	if configured := strings.TrimSpace(os.Getenv("UPLOAD_DIR")); configured != "" {
+		return configured
+	}
+
+	if workingDirectory, err := os.Getwd(); err == nil {
+		candidate := filepath.Join(workingDirectory, "docs")
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+	}
+
+	_, sourceFile, _, _ := runtime.Caller(0)
+	return filepath.Join(filepath.Dir(sourceFile), "..", "docs")
+}
 
 func SaveUploadedFile(file *multipart.FileHeader, folder, prefix string) (string, error) {
 	ext := strings.ToLower(filepath.Ext(file.Filename))
@@ -16,7 +34,7 @@ func SaveUploadedFile(file *multipart.FileHeader, folder, prefix string) (string
 		return "", fmt.Errorf("file harus memiliki ekstensi")
 	}
 
-	directory := filepath.Join("docs", "uploads", folder)
+	directory := filepath.Join(UploadRoot(), "uploads", folder)
 	if err := os.MkdirAll(directory, 0755); err != nil {
 		return "", err
 	}

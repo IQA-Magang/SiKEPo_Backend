@@ -10,6 +10,7 @@ import (
 	"backend/controllers"
 	"backend/repositories"
 	"backend/routes"
+	"backend/utils"
 )
 
 func CreateApp() (*fiber.App, error) {
@@ -26,7 +27,9 @@ func CreateApp() (*fiber.App, error) {
 	// FIBER
 	// =====================================================
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		BodyLimit: 50 * 1024 * 1024,
+	})
 
 	app.Use(cors.New())
 
@@ -34,7 +37,7 @@ func CreateApp() (*fiber.App, error) {
 	// STATIC FILE
 	// =====================================================
 
-	app.Static("/docs", "./docs")
+	app.Static("/docs", utils.UploadRoot())
 	app.Static("/static", "./public")
 
 	// =====================================================
