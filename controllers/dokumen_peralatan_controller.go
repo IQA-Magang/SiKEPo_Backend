@@ -6,8 +6,10 @@ import (
 	"backend/utils"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -119,9 +121,12 @@ func (c *DokumenPeralatanController) Create(ctx *fiber.Ctx) error {
 		PeralatanID uint64 `json:"peralatan_id"`
 	}
 
+	isFileUpload := false
 	if file, err := ctx.FormFile("dokumen"); err == nil {
+		isFileUpload = true
 		input.NamaDokumen = strings.TrimSpace(ctx.FormValue("nama_dokumen"))
 		input.PeralatanID, _ = strconv.ParseUint(ctx.FormValue("peralatan_id"), 10, 64)
+		input.NamaDokumen = uniqueUploadedDocumentName(input.NamaDokumen, file.Filename)
 
 		path, saveErr := utils.SaveUploadedFile(file, "dokumen", fmt.Sprintf("peralatan-%d", input.PeralatanID))
 		if saveErr != nil {
@@ -163,24 +168,24 @@ func (c *DokumenPeralatanController) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Cek nama dokumen
-	exists, err := c.Repository.ExistsByNamaDokumen(
-		input.NamaDokumen,
-	)
+	// Nama file upload sudah dibuat unik; request JSON tetap harus unik.
+	if !isFileUpload {
+		exists, err := c.Repository.ExistsByNamaDokumen(input.NamaDokumen)
 
-	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": "Gagal memeriksa nama dokumen",
-			"error":   err.Error(),
-		})
-	}
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"success": false,
+				"message": "Gagal memeriksa nama dokumen",
+				"error":   err.Error(),
+			})
+		}
 
-	if exists {
-		return ctx.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"success": false,
-			"message": "Nama dokumen sudah digunakan",
-		})
+		if exists {
+			return ctx.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"success": false,
+				"message": "Nama dokumen sudah digunakan",
+			})
+		}
 	}
 
 	dokumen := &models.DokumenPeralatan{
@@ -211,6 +216,20 @@ func (c *DokumenPeralatanController) Create(ctx *fiber.Ctx) error {
 		"message": "Dokumen berhasil dibuat",
 		"data":    createdDokumen,
 	})
+}
+
+func uniqueUploadedDocumentName(requestedName, originalName string) string {
+	name := strings.TrimSpace(requestedName)
+	if name == "" {
+		name = strings.TrimSpace(originalName)
+	}
+	if name == "" {
+		name = "dokumen"
+	}
+
+	extension := filepath.Ext(name)
+	baseName := strings.TrimSuffix(name, extension)
+	return fmt.Sprintf("%s-%d%s", baseName, time.Now().UnixNano(), extension)
 }
 
 // Update
