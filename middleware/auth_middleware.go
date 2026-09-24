@@ -3,6 +3,7 @@ package middleware
 import (
 	"errors"
 	"os"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -84,6 +85,17 @@ func RequireAuth(c *fiber.Ctx) error {
 		c.Locals("role", v)
 	}
 
+	if v, ok := claims["pic"]; ok {
+		switch value := v.(type) {
+		case bool:
+			c.Locals("pic", value)
+		case string:
+			if parsed, err := strconv.ParseBool(value); err == nil {
+				c.Locals("pic", parsed)
+			}
+		}
+	}
+
 	return c.Next()
 }
 
@@ -108,6 +120,37 @@ func RequireRoles(allowedRoles ...string) fiber.Handler {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"success": false,
 			"message": "You do not have permission to access this resource",
+		})
+	}
+}
+
+// RequireAdminOrStaffPIC allows admin or staff whose PIC flag is true.
+func RequireAdminOrStaffPIC() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		role, ok := c.Locals("role").(string)
+		if !ok || role == "" {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"success": false,
+				"message": "Role not found",
+			})
+		}
+
+		if role == "admin" {
+			return c.Next()
+		}
+
+		if role == "staff" {
+			picValue := c.Locals("pic")
+			if picValue != nil {
+				if pic, ok := picValue.(bool); ok && pic {
+					return c.Next()
+				}
+			}
+		}
+
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "Hanya admin atau staff PIC yang dapat mengakses endpoint ini",
 		})
 	}
 }

@@ -14,191 +14,446 @@ import (
 
 type PeralatanRepository interface {
 	FindAll() ([]models.Peralatan, error)
-	CreatePeralatan(req *models.CreatePeralatanRequest) (string, error)
-	FindByID(id uint) (*models.Peralatan, error)
-	FindByNomorAset(nomorAset string) (*models.Peralatan, error)
-	UpdateFoto(id uint, foto string) error
+
+	CreatePeralatan(
+		req *models.CreatePeralatanRequest,
+	) (string, error)
+
+	FindByID(
+		id uint,
+	) (*models.Peralatan, error)
+
+	FindByNomorAset(
+		nomorAset string,
+	) (*models.Peralatan, error)
+
+	UpdateFoto(
+		id uint,
+		foto string,
+	) error
 }
 
 type peralatanRepository struct {
 	db *gorm.DB
 }
 
-func NewPeralatanRepository(db *gorm.DB) PeralatanRepository {
-	return &peralatanRepository{db}
+func NewPeralatanRepository(
+	db *gorm.DB,
+) PeralatanRepository {
+
+	return &peralatanRepository{
+		db: db,
+	}
 }
 
-func (r *peralatanRepository) FindAll() ([]models.Peralatan, error) {
-	var peralatan []models.Peralatan
-	if err := r.db.Order("id DESC").Find(&peralatan).Error; err != nil {
+// =========================================================
+// FIND ALL
+// =========================================================
+
+func (r *peralatanRepository) FindAll() (
+	[]models.Peralatan,
+	error,
+) {
+
+	var data []models.Peralatan
+
+	err := r.db.
+		Preload("KategoriPeralatan").
+		Where("deleted_at IS NULL").
+		Order("id DESC").
+		Find(&data).
+		Error
+
+	return data, err
+}
+
+// =========================================================
+// FIND BY ID
+// =========================================================
+
+func (r *peralatanRepository) FindByID(
+	id uint,
+) (*models.Peralatan, error) {
+
+	var data models.Peralatan
+
+	err := r.db.
+		Preload("KategoriPeralatan").
+		Where("id = ?", id).
+		First(&data).
+		Error
+
+	if err != nil {
 		return nil, err
 	}
 
-	return peralatan, nil
+	return &data, nil
 }
 
-func (r *peralatanRepository) FindByID(id uint) (*models.Peralatan, error) {
-	var peralatan models.Peralatan
-	if err := r.db.First(&peralatan, id).Error; err != nil {
+// =========================================================
+// FIND BY NOMOR ASET
+// =========================================================
+
+func (r *peralatanRepository) FindByNomorAset(
+	nomorAset string,
+) (*models.Peralatan, error) {
+
+	var data models.Peralatan
+
+	err := r.db.
+		Preload("KategoriPeralatan").
+		Where(
+			"nomor_aset = ?",
+			nomorAset,
+		).
+		First(&data).
+		Error
+
+	if err != nil {
 		return nil, err
 	}
 
-	return &peralatan, nil
+	return &data, nil
 }
 
-func (r *peralatanRepository) FindByNomorAset(nomorAset string) (*models.Peralatan, error) {
-	var peralatan models.Peralatan
-	if err := r.db.Where("nomor_aset = ?", nomorAset).First(&peralatan).Error; err != nil {
-		return nil, err
-	}
+// =========================================================
+// UPDATE FOTO
+// =========================================================
 
-	return &peralatan, nil
+func (r *peralatanRepository) UpdateFoto(
+	id uint,
+	foto string,
+) error {
+
+	return r.db.
+		Model(&models.Peralatan{}).
+		Where("id = ?", id).
+		Update("foto", foto).
+		Error
 }
 
-func (r *peralatanRepository) UpdateFoto(id uint, foto string) error {
-	return r.db.Model(&models.Peralatan{}).Where("id = ?", id).Update("foto", foto).Error
-}
+// =========================================================
+// CREATE PERALATAN
+// =========================================================
 
-func (r *peralatanRepository) CreatePeralatan(req *models.CreatePeralatanRequest) (string, error) {
-	// Memulai Database Transaction
+func (r *peralatanRepository) CreatePeralatan(
+	req *models.CreatePeralatanRequest,
+) (string, error) {
+
 	var nomorAset string
-	err := r.db.Transaction(func(tx *gorm.DB) error {
-		var kelompokAsset models.KelompokAsset
-		if err := tx.First(&kelompokAsset, req.KelompokAsetID).Error; err != nil {
-			return err
-		}
 
-		prefix := prefixNomorAset(kelompokAsset.Kode, kelompokAsset.Nama)
-		if prefix == "" {
-			return errors.New("kode atau nama kelompok asset harus memiliki minimal 3 huruf")
-		}
+	err := r.db.Transaction(
+		func(tx *gorm.DB) error {
 
-		var nomorUrut int
-		if err := tx.Model(&models.Peralatan{}).
-			Where("nomor_aset LIKE ?", prefix+"-%").
-			Select("COALESCE(MAX(CAST(SUBSTRING_INDEX(nomor_aset, '-', -1) AS UNSIGNED)), 0)").
-			Scan(&nomorUrut).Error; err != nil {
-			return err
-		}
+			// =================================================
+			// KELOMPOK ASSET
+			// =================================================
 
-		nomorUrut++
-		nomorAset = fmt.Sprintf("%s-%03d", prefix, nomorUrut)
+			var kelompokAsset models.KelompokAsset
 
-		// 1. Mapping dan Simpan ke Tabel Master (Peralatan)
-		peralatan := models.Peralatan{
-			NomorAset:           nomorAset,
-			NamaPeralatan:       req.NamaPeralatan,
-			KategoriPeralatanID: req.KategoriPeralatanID,
-			KelompokAsetID:      req.KelompokAsetID,
-			RuanganID:           req.RuanganID,
-			PICID:               req.PICID,
-			Merek:               req.Merek,
-			TipeModel:           req.TipeModel,
-			NomorSeri:           req.NomorSeri,
-			Foto:                req.Foto,
-			StatusAlat:          req.StatusAlat, // Bisa dikirim dari frontend, atau hardcode "Karantina"
-			Keterangan:          req.Keterangan,
-		}
+			if err := tx.
+				Where(
+					"id = ?",
+					req.KelompokAsetID,
+				).
+				First(&kelompokAsset).
+				Error; err != nil {
 
-		if peralatan.StatusAlat == "" {
-			peralatan.StatusAlat = "Aktif" // Default value jika kosong
-		}
-
-		// Insert ke tabel peralatan
-		if err := tx.Create(&peralatan).Error; err != nil {
-			return err
-		}
-
-		// Convert map[string]interface{} ke JSON bytes agar bisa di-unmarshal ke Struct spesifik
-		detailBytes, err := json.Marshal(req.Detail)
-		if err != nil {
-			return errors.New("gagal memproses data detail peralatan")
-		}
-
-		// 2. Routing Simpan ke Tabel Detail berdasarkan KategoriPeralatanID
-		switch req.KategoriPeralatanID {
-		case 1: // ALAT UKUR (Sheet 1)
-			var detail models.DetailAlatUkur
-			if err := json.Unmarshal(detailBytes, &detail); err != nil {
-				return err
-			}
-			detail.PeralatanID = peralatan.ID
-
-			// Hitung Tgl Jatuh Tempo jika Tgl Kalibrasi dan Interval diisi
-			if detail.TglKalibrasi != nil && detail.IntervalBulan > 0 {
-				jatuhTempo := detail.TglKalibrasi.AddDate(0, detail.IntervalBulan, 0)
-				detail.TglJatuhTempo = &jatuhTempo
+				return fmt.Errorf(
+					"kelompok asset tidak ditemukan: %w",
+					err,
+				)
 			}
 
-			if err := tx.Create(&detail).Error; err != nil {
+			// =================================================
+			// PREFIX
+			// =================================================
+
+			prefix := prefixNomorAset(
+				kelompokAsset.Kode,
+				kelompokAsset.Nama,
+			)
+
+			if prefix == "" {
+				return errors.New(
+					"kode atau nama kelompok asset minimal 3 karakter",
+				)
+			}
+
+			// =================================================
+			// NOMOR URUT
+			// =================================================
+
+			var nomorUrut int
+
+			err := tx.
+				Model(&models.Peralatan{}).
+				Where(
+					"nomor_aset LIKE ?",
+					prefix+"-%",
+				).
+				Select(
+					"COALESCE(MAX(CAST(SUBSTRING_INDEX(nomor_aset, '-', -1) AS UNSIGNED)), 0)",
+				).
+				Scan(&nomorUrut).
+				Error
+
+			if err != nil {
 				return err
 			}
 
-		case 2: // ALAT BANTU (Sheet 2)
-			var detail models.DetailAlatBantu
-			if err := json.Unmarshal(detailBytes, &detail); err != nil {
+			nomorUrut++
+
+			nomorAset = fmt.Sprintf(
+				"%s-%03d",
+				prefix,
+				nomorUrut,
+			)
+
+			// =================================================
+			// STATUS AWAL
+			// =================================================
+
+			statusAlat := strings.TrimSpace(
+				req.StatusAlat,
+			)
+
+			if statusAlat == "" {
+				statusAlat = "Karantina"
+			}
+
+			// =================================================
+			// MASTER
+			// =================================================
+
+			peralatan := models.Peralatan{
+
+				NomorAset: nomorAset,
+
+				NamaPeralatan: req.NamaPeralatan,
+
+				KategoriID: req.KategoriPeralatanID,
+
+				KategoriPeralatanID: req.KategoriPeralatanID,
+
+				KelompokAsetID: req.KelompokAsetID,
+
+				RuanganID: req.RuanganID,
+
+				PICID: req.PICID,
+
+				Merek: req.Merek,
+
+				TipeModel: req.TipeModel,
+
+				NomorSeri: req.NomorSeri,
+
+				Foto: req.Foto,
+
+				StatusAlat: statusAlat,
+
+				StatusVerifikasi: "Belum Diverifikasi",
+
+				Keterangan: req.Keterangan,
+			}
+
+			if err := tx.
+				Create(&peralatan).
+				Error; err != nil {
+
 				return err
 			}
-			detail.PeralatanID = peralatan.ID
 
-			// Hitung Tgl Jatuh Tempo Pemeriksaan
-			if detail.TglPemeriksaanTerakhir != nil && detail.IntervalBulan > 0 {
-				jatuhTempo := detail.TglPemeriksaanTerakhir.AddDate(0, detail.IntervalBulan, 0)
-				detail.TglJatuhTempo = &jatuhTempo
+			// =================================================
+			// DETAIL
+			// =================================================
+
+			detailBytes, err :=
+				json.Marshal(req.Detail)
+
+			if err != nil {
+				return errors.New(
+					"gagal memproses detail peralatan",
+				)
 			}
 
-			if err := tx.Create(&detail).Error; err != nil {
-				return err
+			switch req.KategoriPeralatanID {
+
+			// =================================================
+			// ALAT UKUR
+			// =================================================
+
+			case 1:
+
+				var detail models.DetailAlatUkur
+
+				if err := json.Unmarshal(
+					detailBytes,
+					&detail,
+				); err != nil {
+					return err
+				}
+
+				if detail.JenisLabel == "" {
+					detail.JenisLabel = "calibration"
+				}
+				if detail.JenisLabel != "calibration" &&
+					detail.JenisLabel != "limited calibration" &&
+					detail.JenisLabel != "do not use" {
+					return fmt.Errorf("jenis_label tidak valid: %q", detail.JenisLabel)
+				}
+
+				detail.PeralatanID =
+					peralatan.ID
+
+				if detail.TglKalibrasi != nil &&
+					detail.IntervalBulan > 0 {
+
+					jatuhTempo :=
+						detail.TglKalibrasi.AddDate(
+							0,
+							detail.IntervalBulan,
+							0,
+						)
+
+					detail.TglJatuhTempo =
+						&jatuhTempo
+				}
+
+				if err := tx.
+					Create(&detail).
+					Error; err != nil {
+					return err
+				}
+
+			// =================================================
+			// ALAT BANTU
+			// =================================================
+
+			case 2:
+
+				var detail models.DetailAlatBantu
+
+				if err := json.Unmarshal(
+					detailBytes,
+					&detail,
+				); err != nil {
+					return err
+				}
+
+				detail.PeralatanID =
+					peralatan.ID
+
+				if detail.TglPemeriksaanTerakhir != nil &&
+					detail.IntervalBulan > 0 {
+
+					jatuhTempo :=
+						detail.TglPemeriksaanTerakhir.AddDate(
+							0,
+							detail.IntervalBulan,
+							0,
+						)
+
+					detail.TglJatuhTempo =
+						&jatuhTempo
+				}
+
+				if err := tx.
+					Create(&detail).
+					Error; err != nil {
+					return err
+				}
+
+			// =================================================
+			// ARTEFAK ACUAN
+			// =================================================
+
+			case 3:
+
+				var detail models.DetailArtefakAcuan
+
+				if err := json.Unmarshal(
+					detailBytes,
+					&detail,
+				); err != nil {
+					return err
+				}
+
+				detail.PeralatanID =
+					peralatan.ID
+
+				if err := tx.
+					Create(&detail).
+					Error; err != nil {
+					return err
+				}
+
+			// =================================================
+			// KOMPONEN PENDUKUNG
+			// =================================================
+
+			case 4:
+
+				var detail models.DetailKomponenPendukung
+
+				if err := json.Unmarshal(
+					detailBytes,
+					&detail,
+				); err != nil {
+					return err
+				}
+
+				detail.PeralatanID =
+					peralatan.ID
+
+				if err := tx.
+					Create(&detail).
+					Error; err != nil {
+					return err
+				}
+
+			default:
+
+				return errors.New(
+					"kategori_peralatan_id tidak valid",
+				)
 			}
 
-		case 3: // ARTEFAK ACUAN (Sheet 3)
-			var detail models.DetailArtefakAcuan
-			if err := json.Unmarshal(detailBytes, &detail); err != nil {
-				return err
-			}
-			detail.PeralatanID = peralatan.ID
+			return nil
+		},
+	)
 
-			// Hitung Jadwal Ulang Karakterisasi
-			if detail.TglKarakterisasiTerakhir != nil && detail.IntervalBulan > 0 {
-				jatuhTempo := detail.TglKarakterisasiTerakhir.AddDate(0, detail.IntervalBulan, 0)
-				detail.TglJatuhTempo = &jatuhTempo
-			}
+	if err != nil {
+		return "", err
+	}
 
-			if err := tx.Create(&detail).Error; err != nil {
-				return err
-			}
-
-		case 4: // KOMPONEN PENDUKUNG (Sheet 4)
-			var detail models.DetailKomponenPendukung
-			if err := json.Unmarshal(detailBytes, &detail); err != nil {
-				return err
-			}
-			detail.PeralatanID = peralatan.ID
-
-			// Komponen pendukung menggunakan input Tgl Kedaluwarsa langsung dari user/pabrik,
-			// tidak perlu dihitung otomatis dengan interval.
-			if err := tx.Create(&detail).Error; err != nil {
-				return err
-			}
-
-		default:
-			return errors.New("kategori_id tidak valid atau tidak didukung")
-		}
-
-		// Jika semua berhasil, return nil untuk Commit transaksi
-		return nil
-	})
-	return nomorAset, err
+	return nomorAset, nil
 }
 
-func prefixNomorAset(kode, nama string) string {
-	prefix := kode
-	if strings.TrimSpace(prefix) == "" {
-		prefix = nama
+// =========================================================
+// PREFIX NOMOR ASET
+// =========================================================
+
+func prefixNomorAset(
+	kode string,
+	nama string,
+) string {
+
+	prefix := strings.TrimSpace(kode)
+
+	if prefix == "" {
+		prefix = strings.TrimSpace(nama)
 	}
 
 	prefix = strings.ToUpper(prefix)
-	prefix = regexp.MustCompile(`[^A-Z0-9]`).ReplaceAllString(prefix, "")
+
+	prefix = regexp.
+		MustCompile(`[^A-Z0-9]`).
+		ReplaceAllString(
+			prefix,
+			"",
+		)
+
 	if len(prefix) < 3 {
 		return ""
 	}

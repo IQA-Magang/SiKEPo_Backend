@@ -22,7 +22,7 @@ func SetupPeralatanRoutes(app *fiber.App, db *gorm.DB, notificationRepo reposito
 
 	// 3. Daftarkan Endpoint POST
 	api.Get("/", peralatanController.GetAll)
-	api.Post("/", peralatanController.Create)
-	api.Post("/:id/foto", peralatanController.UploadFoto)
-	api.Get("/:id/qr", peralatanController.GenerateQRCode)
+	api.Post("/", peralatanController.Create, middleware.RequireAdminOrStaffPIC())
+	api.Post("/:id/foto", peralatanController.UploadFoto, middleware.RequireAdminOrStaffPIC())
+	api.Get("/:id/qr", peralatanController.GenerateQRCode, middleware.RequireAdminOrStaffPIC())
 }

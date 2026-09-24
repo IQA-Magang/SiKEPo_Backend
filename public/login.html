@@ -83,11 +83,14 @@
     </div>
 
     <script>
+      const API_BASE_URL =
+        "https://si-ke-po-backend-dkfe-31rhkxj8d-rendy-kamaluddins-projects.vercel.app";
+      
       // recaptcha widget id will be set after rendering
       let recaptchaWidgetId = null;
 
       function onRecaptchaLoad() {
-        fetch("/recaptcha/sitekey")
+        fetch(`${API_BASE_URL}/recaptcha/sitekey`)
           .then((r) => r.json())
           .then((d) => {
             const key = d.site_key;
@@ -122,9 +125,10 @@
 
       const savedToken = localStorage.getItem("sikepo_token");
       if (savedToken) {
-        msg.textContent = "Token sudah tersimpan. Mengarahkan ke halaman uji...";
+        msg.textContent =
+          "Token sudah tersimpan. Mengarahkan ke halaman uji...";
         setTimeout(() => {
-          window.location.href = "/static/asset-test.html";
+          window.location.href = ASSET_TEST_URL;
         }, 500);
       }
 
@@ -147,7 +151,7 @@
         }
 
         try {
-          const res = await fetch("/api/users/login", {
+          const res = await fetch(`${API_BASE_URL}/api/users/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -156,6 +160,17 @@
               recaptcha_token: recaptchaResponse,
             }),
           });
+
+          const contentType = res.headers.get("content-type") || "";
+          if (!contentType.includes("application/json")) {
+            const text = await res.text();
+            throw new Error(
+              `Server mengembalikan HTTP ${res.status}. ${
+                text ||
+                "Deployment mungkin masih dilindungi Vercel Authentication."
+              }`,
+            );
+          }
 
           const data = await res.json();
           if (!data.success) {
@@ -179,7 +194,7 @@
           console.log("Login response:", data);
 
           setTimeout(() => {
-            window.location.href = "/static/asset-test.html";
+            window.location.href = ASSET_TEST_URL;
           }, 700);
         } catch (err) {
           msg.textContent = "Terjadi kesalahan koneksi";

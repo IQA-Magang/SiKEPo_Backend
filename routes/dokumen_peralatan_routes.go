@@ -28,7 +28,7 @@ func DokumenPeralatanRoutes(
 	admin := dokumen.Group(
 		"/",
 		middleware.RequireAuth,
-		middleware.RequireRoles("admin"),
+		middleware.RequireAdminOrStaffPIC(),
 	)
 
 	admin.Post("/", controller.Create)

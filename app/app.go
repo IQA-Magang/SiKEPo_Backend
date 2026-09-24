@@ -10,20 +10,39 @@ import (
 	"backend/controllers"
 	"backend/repositories"
 	"backend/routes"
+	"backend/utils"
 )
 
 func CreateApp() (*fiber.App, error) {
+
+	// =====================================================
+	// DATABASE
+	// =====================================================
 
 	if err := config.ConnectDatabase(); err != nil {
 		return nil, err
 	}
 
-	app := fiber.New()
+	// =====================================================
+	// FIBER
+	// =====================================================
+
+	app := fiber.New(fiber.Config{
+		BodyLimit: 50 * 1024 * 1024,
+	})
 
 	app.Use(cors.New())
 
-	app.Static("/docs", "./docs")
+	// =====================================================
+	// STATIC FILE
+	// =====================================================
+
+	app.Static("/docs", utils.UploadRoot())
 	app.Static("/static", "./public")
+
+	// =====================================================
+	// RECAPTCHA
+	// =====================================================
 
 	app.Get("/recaptcha/sitekey", func(c *fiber.Ctx) error {
 
@@ -43,6 +62,10 @@ func CreateApp() (*fiber.App, error) {
 		})
 	})
 
+	// =====================================================
+	// REPOSITORY
+	// =====================================================
+
 	userRepository :=
 		repositories.NewUserRepository(config.DB)
 
@@ -60,6 +83,10 @@ func CreateApp() (*fiber.App, error) {
 
 	notificationRepo :=
 		repositories.NewNotificationRepository(config.DB)
+
+	// =====================================================
+	// CONTROLLER
+	// =====================================================
 
 	userController := &controllers.UserController{
 		Repository: userRepository,
@@ -80,14 +107,42 @@ func CreateApp() (*fiber.App, error) {
 			UserRepository: userRepository,
 		}
 
+	kategoriPeralatanRepo :=
+		repositories.NewKategoriPeralatanRepository(config.DB)
+
+	kategoriPeralatanController :=
+		controllers.NewKategoriPeralatanController(
+			kategoriPeralatanRepo,
+		)
+
 	dokumenPeralatanController :=
 		&controllers.DokumenPeralatanController{
 			Repository: dokumenPeralatanRepository,
 		}
 
-	routes.UserRoutes(app, userController)
-	routes.LabsRoutes(app, labsController)
-	routes.RuanganRoutes(app, ruanganController)
+	// =====================================================
+	// ROUTES
+	// =====================================================
+
+	routes.UserRoutes(
+		app,
+		userController,
+	)
+
+	routes.LabsRoutes(
+		app,
+		labsController,
+	)
+
+	routes.RuanganRoutes(
+		app,
+		ruanganController,
+	)
+
+	routes.KategoriPeralatanRoutes(
+		app,
+		kategoriPeralatanController,
+	)
 
 	routes.KelompokAssetRoutes(
 		app,
@@ -111,6 +166,16 @@ func CreateApp() (*fiber.App, error) {
 		config.DB,
 		notificationRepo,
 	)
+
+	routes.VerifikasiRoutes(
+		app,
+		config.DB,
+		notificationRepo,
+	)
+
+	// =====================================================
+	// ROOT
+	// =====================================================
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{

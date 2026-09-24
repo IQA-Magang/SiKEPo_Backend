@@ -39,7 +39,9 @@ func ConnectDatabase() error {
 		dbName,
 	)
 
-	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
 
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
@@ -58,10 +60,15 @@ func ConnectDatabase() error {
 	hasKategoriPeralatanTable := database.Migrator().HasTable(&models.KategoriPeralatan{})
 	hasKelompokAssetTable := database.Migrator().HasTable(&models.KelompokAsset{})
 	hasNotificationTable := database.Migrator().HasTable(&models.Notification{})
+	hasVerifikasiTable := database.Migrator().HasTable(&models.Verifikasi{})
+	hasLogPeninjauanPeralatanTable := database.Migrator().HasTable(&models.LogPeninjauanPeralatan{})
+	hasHasilVerifikasiTable := database.Migrator().HasTable(&models.HasilVerifikasi{})
 
-	if !hasUserTable || !hasRuanganTable || !hasLabsTable || !hasPeralatanTable || !hasDokumenPeralatanTable || !hasDetailAlatUkurTable || !hasDetailAlatBantuTable || !hasDetailArtefakAcuanTable || !hasDetailKomponenPendukungTable || !hasKategoriPeralatanTable || !hasKelompokAssetTable || !hasNotificationTable {
+	if !hasUserTable || !hasRuanganTable || !hasLabsTable || !hasPeralatanTable || !hasDokumenPeralatanTable || !hasDetailAlatUkurTable || !hasDetailAlatBantuTable || !hasDetailArtefakAcuanTable || !hasDetailKomponenPendukungTable || !hasKategoriPeralatanTable || !hasKelompokAssetTable || !hasNotificationTable || !hasVerifikasiTable || !hasLogPeninjauanPeralatanTable || !hasHasilVerifikasiTable {
 		log.Println("Beberapa tabel belum ada. Membuat tabel...")
 
+		// Buat tabel parent terlebih dahulu agar foreign key pada tabel detail
+		// tidak merujuk ke tabel yang belum tersedia.
 		err := database.AutoMigrate(
 			&models.User{},
 			&models.Ruangan{},
@@ -75,9 +82,17 @@ func ConnectDatabase() error {
 			&models.KategoriPeralatan{},
 			&models.KelompokAsset{},
 			&models.Notification{},
+			&models.Verifikasi{},
 		)
 		if err != nil {
 			return fmt.Errorf("failed to migrate database tables: %w", err)
+		}
+
+		if err := database.AutoMigrate(
+			&models.LogPeninjauanPeralatan{},
+			&models.HasilVerifikasi{},
+		); err != nil {
+			return fmt.Errorf("failed to migrate verification detail tables: %w", err)
 		}
 
 		log.Println("Semua tabel berhasil dibuat!")
@@ -422,18 +437,14 @@ func SeedDummyData() {
 
 			if err := DB.Create(&models.DetailAlatUkur{
 				PeralatanID:          created[0].ID,
-				ParameterRentangUkur: "Tegangan, Arus, Resistansi",
-				Resolusi:             "0.1 mV",
-				AkurasiSpesifikasi:   "±0.05%",
-				Satuan:               "V",
 				PerantiLunakVersi:    "1.2.0",
-				MetodeKelayakan:      "Kalibrasi referensi",
+				MetodeKelayakan:      "kalibrasi eksternal",
 				NoSertifikat:         "SER-UK-001",
 				TglKalibrasi:         &kalibrasi,
+				TglJatuhTempo:        nil,
 				IntervalBulan:        12,
-				NilaiKoreksi:         "0.02",
-				Ketidakpastian:       "0.01%",
-				JenisLabel:           "Digital",
+				FungsiSbgAlatStandar: false,
+				JenisLabel:           "calibration",
 				StatusKelayakan:      "Layak",
 			}).Error; err != nil {
 				log.Printf("Gagal membuat detail alat ukur: %v", err)
@@ -456,30 +467,29 @@ func SeedDummyData() {
 			if err := DB.Create(&models.DetailArtefakAcuan{
 				PeralatanID:                   created[2].ID,
 				JenisDeskripsi:                "Blok kalibrasi referensi",
-				KarakteristikYangDiacu:        "Tegangan dan arus stabil",
+				KarakteristikYangDiacu:        "dimension & kinerja",
 				NilaiSpesifikasiKarakterisasi: "0.05%",
 				MetodeKarakterisasi:           "Standar nasional",
 				NoLaporanKarakterisasi:        "LPK-003",
-				TglKarakterisasiTerakhir:      &karakterisasi,
+				TglKarakterisasiUlang:         &karakterisasi,
 				IntervalBulan:                 12,
 				KondisiPenyimpanan:            "Rak tertutup, suhu terkontrol",
+				Status:                        "aktif",
 			}).Error; err != nil {
 				log.Printf("Gagal membuat detail artefak acuan: %v", err)
 			}
 
 			if err := DB.Create(&models.DetailKomponenPendukung{
-				PeralatanID:               created[3].ID,
-				SubKategori:               "Komponen bobot presisi",
-				DeskripsiSpesifikasi:      "Timbangan presisi untuk sampel analitik",
-				SumberPemasok:             "PT Metrikindo",
-				NoLotBatchEdisi:           "LOT-001",
-				GradeMutu:                 "A",
-				SatuanKemasan:             "Unit",
-				TglTerimaTerbit:           &terima,
-				TglKedaluwarsa:            &kedaluwarsa,
-				KondisiPenyimpanan:        "Kering dan bersih",
-				PengaruhThdKeabsahanHasil: true,
-				StatusKetersediaan:        "Tersedia",
+				PeralatanID:          created[3].ID,
+				Kategori:             "bahan habis pakai",
+				DeskripsiSpesifikasi: "Timbangan presisi untuk sampel analitik",
+				SumberPemasok:        "PT Metrikindo",
+				NoLotBatchEdisi:      "LOT-001",
+				SatuanKemasan:        "Unit",
+				TglTerimaTerbit:      &terima,
+				TglKedaluwarsa:       &kedaluwarsa,
+				KondisiPenyimpanan:   "Kering dan bersih",
+				StatusKetersediaan:   "Tersedia",
 			}).Error; err != nil {
 				log.Printf("Gagal membuat detail komponen pendukung: %v", err)
 			}

@@ -1,60 +1,105 @@
 package routes
 
-// import (
-// 	"backend/controllers"
-// 	"backend/middleware"
+import (
+	"backend/controllers"
+	"backend/middleware"
+	"backend/repositories"
 
-// 	"github.com/gofiber/fiber/v2"
-// )
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+)
 
-// func VerifikasiRoutes(
-// 	app *fiber.App,
-// 	controller *controllers.VerifikasiController,
-// ) {
-// 	verifikasi := app.Group(
-// 		"/api/verifikasi",
-// 		middleware.RequireAuth,
-// 	)
+func VerifikasiRoutes(
+	app *fiber.App,
+	db *gorm.DB,
+	notificationRepo repositories.NotificationRepository,
+) {
 
-// 	// GET ALL
-// 	verifikasi.Get(
-// 		"/",
-// 		controller.GetVerifikasi,
-// 	)
+	verifikasiRepository :=
+		repositories.NewVerifikasiRepository(db)
 
-// 	// GET BY PERALATAN
-// 	verifikasi.Get(
-// 		"/peralatan/:peralatan_id",
-// 		controller.GetByPeralatan,
-// 	)
+	peralatanRepository :=
+		repositories.NewPeralatanRepository(db)
 
-// 	// GET BY ID
-// 	verifikasi.Get(
-// 		"/:id",
-// 		controller.GetVerifikasiByID,
-// 	)
+	logRepository :=
+		repositories.NewLogPeninjauanRepository(db)
 
-// 	// CREATE
-// 	// Admin dan Staff dapat membuat verifikasi
-// 	verifikasi.Post(
-// 		"/",
-// 		middleware.RequireRoles("admin", "staff"),
-// 		controller.CreateVerifikasi,
-// 	)
+	controller :=
+		controllers.NewVerifikasiController(
+			verifikasiRepository,
+			peralatanRepository,
+			logRepository,
+			notificationRepo,
+		)
 
-// 	// APPROVE
-// 	// Hanya Manager
-// 	verifikasi.Put(
-// 		"/:id/approve",
-// 		middleware.RequireRoles("manager"),
-// 		controller.ApproveVerifikasi,
-// 	)
+	verifikasi := app.Group(
+		"/api/verifikasi",
+		middleware.RequireAuth,
+	)
 
-// 	// DELETE
-// 	// Hanya Admin
-// 	verifikasi.Delete(
-// 		"/:id",
-// 		middleware.RequireRoles("admin"),
-// 		controller.DeleteVerifikasi,
-// 	)
-// }
+	// GET SEMUA
+	verifikasi.Get(
+		"/",
+		controller.GetVerifikasi,
+	)
+
+	// GET PENGAJUAN MANAGER
+	verifikasi.Get(
+		"/pengajuan",
+		controller.GetPengajuan,
+	)
+
+	// GET LOG
+	verifikasi.Get(
+		"/log-peninjauan",
+		controller.GetLogPeninjauan,
+	)
+
+	// GET LOG PERALATAN
+	verifikasi.Get(
+		"/log-peninjauan/peralatan/:peralatan_id",
+		controller.GetLogByPeralatan,
+	)
+
+	// GET BY PERALATAN
+	verifikasi.Get(
+		"/peralatan/:peralatan_id",
+		controller.GetByPeralatan,
+	)
+
+	// GET BY ID
+	verifikasi.Get(
+		"/:id",
+		controller.GetVerifikasiByID,
+	)
+
+	// CREATE DRAFT
+	verifikasi.Post(
+		"/",
+		controller.CreateVerifikasi,
+	)
+
+	// PIC SIGN
+	verifikasi.Put(
+		"/:id/sign-pic",
+		controller.SignPIC,
+	)
+
+	// MANAGER APPROVE
+	verifikasi.Put(
+		"/:id/approve",
+		controller.ApproveVerifikasi,
+	)
+
+	// MANAGER REJECT
+	verifikasi.Put(
+		"/:id/reject",
+		controller.RejectVerifikasi,
+	)
+
+	// DELETE
+	verifikasi.Delete(
+		"/:id",
+		controller.DeleteVerifikasi,
+	)
+}
