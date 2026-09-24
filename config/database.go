@@ -39,7 +39,9 @@ func ConnectDatabase() error {
 		dbName,
 	)
 
-	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
 
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
@@ -65,6 +67,8 @@ func ConnectDatabase() error {
 	if !hasUserTable || !hasRuanganTable || !hasLabsTable || !hasPeralatanTable || !hasDokumenPeralatanTable || !hasDetailAlatUkurTable || !hasDetailAlatBantuTable || !hasDetailArtefakAcuanTable || !hasDetailKomponenPendukungTable || !hasKategoriPeralatanTable || !hasKelompokAssetTable || !hasNotificationTable || !hasVerifikasiTable || !hasLogPeninjauanPeralatanTable || !hasHasilVerifikasiTable {
 		log.Println("Beberapa tabel belum ada. Membuat tabel...")
 
+		// Buat tabel parent terlebih dahulu agar foreign key pada tabel detail
+		// tidak merujuk ke tabel yang belum tersedia.
 		err := database.AutoMigrate(
 			&models.User{},
 			&models.Ruangan{},
@@ -79,11 +83,16 @@ func ConnectDatabase() error {
 			&models.KelompokAsset{},
 			&models.Notification{},
 			&models.Verifikasi{},
-			&models.LogPeninjauanPeralatan{},
-			&models.HasilVerifikasi{},
 		)
 		if err != nil {
 			return fmt.Errorf("failed to migrate database tables: %w", err)
+		}
+
+		if err := database.AutoMigrate(
+			&models.LogPeninjauanPeralatan{},
+			&models.HasilVerifikasi{},
+		); err != nil {
+			return fmt.Errorf("failed to migrate verification detail tables: %w", err)
 		}
 
 		log.Println("Semua tabel berhasil dibuat!")
