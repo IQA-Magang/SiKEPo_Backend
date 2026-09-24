@@ -294,6 +294,15 @@ func (r *peralatanRepository) CreatePeralatan(
 					return err
 				}
 
+				if detail.JenisLabel == "" {
+					detail.JenisLabel = "calibration"
+				}
+				if detail.JenisLabel != "calibration" &&
+					detail.JenisLabel != "limited calibration" &&
+					detail.JenisLabel != "do not use" {
+					return fmt.Errorf("jenis_label tidak valid: %q", detail.JenisLabel)
+				}
+
 				detail.PeralatanID =
 					peralatan.ID
 
