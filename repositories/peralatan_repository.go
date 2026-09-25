@@ -80,6 +80,7 @@ func (r *peralatanRepository) FindByID(
 	err := r.db.
 		Preload("KategoriPeralatan").
 		Where("id = ?", id).
+		Where("deleted_at IS NULL").
 		First(&data).
 		Error
 

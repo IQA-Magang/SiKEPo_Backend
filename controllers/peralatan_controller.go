@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/skip2/go-qrcode"
@@ -78,6 +79,88 @@ func (c *PeralatanController) GetAll(ctx *fiber.Ctx) error {
 	return ctx.JSON(fiber.Map{
 		"status": "success",
 		"data":   peralatan,
+	})
+}
+
+func (c *PeralatanController) GetByNomorAset(ctx *fiber.Ctx) error {
+	nomorAset := strings.TrimSpace(ctx.Params("nomor_aset"))
+	if nomorAset == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Nomor aset peralatan tidak valid",
+		})
+	}
+
+	peralatan, err := c.Repo.FindByNomorAset(nomorAset)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Peralatan tidak ditemukan",
+			})
+		}
+
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Gagal mengambil data peralatan",
+			"error":   err.Error(),
+		})
+	}
+
+	var detail interface{}
+	if c.DB != nil {
+		switch peralatan.KategoriPeralatanID {
+		case 1:
+			var item models.DetailAlatUkur
+			err = c.DB.Where("peralatan_id = ?", peralatan.ID).First(&item).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				detail = nil
+			} else {
+				detail = item
+			}
+		case 2:
+			var item models.DetailAlatBantu
+			err = c.DB.Where("peralatan_id = ?", peralatan.ID).First(&item).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				detail = nil
+			} else {
+				detail = item
+			}
+		case 3:
+			var item models.DetailArtefakAcuan
+			err = c.DB.Where("peralatan_id = ?", peralatan.ID).First(&item).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				detail = nil
+			} else {
+				detail = item
+			}
+		case 4:
+			var item models.DetailKomponenPendukung
+			err = c.DB.Where("peralatan_id = ?", peralatan.ID).First(&item).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				detail = nil
+			} else {
+				detail = item
+			}
+		default:
+			detail = nil
+		}
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Gagal mengambil detail peralatan",
+				"error":   err.Error(),
+			})
+		}
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "success",
+		"message": "Data peralatan berhasil diambil",
+		"data": fiber.Map{
+			"peralatan": peralatan,
+			"detail":    detail,
+		},
 	})
 }
 
