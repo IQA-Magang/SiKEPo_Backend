@@ -17,6 +17,9 @@ func SetupPeralatanRoutes(app *fiber.App, db *gorm.DB, notificationRepo reposito
 	peralatanController.NotificationRepo = notificationRepo
 	peralatanController.DB = db
 
+	guest := app.Group("/api/peralatan")
+	guest.Get("/:nomor_aset", peralatanController.GetByNomorAset)
+
 	// 2. Grouping Route API
 	api := app.Group("/api/peralatan", middleware.RequireAuth)
 
