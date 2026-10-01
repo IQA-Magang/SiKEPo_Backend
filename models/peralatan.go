@@ -19,6 +19,8 @@ type Peralatan struct {
 
 	RuanganID uint `gorm:"not null" json:"ruangan_id"`
 
+	// PIC otomatis diisi dengan Manager Lab
+	// berdasarkan ruangan yang dipilih.
 	PICID uint `gorm:"not null" json:"pic_id"`
 
 	Merek string `gorm:"type:varchar(100)" json:"merek"`
@@ -189,7 +191,9 @@ type CreatePeralatanRequest struct {
 
 	RuanganID uint `json:"ruangan_id" validate:"required"`
 
-	PICID uint `json:"pic_id" validate:"required"`
+	// PICID sengaja tidak ada di request.
+	// PIC otomatis ditentukan oleh backend berdasarkan
+	// Manager Lab dari ruangan yang dipilih.
 
 	Merek string `json:"merek"`
 

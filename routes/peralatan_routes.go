@@ -10,22 +10,91 @@ import (
 )
 
 // SetupPeralatanRoutes mendaftarkan endpoint untuk modul peralatan
-func SetupPeralatanRoutes(app *fiber.App, db *gorm.DB, notificationRepo repositories.NotificationRepository) {
-	// 1. Inisialisasi Repository dan Controller
-	peralatanRepo := repositories.NewPeralatanRepository(db)
-	peralatanController := controllers.NewPeralatanController(peralatanRepo)
-	peralatanController.NotificationRepo = notificationRepo
-	peralatanController.DB = db
+func SetupPeralatanRoutes(
+	app *fiber.App,
+	db *gorm.DB,
+	notificationRepo repositories.NotificationRepository,
+) {
+	// =====================================================
+	// REPOSITORY
+	// =====================================================
 
-	guest := app.Group("/api/peralatan")
-	guest.Get("/:nomor_aset", peralatanController.GetByNomorAset)
+	peralatanRepo :=
+		repositories.NewPeralatanRepository(db)
 
-	// 2. Grouping Route API
-	api := app.Group("/api/peralatan", middleware.RequireAuth)
+	// =====================================================
+	// CONTROLLER
+	// =====================================================
 
-	// 3. Daftarkan Endpoint POST
-	api.Get("/", peralatanController.GetAll)
-	api.Post("/", peralatanController.Create, middleware.RequireAdminOrStaffPIC())
-	api.Post("/:id/foto", peralatanController.UploadFoto, middleware.RequireAdminOrStaffPIC())
-	api.Get("/:id/qr", peralatanController.GenerateQRCode, middleware.RequireAdminOrStaffPIC())
+	peralatanController :=
+		controllers.NewPeralatanController(
+			peralatanRepo,
+		)
+
+	peralatanController.NotificationRepo =
+		notificationRepo
+
+	peralatanController.DB =
+		db
+
+	// =====================================================
+	// GUEST
+	// =====================================================
+
+	guest :=
+		app.Group("/api/peralatan")
+
+	guest.Get(
+		"/:nomor_aset",
+		peralatanController.GetByNomorAset,
+	)
+
+	// =====================================================
+	// AUTHENTICATED
+	// =====================================================
+
+	api :=
+		app.Group(
+			"/api/peralatan",
+			middleware.RequireAuth,
+		)
+
+	// =====================================================
+	// GET ALL
+	// =====================================================
+
+	api.Get(
+		"/",
+		peralatanController.GetAll,
+	)
+
+	// =====================================================
+	// CREATE
+	// =====================================================
+
+	api.Post(
+		"/",
+		peralatanController.Create,
+		middleware.RequireAdminOrStaffPIC(),
+	)
+
+	// =====================================================
+	// UPLOAD FOTO
+	// =====================================================
+
+	api.Post(
+		"/:id/foto",
+		peralatanController.UploadFoto,
+		middleware.RequireAdminOrStaffPIC(),
+	)
+
+	// =====================================================
+	// QR CODE
+	// =====================================================
+
+	api.Get(
+		"/:id/qr",
+		peralatanController.GenerateQRCode,
+		middleware.RequireAdminOrStaffPIC(),
+	)
 }

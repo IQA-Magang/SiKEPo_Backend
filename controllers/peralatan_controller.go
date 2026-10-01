@@ -168,7 +168,10 @@ func (c *PeralatanController) GetByNomorAset(ctx *fiber.Ctx) error {
 func (c *PeralatanController) Create(ctx *fiber.Ctx) error {
 	req := new(models.CreatePeralatanRequest)
 
-	// 1. Parsing JSON Body ke Struct Request
+	// =====================================================
+	// PARSING JSON
+	// =====================================================
+
 	if err := ctx.BodyParser(req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
@@ -177,7 +180,14 @@ func (c *PeralatanController) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// (Opsional) Lakukan validasi manual sederhana jika diperlukan
+	// =====================================================
+	// VALIDASI NAMA
+	// =====================================================
+
+	req.NamaPeralatan = strings.TrimSpace(
+		req.NamaPeralatan,
+	)
+
 	if req.NamaPeralatan == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
@@ -185,40 +195,119 @@ func (c *PeralatanController) Create(ctx *fiber.Ctx) error {
 		})
 	}
 
-	if req.KategoriPeralatanID < 1 || req.KategoriPeralatanID > 4 {
+	// =====================================================
+	// VALIDASI KATEGORI
+	// =====================================================
+
+	if req.KategoriPeralatanID < 1 ||
+		req.KategoriPeralatanID > 4 {
+
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Kategori ID tidak valid (harus 1 - 4)",
 		})
 	}
 
-	// 2. Eksekusi Repository untuk Simpan Data
-	nomorAset, err := c.Repo.CreatePeralatan(req)
-	if err != nil {
-		// Pengecekan apakah error karena nomor aset duplikat (tergantung driver DB, ini error umum)
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+	// =====================================================
+	// VALIDASI KELOMPOK ASSET
+	// =====================================================
+
+	if req.KelompokAsetID == 0 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Gagal menyimpan data peralatan",
-			"error":   err.Error(),
+			"message": "Kelompok asset wajib dipilih",
 		})
 	}
-	peralatan, err := c.Repo.FindByNomorAset(nomorAset)
+
+	// =====================================================
+	// VALIDASI RUANGAN
+	// =====================================================
+
+	if req.RuanganID == 0 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Ruangan wajib dipilih",
+		})
+	}
+
+	// =====================================================
+	// CREATE PERALATAN
+	// =====================================================
+
+	nomorAset, err := c.Repo.CreatePeralatan(req)
+
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+
+		errorMessage := err.Error()
+
+		// Ruangan / Manager Lab belum tersedia
+		if strings.Contains(
+			errorMessage,
+			"ruangan tidak ditemukan",
+		) ||
+			strings.Contains(
+				errorMessage,
+				"ruangan belum terhubung",
+			) ||
+			strings.Contains(
+				errorMessage,
+				"laboratorium belum memiliki Manager Lab",
+			) {
+
+			return ctx.Status(
+				fiber.StatusBadRequest,
+			).JSON(fiber.Map{
+				"status":  "error",
+				"message": errorMessage,
+			})
+		}
+
+		return ctx.Status(
+			fiber.StatusInternalServerError,
+		).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Gagal menyimpan data peralatan",
+			"error":   errorMessage,
+		})
+	}
+
+	// =====================================================
+	// AMBIL DATA PERALATAN
+	// =====================================================
+
+	peralatan, err :=
+		c.Repo.FindByNomorAset(nomorAset)
+
+	if err != nil {
+		return ctx.Status(
+			fiber.StatusInternalServerError,
+		).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Peralatan berhasil dibuat tetapi gagal mengambil ID",
 			"error":   err.Error(),
 		})
 	}
 
-	c.sendPICPeralatanNotification(peralatan)
+	// =====================================================
+	// NOTIFIKASI PIC
+	// =====================================================
 
-	// 3. Response Berhasil
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
+	c.sendPICPeralatanNotification(
+		peralatan,
+	)
+
+	// =====================================================
+	// RESPONSE
+	// =====================================================
+
+	return ctx.Status(
+		fiber.StatusCreated,
+	).JSON(fiber.Map{
 		"status":     "success",
 		"message":    "Peralatan beserta detail spesifikasinya berhasil ditambahkan",
 		"nomor_aset": nomorAset,
 		"id":         peralatan.ID,
+		"pic_id":     peralatan.PICID,
 	})
 }
 

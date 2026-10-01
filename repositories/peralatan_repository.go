@@ -40,7 +40,6 @@ type peralatanRepository struct {
 func NewPeralatanRepository(
 	db *gorm.DB,
 ) PeralatanRepository {
-
 	return &peralatanRepository{
 		db: db,
 	}
@@ -54,7 +53,6 @@ func (r *peralatanRepository) FindAll() (
 	[]models.Peralatan,
 	error,
 ) {
-
 	var data []models.Peralatan
 
 	err := r.db.
@@ -147,7 +145,7 @@ func (r *peralatanRepository) CreatePeralatan(
 		func(tx *gorm.DB) error {
 
 			// =================================================
-			// KELOMPOK ASSET
+			// VALIDASI KELOMPOK ASSET
 			// =================================================
 
 			var kelompokAsset models.KelompokAsset
@@ -167,7 +165,62 @@ func (r *peralatanRepository) CreatePeralatan(
 			}
 
 			// =================================================
-			// PREFIX
+			// AMBIL RUANGAN
+			// =================================================
+
+			var ruangan models.Ruangan
+
+			if err := tx.
+				Preload("Labs").
+				Where(
+					"id = ?",
+					req.RuanganID,
+				).
+				First(&ruangan).
+				Error; err != nil {
+
+				return fmt.Errorf(
+					"ruangan tidak ditemukan: %w",
+					err,
+				)
+			}
+
+			// =================================================
+			// VALIDASI LAB
+			// =================================================
+
+			if ruangan.Labs == nil {
+				return errors.New(
+					"ruangan belum terhubung dengan laboratorium",
+				)
+			}
+
+			// =================================================
+			// VALIDASI MANAGER LAB
+			// =================================================
+
+			if ruangan.Labs.ManagerID == nil {
+				return errors.New(
+					"laboratorium belum memiliki Manager Lab",
+				)
+			}
+
+			// =================================================
+			// PIC OTOMATIS = MANAGER LAB
+			// =================================================
+			//
+			// Manager Lab dari lab yang menaungi ruangan
+			// otomatis menjadi PIC peralatan.
+			//
+			// ManagerID bertipe uint64.
+			// PICID pada Peralatan bertipe uint.
+			// Karena itu dilakukan konversi uint().
+			// =================================================
+
+			picID := *ruangan.Labs.ManagerID
+
+			// =================================================
+			// PREFIX NOMOR ASET
 			// =================================================
 
 			prefix := prefixNomorAset(
@@ -224,11 +277,10 @@ func (r *peralatanRepository) CreatePeralatan(
 			}
 
 			// =================================================
-			// MASTER
+			// MASTER PERALATAN
 			// =================================================
 
 			peralatan := models.Peralatan{
-
 				NomorAset: nomorAset,
 
 				NamaPeralatan: req.NamaPeralatan,
@@ -241,7 +293,10 @@ func (r *peralatanRepository) CreatePeralatan(
 
 				RuanganID: req.RuanganID,
 
-				PICID: req.PICID,
+				// =================================================
+				// PIC OTOMATIS = MANAGER LAB
+				// =================================================
+				PICID: uint(picID),
 
 				Merek: req.Merek,
 
@@ -258,6 +313,10 @@ func (r *peralatanRepository) CreatePeralatan(
 				Keterangan: req.Keterangan,
 			}
 
+			// =================================================
+			// SIMPAN MASTER PERALATAN
+			// =================================================
+
 			if err := tx.
 				Create(&peralatan).
 				Error; err != nil {
@@ -266,7 +325,7 @@ func (r *peralatanRepository) CreatePeralatan(
 			}
 
 			// =================================================
-			// DETAIL
+			// PROSES DETAIL PERALATAN
 			// =================================================
 
 			detailBytes, err :=
@@ -278,11 +337,11 @@ func (r *peralatanRepository) CreatePeralatan(
 				)
 			}
 
-			switch req.KategoriPeralatanID {
+			// =================================================
+			// KATEGORI 1 - ALAT UKUR
+			// =================================================
 
-			// =================================================
-			// ALAT UKUR
-			// =================================================
+			switch req.KategoriPeralatanID {
 
 			case 1:
 
@@ -295,18 +354,26 @@ func (r *peralatanRepository) CreatePeralatan(
 					return err
 				}
 
+				// Default jenis label
 				if detail.JenisLabel == "" {
 					detail.JenisLabel = "calibration"
 				}
+
+				// Validasi jenis label
 				if detail.JenisLabel != "calibration" &&
 					detail.JenisLabel != "limited calibration" &&
 					detail.JenisLabel != "do not use" {
-					return fmt.Errorf("jenis_label tidak valid: %q", detail.JenisLabel)
+
+					return fmt.Errorf(
+						"jenis_label tidak valid: %q",
+						detail.JenisLabel,
+					)
 				}
 
 				detail.PeralatanID =
 					peralatan.ID
 
+				// Hitung tanggal jatuh tempo otomatis
 				if detail.TglKalibrasi != nil &&
 					detail.IntervalBulan > 0 {
 
@@ -324,11 +391,12 @@ func (r *peralatanRepository) CreatePeralatan(
 				if err := tx.
 					Create(&detail).
 					Error; err != nil {
+
 					return err
 				}
 
 			// =================================================
-			// ALAT BANTU
+			// KATEGORI 2 - ALAT BANTU
 			// =================================================
 
 			case 2:
@@ -345,6 +413,7 @@ func (r *peralatanRepository) CreatePeralatan(
 				detail.PeralatanID =
 					peralatan.ID
 
+				// Hitung tanggal jatuh tempo otomatis
 				if detail.TglPemeriksaanTerakhir != nil &&
 					detail.IntervalBulan > 0 {
 
@@ -362,11 +431,12 @@ func (r *peralatanRepository) CreatePeralatan(
 				if err := tx.
 					Create(&detail).
 					Error; err != nil {
+
 					return err
 				}
 
 			// =================================================
-			// ARTEFAK ACUAN
+			// KATEGORI 3 - ARTEFAK ACUAN
 			// =================================================
 
 			case 3:
@@ -386,11 +456,12 @@ func (r *peralatanRepository) CreatePeralatan(
 				if err := tx.
 					Create(&detail).
 					Error; err != nil {
+
 					return err
 				}
 
 			// =================================================
-			// KOMPONEN PENDUKUNG
+			// KATEGORI 4 - KOMPONEN PENDUKUNG
 			// =================================================
 
 			case 4:
@@ -410,8 +481,13 @@ func (r *peralatanRepository) CreatePeralatan(
 				if err := tx.
 					Create(&detail).
 					Error; err != nil {
+
 					return err
 				}
+
+			// =================================================
+			// KATEGORI TIDAK VALID
+			// =================================================
 
 			default:
 
@@ -424,9 +500,17 @@ func (r *peralatanRepository) CreatePeralatan(
 		},
 	)
 
+	// =========================================================
+	// TRANSACTION ERROR
+	// =========================================================
+
 	if err != nil {
 		return "", err
 	}
+
+	// =========================================================
+	// RETURN NOMOR ASET
+	// =========================================================
 
 	return nomorAset, nil
 }
@@ -440,16 +524,24 @@ func prefixNomorAset(
 	nama string,
 ) string {
 
-	prefix := strings.TrimSpace(kode)
+	prefix := strings.TrimSpace(
+		kode,
+	)
 
 	if prefix == "" {
-		prefix = strings.TrimSpace(nama)
+		prefix = strings.TrimSpace(
+			nama,
+		)
 	}
 
-	prefix = strings.ToUpper(prefix)
+	prefix = strings.ToUpper(
+		prefix,
+	)
 
 	prefix = regexp.
-		MustCompile(`[^A-Z0-9]`).
+		MustCompile(
+			`[^A-Z0-9]`,
+		).
 		ReplaceAllString(
 			prefix,
 			"",
