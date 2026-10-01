@@ -93,15 +93,14 @@ func (c *UserController) GetUserByID(ctx *fiber.Ctx) error {
 func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 
 	type CreateUserRequest struct {
-		NIP      string `json:"nip"`
-		Name     string `json:"name"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		Role     string `json:"role"`
-		Position string `json:"position"`
-
-		// PIC
-		PIC bool `json:"pic"`
+		NIP      string  `json:"nip"`
+		Name     string  `json:"name"`
+		Email    string  `json:"email"`
+		Password string  `json:"password"`
+		Role     string  `json:"role"`
+		Position string  `json:"position"`
+		PIC      bool    `json:"pic"`
+		LabsID   *uint64 `json:"labs_id"`
 	}
 
 	var request CreateUserRequest
@@ -113,19 +112,11 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ==============================
-	// NORMALISASI
-	// ==============================
-
 	request.NIP = strings.TrimSpace(request.NIP)
 	request.Name = strings.TrimSpace(request.Name)
 	request.Email = strings.TrimSpace(request.Email)
 	request.Role = strings.TrimSpace(request.Role)
 	request.Position = strings.TrimSpace(request.Position)
-
-	// ==============================
-	// VALIDASI
-	// ==============================
 
 	if request.NIP == "" {
 		return ctx.Status(400).JSON(fiber.Map{
@@ -176,9 +167,18 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ==============================
-	// MODEL
-	// ==============================
+	// =====================================================
+	// VALIDASI LAB
+	// =====================================================
+
+	// Admin boleh tanpa Lab.
+	// Staff dan Manager wajib memiliki Lab.
+	if request.Role != "admin" && request.LabsID == nil {
+		return ctx.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": "Staff dan Manager wajib memiliki Lab",
+		})
+	}
 
 	user := models.User{
 		NIP:      request.NIP,
@@ -186,14 +186,9 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		Email:    request.Email,
 		Role:     request.Role,
 		Position: request.Position,
-
-		// PIC
-		PIC: request.PIC,
+		PIC:      request.PIC,
+		LabsID:   request.LabsID,
 	}
-
-	// ==============================
-	// CREATE
-	// ==============================
 
 	err := c.Repository.CreateUser(
 		&user,
@@ -250,15 +245,14 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	}
 
 	type UpdateUserRequest struct {
-		NIP      string `json:"nip"`
-		Name     string `json:"name"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		Role     string `json:"role"`
-		Position string `json:"position"`
-
-		// PIC
-		PIC bool `json:"pic"`
+		NIP      string  `json:"nip"`
+		Name     string  `json:"name"`
+		Email    string  `json:"email"`
+		Password string  `json:"password"`
+		Role     string  `json:"role"`
+		Position string  `json:"position"`
+		PIC      bool    `json:"pic"`
+		LabsID   *uint64 `json:"labs_id"`
 	}
 
 	var request UpdateUserRequest
@@ -270,19 +264,11 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ==============================
-	// NORMALISASI
-	// ==============================
-
 	request.NIP = strings.TrimSpace(request.NIP)
 	request.Name = strings.TrimSpace(request.Name)
 	request.Email = strings.TrimSpace(request.Email)
 	request.Role = strings.TrimSpace(request.Role)
 	request.Position = strings.TrimSpace(request.Position)
-
-	// ==============================
-	// VALIDASI
-	// ==============================
 
 	if request.NIP == "" ||
 		request.Name == "" ||
@@ -303,21 +289,22 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Model
+	if request.Role != "admin" && request.LabsID == nil {
+		return ctx.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": "Staff dan Manager wajib memiliki Lab",
+		})
+	}
+
 	user := models.User{
 		NIP:      request.NIP,
 		Name:     request.Name,
 		Email:    request.Email,
 		Role:     request.Role,
 		Position: request.Position,
-
-		// PIC
-		PIC: request.PIC,
+		PIC:      request.PIC,
+		LabsID:   request.LabsID,
 	}
-
-	// ==============================
-	// UPDATE
-	// ==============================
 
 	err = c.Repository.UpdateUser(
 		id,
@@ -355,10 +342,6 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ==============================
-	// GET DATA TERBARU
-	// ==============================
-
 	updatedUser, err := c.Repository.GetUserByID(id)
 
 	if err != nil {
@@ -374,7 +357,6 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		"data":    updatedUser,
 	})
 }
-
 // ========================================
 // DELETE USER
 // ========================================

@@ -24,9 +24,9 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	}
 }
 
-// ==============================
+// =====================================================
 // GET ALL
-// ==============================
+// =====================================================
 
 func (r *UserRepository) GetAllUsers() ([]models.User, error) {
 
@@ -40,9 +40,9 @@ func (r *UserRepository) GetAllUsers() ([]models.User, error) {
 	return users, err
 }
 
-// ==============================
+// =====================================================
 // GET BY ID
-// ==============================
+// =====================================================
 
 func (r *UserRepository) GetUserByID(id uint64) (*models.User, error) {
 
@@ -60,9 +60,9 @@ func (r *UserRepository) GetUserByID(id uint64) (*models.User, error) {
 	return &user, nil
 }
 
-// ==============================
+// =====================================================
 // GET BY EMAIL
-// ==============================
+// =====================================================
 
 func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 
@@ -80,9 +80,9 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-// ==============================
+// =====================================================
 // GET BY NIP
-// ==============================
+// =====================================================
 
 func (r *UserRepository) GetUserByNIP(nip string) (*models.User, error) {
 
@@ -100,18 +100,14 @@ func (r *UserRepository) GetUserByNIP(nip string) (*models.User, error) {
 	return &user, nil
 }
 
-// ==============================
+// =====================================================
 // CREATE
-// ==============================
+// =====================================================
 
 func (r *UserRepository) CreateUser(
 	user *models.User,
 	password string,
 ) error {
-
-	// ==============================
-	// CEK NIP
-	// ==============================
 
 	var nipCount int64
 
@@ -129,10 +125,6 @@ func (r *UserRepository) CreateUser(
 		return ErrNIPAlreadyExists
 	}
 
-	// ==============================
-	// CEK EMAIL
-	// ==============================
-
 	var emailCount int64
 
 	err = r.DB.
@@ -149,10 +141,6 @@ func (r *UserRepository) CreateUser(
 		return ErrEmailAlreadyExists
 	}
 
-	// ==============================
-	// HASH PASSWORD
-	// ==============================
-
 	passwordHash, err := bcrypt.GenerateFromPassword(
 		[]byte(password),
 		bcrypt.DefaultCost,
@@ -164,13 +152,12 @@ func (r *UserRepository) CreateUser(
 
 	user.Password = string(passwordHash)
 
-	// Simpan user termasuk PIC
 	return r.DB.Create(user).Error
 }
 
-// ==============================
+// =====================================================
 // UPDATE
-// ==============================
+// =====================================================
 
 func (r *UserRepository) UpdateUser(
 	id uint64,
@@ -180,10 +167,6 @@ func (r *UserRepository) UpdateUser(
 
 	var existingUser models.User
 
-	// ==============================
-	// CARI USER
-	// ==============================
-
 	err := r.DB.
 		Where("user_id = ?", id).
 		First(&existingUser).
@@ -192,10 +175,6 @@ func (r *UserRepository) UpdateUser(
 	if err != nil {
 		return err
 	}
-
-	// ==============================
-	// CEK NIP
-	// ==============================
 
 	var nipCount int64
 
@@ -217,10 +196,6 @@ func (r *UserRepository) UpdateUser(
 		return ErrNIPAlreadyExists
 	}
 
-	// ==============================
-	// CEK EMAIL
-	// ==============================
-
 	var emailCount int64
 
 	err = r.DB.
@@ -241,7 +216,6 @@ func (r *UserRepository) UpdateUser(
 		return ErrEmailAlreadyExists
 	}
 
-	// Update user
 	existingUser.NIP = user.NIP
 	existingUser.Name = user.Name
 	existingUser.Email = user.Email
@@ -249,14 +223,12 @@ func (r *UserRepository) UpdateUser(
 	existingUser.Position = user.Position
 	existingUser.PIC = user.PIC
 
-	// ==============================
-	// UPDATE PASSWORD
-	// ==============================
+	// =====================================================
+	// UPDATE LAB SCOPE
+	// =====================================================
 
-	// Update PIC
-	existingUser.PIC = user.PIC
+	existingUser.LabsID = user.LabsID
 
-	// Update password jika diisi
 	if password != "" {
 
 		passwordHash, err := bcrypt.GenerateFromPassword(
@@ -271,16 +243,12 @@ func (r *UserRepository) UpdateUser(
 		existingUser.Password = string(passwordHash)
 	}
 
-	// ==============================
-	// SIMPAN
-	// ==============================
-
 	return r.DB.Save(&existingUser).Error
 }
 
-// ==============================
+// =====================================================
 // DELETE
-// ==============================
+// =====================================================
 
 func (r *UserRepository) DeleteUser(id uint64) error {
 
