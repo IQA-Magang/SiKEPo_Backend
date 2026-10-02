@@ -68,7 +68,7 @@ curl -X POST http://localhost:5000/api/users/ \
     "password": "password123",
     "role": "staff",
     "position": "Staff Laboratorium",
-    "pic": false
+    "pengelola": false
   }'
 ```
 

@@ -85,13 +85,17 @@ func RequireAuth(c *fiber.Ctx) error {
 		c.Locals("role", v)
 	}
 
-	if v, ok := claims["pic"]; ok {
-		switch value := v.(type) {
+	pengelolaValue, ok := claims["pengelola"]
+	if !ok {
+		pengelolaValue = claims["pic"]
+	}
+	if pengelolaValue != nil {
+		switch value := pengelolaValue.(type) {
 		case bool:
-			c.Locals("pic", value)
+			c.Locals("pengelola", value)
 		case string:
 			if parsed, err := strconv.ParseBool(value); err == nil {
-				c.Locals("pic", parsed)
+				c.Locals("pengelola", parsed)
 			}
 		}
 	}
@@ -140,9 +144,9 @@ func RequireAdminOrStaffPIC() fiber.Handler {
 		}
 
 		if role == "staff" {
-			picValue := c.Locals("pic")
-			if picValue != nil {
-				if pic, ok := picValue.(bool); ok && pic {
+			pengelolaValue := c.Locals("pengelola")
+			if pengelolaValue != nil {
+				if pengelola, ok := pengelolaValue.(bool); ok && pengelola {
 					return c.Next()
 				}
 			}
@@ -150,7 +154,7 @@ func RequireAdminOrStaffPIC() fiber.Handler {
 
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"success": false,
-			"message": "Hanya admin atau staff PIC yang dapat mengakses endpoint ini",
+			"message": "Hanya admin atau staff pengelola yang dapat mengakses endpoint ini",
 		})
 	}
 }

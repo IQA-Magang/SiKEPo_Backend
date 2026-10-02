@@ -136,14 +136,14 @@ func (c *UserController) managerLabsID(ctx *fiber.Ctx) (*uint64, error) {
 func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 
 	type CreateUserRequest struct {
-		NIP      string  `json:"nip"`
-		Name     string  `json:"name"`
-		Email    string  `json:"email"`
-		Password string  `json:"password"`
-		Role     string  `json:"role"`
-		Position string  `json:"position"`
-		PIC      bool    `json:"pic"`
-		LabsID   *uint64 `json:"labs_id"`
+		NIP       string  `json:"nip"`
+		Name      string  `json:"name"`
+		Email     string  `json:"email"`
+		Password  string  `json:"password"`
+		Role      string  `json:"role"`
+		Position  string  `json:"position"`
+		Pengelola bool    `json:"pengelola"`
+		LabsID    *uint64 `json:"labs_id"`
 	}
 
 	var request CreateUserRequest
@@ -224,13 +224,13 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 	}
 
 	user := models.User{
-		NIP:      request.NIP,
-		Name:     request.Name,
-		Email:    request.Email,
-		Role:     request.Role,
-		Position: request.Position,
-		PIC:      request.PIC,
-		LabsID:   request.LabsID,
+		NIP:       request.NIP,
+		Name:      request.Name,
+		Email:     request.Email,
+		Role:      request.Role,
+		Position:  request.Position,
+		Pengelola: request.Pengelola,
+		LabsID:    request.LabsID,
 	}
 
 	err := c.Repository.CreateUser(
@@ -288,14 +288,14 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	}
 
 	type UpdateUserRequest struct {
-		NIP      string  `json:"nip"`
-		Name     string  `json:"name"`
-		Email    string  `json:"email"`
-		Password string  `json:"password"`
-		Role     string  `json:"role"`
-		Position string  `json:"position"`
-		PIC      bool    `json:"pic"`
-		LabsID   *uint64 `json:"labs_id"`
+		NIP       string  `json:"nip"`
+		Name      string  `json:"name"`
+		Email     string  `json:"email"`
+		Password  string  `json:"password"`
+		Role      string  `json:"role"`
+		Position  string  `json:"position"`
+		Pengelola bool    `json:"pengelola"`
+		LabsID    *uint64 `json:"labs_id"`
 	}
 
 	var request UpdateUserRequest
@@ -340,13 +340,13 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	}
 
 	user := models.User{
-		NIP:      request.NIP,
-		Name:     request.Name,
-		Email:    request.Email,
-		Role:     request.Role,
-		Position: request.Position,
-		PIC:      request.PIC,
-		LabsID:   request.LabsID,
+		NIP:       request.NIP,
+		Name:      request.Name,
+		Email:     request.Email,
+		Role:      request.Role,
+		Position:  request.Position,
+		Pengelola: request.Pengelola,
+		LabsID:    request.LabsID,
 	}
 
 	err = c.Repository.UpdateUser(

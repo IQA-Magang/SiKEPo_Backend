@@ -248,7 +248,7 @@ func (r *UserRepository) UpdateUser(
 	existingUser.Email = user.Email
 	existingUser.Role = user.Role
 	existingUser.Position = user.Position
-	existingUser.PIC = user.PIC
+	existingUser.Pengelola = user.Pengelola
 
 	// =====================================================
 	// UPDATE LAB SCOPE

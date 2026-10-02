@@ -792,7 +792,7 @@ func (c *VerifikasiController) CreateVerifikasi(
 
 	}
 
-	if !picUser.PIC {
+	if !picUser.Pengelola {
 
 		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
 

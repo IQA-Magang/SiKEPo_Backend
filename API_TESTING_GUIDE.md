@@ -105,7 +105,7 @@ Response sukses:
       "email": "admin@sikepo.local",
       "role": "admin",
       "position": "Administrator",
-      "pic": true
+      "pengelola": true
     }
   }
 }
@@ -140,7 +140,7 @@ curl -X POST http://localhost:5000/api/users \
     "password": "password123",
     "role": "staff",
     "position": "Staff Laboratorium",
-    "pic": false
+    "pengelola": false
   }'
 ```
 

@@ -31,10 +31,10 @@ func CreateToken(user *models.User) (string, error) {
 	now := time.Now()
 
 	claims := jwt.MapClaims{
-		"user_id": user.UserID,
-		"email":   user.Email,
-		"role":    user.Role,
-		"pic":     user.PIC,
+		"user_id":   user.UserID,
+		"email":     user.Email,
+		"role":      user.Role,
+		"pengelola": user.Pengelola,
 		"exp": now.Add(
 			time.Duration(expiryMinutes) * time.Minute,
 		).Unix(),
