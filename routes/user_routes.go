@@ -16,16 +16,17 @@ func UserRoutes(
 	users := app.Group("/api/users")
 	users.Post("/login", controller.Login)
 
-	// Protected admin routes
+	manager := users.Group("/manager", middleware.RequireAuth, middleware.RequireRoles("manager"))
+	manager.Get("/", controller.GetUsers)
+	manager.Get(":id", controller.GetUserByID)
+	manager.Put(":id", controller.UpdateUser)
+
+	// Protected admin routes must follow static manager routes so /manager is not
+	// matched as the admin /:id route.
 	admin := users.Group("/", middleware.RequireAuth, middleware.RequireRoles("admin"))
 	admin.Post("/", controller.CreateUser)
 	admin.Put(":id", controller.UpdateUser)
 	admin.Delete(":id", controller.DeleteUser)
 	admin.Get("/", controller.GetUsers)
 	admin.Get(":id", controller.GetUserByID)
-
-	manager := users.Group("/manager", middleware.RequireAuth, middleware.RequireRoles("manager"))
-	manager.Get("/", controller.GetUsers)
-	manager.Get(":id", controller.GetUserByID)
-	manager.Put(":id", controller.UpdateUser)
 }
