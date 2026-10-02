@@ -23,4 +23,9 @@ func UserRoutes(
 	admin.Delete(":id", controller.DeleteUser)
 	admin.Get("/", controller.GetUsers)
 	admin.Get(":id", controller.GetUserByID)
+
+	manager := users.Group("/", middleware.RequireAuth, middleware.RequireRoles("manager"))
+	manager.Get("/", controller.GetUsers)
+	manager.Get(":id", controller.GetUserByID)
+	manager.Put(":id", controller.UpdateUser)
 }

@@ -25,7 +25,21 @@ type UserController struct {
 
 func (c *UserController) GetUsers(ctx *fiber.Ctx) error {
 
-	users, err := c.Repository.GetAllUsers()
+	var users []models.User
+	var err error
+
+	if role, _ := ctx.Locals("role").(string); role == "manager" {
+		labsID, scopeErr := c.managerLabsID(ctx)
+		if scopeErr != nil {
+			return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"success": false,
+				"message": "Manager tidak memiliki akses lab yang valid",
+			})
+		}
+		users, err = c.Repository.GetUsersByLabsID(*labsID)
+	} else {
+		users, err = c.Repository.GetAllUsers()
+	}
 
 	if err != nil {
 		return ctx.Status(500).JSON(fiber.Map{
@@ -61,7 +75,19 @@ func (c *UserController) GetUserByID(ctx *fiber.Ctx) error {
 		})
 	}
 
-	user, err := c.Repository.GetUserByID(id)
+	var user *models.User
+	if role, _ := ctx.Locals("role").(string); role == "manager" {
+		labsID, scopeErr := c.managerLabsID(ctx)
+		if scopeErr != nil {
+			return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"success": false,
+				"message": "Manager tidak memiliki akses lab yang valid",
+			})
+		}
+		user, err = c.Repository.GetUserByIDAndLabsID(id, *labsID)
+	} else {
+		user, err = c.Repository.GetUserByID(id)
+	}
 
 	if err != nil {
 
@@ -84,6 +110,23 @@ func (c *UserController) GetUserByID(ctx *fiber.Ctx) error {
 		"message": "Data user berhasil ditemukan",
 		"data":    user,
 	})
+}
+
+func (c *UserController) managerLabsID(ctx *fiber.Ctx) (*uint64, error) {
+	email, ok := ctx.Locals("email").(string)
+	if !ok || email == "" {
+		return nil, errors.New("email manager tidak ditemukan di token")
+	}
+
+	manager, err := c.Repository.GetUserByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	if manager.Role != "manager" || manager.LabsID == nil {
+		return nil, errors.New("manager tidak memiliki lab")
+	}
+
+	return manager.LabsID, nil
 }
 
 // ========================================
@@ -357,6 +400,7 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		"data":    updatedUser,
 	})
 }
+
 // ========================================
 // DELETE USER
 // ========================================

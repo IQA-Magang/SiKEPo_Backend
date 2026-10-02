@@ -40,6 +40,18 @@ func (r *UserRepository) GetAllUsers() ([]models.User, error) {
 	return users, err
 }
 
+func (r *UserRepository) GetUsersByLabsID(labsID uint64) ([]models.User, error) {
+	var users []models.User
+
+	err := r.DB.
+		Where("labs_id = ?", labsID).
+		Order("user_id DESC").
+		Find(&users).
+		Error
+
+	return users, err
+}
+
 // =====================================================
 // GET BY ID
 // =====================================================
@@ -50,6 +62,21 @@ func (r *UserRepository) GetUserByID(id uint64) (*models.User, error) {
 
 	err := r.DB.
 		Where("user_id = ?", id).
+		First(&user).
+		Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *UserRepository) GetUserByIDAndLabsID(id, labsID uint64) (*models.User, error) {
+	var user models.User
+
+	err := r.DB.
+		Where("user_id = ? AND labs_id = ?", id, labsID).
 		First(&user).
 		Error
 
