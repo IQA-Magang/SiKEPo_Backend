@@ -260,7 +260,7 @@ func (c *VerifikasiController) canAccessVerifikasi(
 	}
 
 	user, err := c.getAuthenticatedUser(ctx)
-	if err != nil || user.Role != "staff" || user.LabsID == nil || data.IDPeralatan == 0 {
+	if err != nil || user.Role != "staff" || !user.Pengelola || user.LabsID == nil || data.IDPeralatan == 0 {
 		return false
 	}
 	return c.isPeralatanInSameLab(data.IDPeralatan, *user.LabsID)
@@ -279,10 +279,21 @@ func (c *VerifikasiController) canAccessPeralatan(
 	}
 
 	user, err := c.getAuthenticatedUser(ctx)
-	if err != nil || user.Role != "staff" || user.LabsID == nil {
+	if err != nil || user.Role != "staff" || !user.Pengelola || user.LabsID == nil {
 		return false
 	}
 	return c.isPeralatanInSameLab(uint64(peralatan.ID), *user.LabsID)
+}
+
+func (c *VerifikasiController) canVerifyAsLabPengelola(
+	ctx *fiber.Ctx,
+	peralatanID uint64,
+) bool {
+	user, err := c.getAuthenticatedUser(ctx)
+	if err != nil || user.Role != "staff" || !user.Pengelola || user.LabsID == nil {
+		return false
+	}
+	return c.isPeralatanInSameLab(peralatanID, *user.LabsID)
 }
 
 func (c *VerifikasiController) isPeralatanInSameLab(
@@ -662,7 +673,7 @@ func (c *VerifikasiController) CreateVerifikasi(
 
 ) error {
 
-	picID, err :=
+	userID, err :=
 
 		getAuthenticatedUserID(ctx)
 
@@ -738,69 +749,11 @@ func (c *VerifikasiController) CreateVerifikasi(
 
 	}
 
-	// =====================================================
-
-	// VALIDASI PIC YANG DITETAPKAN ADMIN
-
-	// =====================================================
-
-	// VALIDASI AKSES LAB
-	if !c.canAccessPeralatan(ctx, peralatan) {
+	if !c.canVerifyAsLabPengelola(ctx, uint64(peralatan.ID)) {
 		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"success": false,
-			"message": "Anda tidak memiliki akses ke peralatan dari Lab ini",
+			"message": "Hanya pengelola staff dari Lab peralatan yang dapat membuat verifikasi",
 		})
-	}
-
-	if peralatan.PICID == 0 {
-
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-
-			"success": false,
-
-			"message": "Peralatan belum memiliki PIC",
-		})
-
-	}
-
-	if peralatan.PICID != uint(picID) {
-
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-
-			"success": false,
-
-			"message": "Anda bukan PIC yang ditetapkan untuk peralatan ini",
-		})
-
-	}
-
-	// User assigned as equipment PIC must still have pengelola access.
-
-	var picUser models.User
-
-	if err := c.Repository.DB.
-		Where("user_id = ?", picID).
-		First(&picUser).
-		Error; err != nil {
-
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-
-			"success": false,
-
-			"message": "Data PIC tidak ditemukan",
-		})
-
-	}
-
-	if !picUser.Pengelola {
-
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-
-			"success": false,
-
-			"message": "User yang ditetapkan bukan pengelola aktif",
-		})
-
 	}
 
 	request.KodeAktivitas =
@@ -912,7 +865,7 @@ func (c *VerifikasiController) CreateVerifikasi(
 
 				TindakLanjut: request.TindakLanjut,
 
-				PICID: &picID,
+				PICID: &userID,
 
 				Catatan: request.Catatan,
 			}
@@ -1052,7 +1005,7 @@ func (c *VerifikasiController) SignPIC(
 
 ) error {
 
-	picID, err :=
+	userID, err :=
 
 		getAuthenticatedUserID(ctx)
 
@@ -1172,27 +1125,11 @@ func (c *VerifikasiController) SignPIC(
 
 	}
 
-	if data.Peralatan == nil || !c.canAccessPeralatan(ctx, data.Peralatan) {
+	if data.Peralatan == nil || !c.canVerifyAsLabPengelola(ctx, uint64(data.IDPeralatan)) {
 		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"success": false,
-			"message": "Anda tidak memiliki akses ke peralatan dari Lab ini",
+			"message": "Hanya pengelola staff dari Lab peralatan yang dapat menandatangani",
 		})
-	}
-
-	if data.PICID == nil ||
-
-		*data.PICID != picID {
-
-		return ctx.Status(
-
-			fiber.StatusForbidden,
-		).JSON(fiber.Map{
-
-			"success": false,
-
-			"message": "Anda bukan PIC dari verifikasi ini",
-		})
-
 	}
 
 	if data.Status != "Draft" {
@@ -1221,7 +1158,7 @@ func (c *VerifikasiController) SignPIC(
 
 					id,
 
-					picID,
+					userID,
 
 					request.Signature,
 				); err != nil {
