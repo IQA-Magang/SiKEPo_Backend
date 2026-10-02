@@ -59,6 +59,7 @@ func ConnectDatabase() error {
 	// ========================================================
 
 	hasUserTable := database.Migrator().HasTable(&models.User{})
+	hasDetailPeminjamanTable := database.Migrator().HasTable(&models.DetailPeminjaman{})
 	hasRuanganTable := database.Migrator().HasTable(&models.Ruangan{})
 	hasLabsTable := database.Migrator().HasTable(&models.Labs{})
 	hasPeralatanTable := database.Migrator().HasTable(&models.Peralatan{})
@@ -75,6 +76,7 @@ func ConnectDatabase() error {
 	hasHasilVerifikasiTable := database.Migrator().HasTable(&models.HasilVerifikasi{})
 
 	if !hasUserTable ||
+		!hasDetailPeminjamanTable ||
 		!hasRuanganTable ||
 		!hasLabsTable ||
 		!hasPeralatanTable ||
@@ -101,6 +103,7 @@ func ConnectDatabase() error {
 			&models.Ruangan{},
 			&models.Labs{},
 			&models.Peralatan{},
+			&models.DetailPeminjaman{},
 			&models.DetailAlatUkur{},
 			&models.DetailAlatBantu{},
 			&models.DetailArtefakAcuan{},
