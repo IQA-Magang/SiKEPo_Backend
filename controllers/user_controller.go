@@ -29,14 +29,14 @@ func (c *UserController) GetUsers(ctx *fiber.Ctx) error {
 	var err error
 
 	if role, _ := ctx.Locals("role").(string); role == "manager" {
-		labsID, scopeErr := c.managerLabsID(ctx)
+		labsIDs, scopeErr := c.managerLabsIDs(ctx)
 		if scopeErr != nil {
 			return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"success": false,
 				"message": "Manager tidak memiliki akses lab yang valid",
 			})
 		}
-		users, err = c.Repository.GetUsersByLabsID(*labsID)
+		users, err = c.Repository.GetUsersByLabsIDs(labsIDs)
 	} else {
 		users, err = c.Repository.GetAllUsers()
 	}
@@ -77,14 +77,14 @@ func (c *UserController) GetUserByID(ctx *fiber.Ctx) error {
 
 	var user *models.User
 	if role, _ := ctx.Locals("role").(string); role == "manager" {
-		labsID, scopeErr := c.managerLabsID(ctx)
+		labsIDs, scopeErr := c.managerLabsIDs(ctx)
 		if scopeErr != nil {
 			return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"success": false,
 				"message": "Manager tidak memiliki akses lab yang valid",
 			})
 		}
-		user, err = c.Repository.GetUserByIDAndLabsID(id, *labsID)
+		user, err = c.Repository.GetUserByIDAndLabsIDs(id, labsIDs)
 	} else {
 		user, err = c.Repository.GetUserByID(id)
 	}
@@ -112,7 +112,7 @@ func (c *UserController) GetUserByID(ctx *fiber.Ctx) error {
 	})
 }
 
-func (c *UserController) managerLabsID(ctx *fiber.Ctx) (*uint64, error) {
+func (c *UserController) managerLabsIDs(ctx *fiber.Ctx) ([]uint64, error) {
 	email, ok := ctx.Locals("email").(string)
 	if !ok || email == "" {
 		return nil, errors.New("email manager tidak ditemukan di token")
@@ -122,11 +122,32 @@ func (c *UserController) managerLabsID(ctx *fiber.Ctx) (*uint64, error) {
 	if err != nil {
 		return nil, err
 	}
-	if manager.Role != "manager" || manager.LabsID == nil {
-		return nil, errors.New("manager tidak memiliki lab")
+	if !strings.EqualFold(strings.TrimSpace(manager.Role), "manager") {
+		return nil, errors.New("pengguna bukan manager")
 	}
 
-	return manager.LabsID, nil
+	var labsIDs []uint64
+	if err := c.Repository.DB.Model(&models.Labs{}).
+		Where("manager_id = ?", manager.UserID).
+		Pluck("id", &labsIDs).Error; err != nil {
+		return nil, err
+	}
+	if manager.LabsID != nil && !containsLabsID(labsIDs, *manager.LabsID) {
+		labsIDs = append(labsIDs, *manager.LabsID)
+	}
+	if len(labsIDs) == 0 {
+		return nil, errors.New("manager tidak memiliki lab")
+	}
+	return labsIDs, nil
+}
+
+func containsLabsID(labsIDs []uint64, target uint64) bool {
+	for _, labsID := range labsIDs {
+		if labsID == target {
+			return true
+		}
+	}
+	return false
 }
 
 // ========================================
@@ -349,11 +370,7 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		LabsID:    request.LabsID,
 	}
 
-	err = c.Repository.UpdateUser(
-		id,
-		&user,
-		request.Password,
-	)
+	err = c.Repository.UpdateUser(id, &user, request.Password)
 
 	if err != nil {
 
@@ -398,6 +415,55 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		"success": true,
 		"message": "User berhasil diubah",
 		"data":    updatedUser,
+	})
+}
+
+func (c *UserController) SetStaffPengelola(ctx *fiber.Ctx) error {
+	id, err := strconv.ParseUint(ctx.Params("id"), 10, 64)
+	if err != nil || id == 0 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "ID user tidak valid",
+		})
+	}
+
+	var request struct {
+		Pengelola *bool `json:"pengelola"`
+	}
+	if err := ctx.BodyParser(&request); err != nil || request.Pengelola == nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Status pengelola wajib diisi",
+		})
+	}
+
+	labsIDs, err := c.managerLabsIDs(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "Manager tidak memiliki akses lab yang valid",
+		})
+	}
+
+	user, err := c.Repository.SetStaffPengelolaByLabsIDs(id, labsIDs, *request.Pengelola)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"success": false,
+				"message": "Staff tidak ditemukan dalam lab yang dikelola",
+			})
+		}
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal memperbarui status pengelola",
+			"error":   err.Error(),
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"success": true,
+		"message": "Status pengelola berhasil diperbarui",
+		"data":    user,
 	})
 }
 

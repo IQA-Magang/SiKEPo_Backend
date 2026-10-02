@@ -75,7 +75,7 @@ func SetupPeralatanRoutes(
 	api.Post(
 		"/",
 		peralatanController.Create,
-		middleware.RequireAdminOrStaffPIC(),
+		middleware.RequireAdminOrStaffPengelola(),
 	)
 
 	// =====================================================
@@ -85,7 +85,7 @@ func SetupPeralatanRoutes(
 	api.Post(
 		"/:id/foto",
 		peralatanController.UploadFoto,
-		middleware.RequireAdminOrStaffPIC(),
+		middleware.RequireAdminOrStaffPengelola(),
 	)
 
 	// =====================================================
@@ -95,6 +95,6 @@ func SetupPeralatanRoutes(
 	api.Get(
 		"/:id/qr",
 		peralatanController.GenerateQRCode,
-		middleware.RequireAdminOrStaffPIC(),
+		middleware.RequireAdminOrStaffPengelola(),
 	)
 }

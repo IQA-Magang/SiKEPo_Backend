@@ -52,6 +52,20 @@ func (r *UserRepository) GetUsersByLabsID(labsID uint64) ([]models.User, error) 
 	return users, err
 }
 
+func (r *UserRepository) GetUsersByLabsIDs(labsIDs []uint64) ([]models.User, error) {
+	var users []models.User
+	if len(labsIDs) == 0 {
+		return users, nil
+	}
+
+	err := r.DB.
+		Where("labs_id IN ?", labsIDs).
+		Order("user_id DESC").
+		Find(&users).
+		Error
+	return users, err
+}
+
 // =====================================================
 // GET BY ID
 // =====================================================
@@ -84,6 +98,22 @@ func (r *UserRepository) GetUserByIDAndLabsID(id, labsID uint64) (*models.User, 
 		return nil, err
 	}
 
+	return &user, nil
+}
+
+func (r *UserRepository) GetUserByIDAndLabsIDs(id uint64, labsIDs []uint64) (*models.User, error) {
+	var user models.User
+	if len(labsIDs) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	err := r.DB.
+		Where("user_id = ? AND labs_id IN ?", id, labsIDs).
+		First(&user).
+		Error
+	if err != nil {
+		return nil, err
+	}
 	return &user, nil
 }
 
@@ -271,6 +301,40 @@ func (r *UserRepository) UpdateUser(
 	}
 
 	return r.DB.Save(&existingUser).Error
+}
+
+func (r *UserRepository) SetStaffPengelolaByLabsIDs(
+	id uint64,
+	labsIDs []uint64,
+	pengelola bool,
+) (*models.User, error) {
+	if len(labsIDs) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	var staff models.User
+	if err := r.DB.
+		Where("user_id = ? AND labs_id IN ? AND role = ?", id, labsIDs, "staff").
+		First(&staff).
+		Error; err != nil {
+		return nil, err
+	}
+
+	result := r.DB.Model(&models.User{}).
+		Where("user_id = ? AND labs_id IN ? AND role = ?", id, labsIDs, "staff").
+		Update("pengelola", pengelola)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	var updatedUser models.User
+	if err := r.DB.
+		Where("user_id = ? AND labs_id IN ? AND role = ?", id, labsIDs, "staff").
+		First(&updatedUser).
+		Error; err != nil {
+		return nil, err
+	}
+	return &updatedUser, nil
 }
 
 // =====================================================

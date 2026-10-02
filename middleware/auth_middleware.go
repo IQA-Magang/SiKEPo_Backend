@@ -4,9 +4,12 @@ import (
 	"errors"
 	"os"
 	"strconv"
+	"strings"
 
+	"backend/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"gorm.io/gorm"
 )
 
 // RequireAuth verifies JWT and sets user info in context locals.
@@ -85,11 +88,7 @@ func RequireAuth(c *fiber.Ctx) error {
 		c.Locals("role", v)
 	}
 
-	pengelolaValue, ok := claims["pengelola"]
-	if !ok {
-		pengelolaValue = claims["pic"]
-	}
-	if pengelolaValue != nil {
+	if pengelolaValue := claims["pengelola"]; pengelolaValue != nil {
 		switch value := pengelolaValue.(type) {
 		case bool:
 			c.Locals("pengelola", value)
@@ -128,8 +127,53 @@ func RequireRoles(allowedRoles ...string) fiber.Handler {
 	}
 }
 
-// RequireAdminOrStaffPIC allows admin or staff whose PIC flag is true.
-func RequireAdminOrStaffPIC() fiber.Handler {
+func RequireDatabaseRoles(db *gorm.DB, allowedRoles ...string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		email, ok := c.Locals("email").(string)
+		email = strings.TrimSpace(email)
+		if !ok || email == "" {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"success": false,
+				"message": "Identitas pengguna tidak valid",
+			})
+		}
+
+		var user models.User
+		if err := db.Select("user_id", "email", "role").
+			Where("email = ?", email).
+			First(&user).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+					"success": false,
+					"message": "Pengguna tidak ditemukan atau tidak memiliki akses",
+				})
+			}
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"success": false,
+				"message": "Gagal memverifikasi role pengguna",
+			})
+		}
+
+		role := strings.ToLower(strings.TrimSpace(user.Role))
+		c.Locals("user_id", user.UserID)
+		c.Locals("role", role)
+		c.Locals("email", user.Email)
+
+		for _, allowedRole := range allowedRoles {
+			if role == strings.ToLower(strings.TrimSpace(allowedRole)) {
+				return c.Next()
+			}
+		}
+
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "Akun ini tidak memiliki role Manager di backend",
+		})
+	}
+}
+
+// RequireAdminOrStaffPengelola allows admin or staff marked as pengelola.
+func RequireAdminOrStaffPengelola() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		role, ok := c.Locals("role").(string)
 		if !ok || role == "" {

@@ -774,7 +774,7 @@ func (c *VerifikasiController) CreateVerifikasi(
 
 	}
 
-	// Pastikan user yang ditetapkan memang masih berstatus PIC.
+	// User assigned as equipment PIC must still have pengelola access.
 
 	var picUser models.User
 
@@ -798,7 +798,7 @@ func (c *VerifikasiController) CreateVerifikasi(
 
 			"success": false,
 
-			"message": "User yang ditetapkan bukan PIC aktif",
+			"message": "User yang ditetapkan bukan pengelola aktif",
 		})
 
 	}

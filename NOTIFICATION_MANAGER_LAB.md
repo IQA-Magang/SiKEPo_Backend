@@ -164,7 +164,7 @@ Response:
 
 Berikut contoh pengujian end-to-end untuk flow notifikasi.
 
-### A. Login sebagai PIC atau staff
+### A. Login sebagai pengelola atau staff
 
 ```bash
 curl -X POST http://localhost:5000/api/users/login \
