@@ -14,7 +14,7 @@ type User struct {
 	Password  string `gorm:"column:password;size:255;not null" json:"-"`
 	Role      string `gorm:"column:role;not null" json:"role"`
 	Position  string `gorm:"column:position;size:100;not null" json:"position"`
-	Pengelola bool   `gorm:"column:pic;not null;default:false" json:"pengelola"`
+	Pengelola bool   `gorm:"column:pengelola;not null;default:false" json:"pengelola"`
 
 	// =====================================================
 	// SCOPE LAB USER
