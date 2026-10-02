@@ -1,9 +1,11 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"backend/models"
@@ -167,6 +169,9 @@ func ConnectDatabase() error {
 	// ========================================================
 
 	SyncUserLabs()
+	if err := SeedLabUsers(); err != nil {
+		return fmt.Errorf("failed to seed users for each lab: %w", err)
+	}
 
 	log.Println("Database connected successfully!")
 
@@ -296,6 +301,104 @@ func SyncUserLabs() {
 			labsID,
 		)
 	}
+}
+
+func SeedLabUsers() error {
+	if DB == nil {
+		return nil
+	}
+
+	var labs []models.Labs
+	if err := DB.Order("id ASC").Find(&labs).Error; err != nil {
+		return fmt.Errorf("find labs for user seed: %w", err)
+	}
+
+	for _, lab := range labs {
+		manager := models.User{
+			NIP: fmt.Sprintf("9%09d1", lab.ID), Name: "Manager Lab " + lab.KodeLabs,
+			Email: "manager." + strings.ToLower(lab.KodeLabs) + "@sikepo.local",
+			Role:  "manager", Position: "Manager Laboratorium", Pengelola: true,
+		}
+		staff := models.User{
+			NIP: fmt.Sprintf("9%09d2", lab.ID), Name: "Staff Lab " + lab.KodeLabs,
+			Email: "staff." + strings.ToLower(lab.KodeLabs) + "@sikepo.local",
+			Role:  "staff", Position: "Staff Laboratorium",
+		}
+		legacyManager := false
+		if lab.KodeLabs == "IQA" {
+			manager = models.User{
+				NIP: "1980010102", Name: "Manager Lab", Email: "manager@sikepo.local",
+				Role: "manager", Position: "Manager Laboratorium", Pengelola: true,
+			}
+			staff = models.User{
+				NIP: "1980010103", Name: "Staff Lab", Email: "staff@sikepo.local",
+				Role: "staff", Position: "Staff Laboratorium",
+			}
+			legacyManager = true
+		}
+
+		if err := DB.Transaction(func(tx *gorm.DB) error {
+			manager, err := ensureLabSeedUser(tx, manager, lab.ID)
+			if err != nil {
+				return err
+			}
+
+			if _, err := ensureLabSeedUser(tx, staff, lab.ID); err != nil {
+				return err
+			}
+
+			assignManager := lab.ManagerID == nil
+			if !assignManager && !legacyManager {
+				var currentManager models.User
+				if err := tx.Where("user_id = ?", *lab.ManagerID).First(&currentManager).Error; err != nil {
+					return err
+				}
+				assignManager = currentManager.Email == "manager@sikepo.local"
+			}
+
+			if assignManager {
+				return tx.Model(&models.Labs{}).
+					Where("id = ?", lab.ID).
+					Update("manager_id", manager.UserID).Error
+			}
+			return nil
+		}); err != nil {
+			return fmt.Errorf("seed users for lab %s: %w", lab.KodeLabs, err)
+		}
+	}
+
+	return nil
+}
+
+func ensureLabSeedUser(db *gorm.DB, user models.User, labsID uint64) (*models.User, error) {
+	var existing models.User
+	err := db.Where("email = ?", user.Email).First(&existing).Error
+	if err == nil {
+		if existing.Role != user.Role {
+			return nil, fmt.Errorf("seed account %s has role %s, expected %s", user.Email, existing.Role, user.Role)
+		}
+		if existing.LabsID == nil {
+			if err := db.Model(&existing).Update("labs_id", labsID).Error; err != nil {
+				return nil, err
+			}
+			existing.LabsID = &labsID
+		}
+		return &existing, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	user.Password = string(passwordHash)
+	user.LabsID = &labsID
+	if err := db.Create(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 // ============================================================
