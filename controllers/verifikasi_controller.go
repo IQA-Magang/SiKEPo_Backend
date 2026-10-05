@@ -413,13 +413,28 @@ func isValidHasilVerifikasi(
 
 // =====================================================
 
+// =====================================================
+// GET ALL / RIWAYAT VERIFIKASI
+// =====================================================
+
 func (c *VerifikasiController) GetVerifikasi(
 	ctx *fiber.Ctx,
 ) error {
+
 	user, err := c.getAuthenticatedUser(ctx)
+
 	if err != nil {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"success": false, "message": err.Error()})
+		return ctx.Status(
+			fiber.StatusUnauthorized,
+		).JSON(fiber.Map{
+			"success": false,
+			"message": err.Error(),
+		})
 	}
+
+	// =====================================================
+	// QUERY DASAR
+	// =====================================================
 
 	query := c.Repository.DB.
 		Preload("Peralatan").
@@ -428,38 +443,101 @@ func (c *VerifikasiController) GetVerifikasi(
 		Preload("HasilVerifikasi").
 		Where("verifikasi.deleted_at IS NULL")
 
-	if user.Role == "staff" {
+	// =====================================================
+	// FILTER BERDASARKAN LAB
+	// =====================================================
+	//
+	// Admin
+	//   -> Melihat semua Lab
+	//
+	// Manager
+	//   -> Hanya Lab sesuai LabsID
+	//
+	// Staff
+	//   -> Hanya Lab sesuai LabsID
+	//
+	// =====================================================
+
+	if user.Role == "staff" || user.Role == "manager" {
+
 		if user.LabsID == nil {
-			return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"success": false, "message": "Staff belum memiliki Lab"})
+			return ctx.Status(
+				fiber.StatusForbidden,
+			).JSON(fiber.Map{
+				"success": false,
+				"message": "User belum memiliki Lab",
+			})
 		}
+
 		query = query.Where(`
 			EXISTS (
 				SELECT 1
 				FROM peralatan AS p
-				INNER JOIN ruangan AS r ON r.id = p.ruangan_id
+				INNER JOIN ruangan AS r
+					ON r.id = p.ruangan_id
 				WHERE p.id = verifikasi.id_peralatan
 				AND r.labs_id = ?
 			)
 		`, *user.LabsID)
-	} else if user.Role != "admin" && user.Role != "manager" {
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"success": false, "message": "Role tidak memiliki akses ke verifikasi"})
+
+	} else if user.Role != "admin" {
+
+		return ctx.Status(
+			fiber.StatusForbidden,
+		).JSON(fiber.Map{
+			"success": false,
+			"message": "Role tidak memiliki akses ke verifikasi",
+		})
 	}
+
+	// =====================================================
+	// AMBIL DATA
+	// =====================================================
 
 	var data []models.Verifikasi
-	if err := query.Order("verifikasi.id_verifikasi DESC").Find(&data).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"success": false, "message": "Gagal mengambil data verifikasi", "error": err.Error()})
+
+	if err := query.
+		Order("verifikasi.id_verifikasi DESC").
+		Find(&data).
+		Error; err != nil {
+
+		return ctx.Status(
+			fiber.StatusInternalServerError,
+		).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal mengambil data verifikasi",
+			"error":   err.Error(),
+		})
 	}
 
-	return ctx.JSON(fiber.Map{"success": true, "data": data})
+	return ctx.JSON(fiber.Map{
+		"success": true,
+		"data":    data,
+	})
 }
+
+// =====================================================
+// GET PENGAJUAN MANAGER
+// =====================================================
 
 func (c *VerifikasiController) GetPengajuan(
 	ctx *fiber.Ctx,
 ) error {
+
 	user, err := c.getAuthenticatedUser(ctx)
+
 	if err != nil {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"success": false, "message": err.Error()})
+		return ctx.Status(
+			fiber.StatusUnauthorized,
+		).JSON(fiber.Map{
+			"success": false,
+			"message": err.Error(),
+		})
 	}
+
+	// =====================================================
+	// QUERY DASAR
+	// =====================================================
 
 	query := c.Repository.DB.
 		Preload("Peralatan").
@@ -468,29 +546,77 @@ func (c *VerifikasiController) GetPengajuan(
 		Where("verifikasi.status = ?", "Diajukan").
 		Where("verifikasi.deleted_at IS NULL")
 
-	if user.Role == "staff" {
+	// =====================================================
+	// FILTER BERDASARKAN LAB
+	// =====================================================
+	//
+	// Admin
+	//   -> Semua Lab
+	//
+	// Manager
+	//   -> Lab sesuai LabsID
+	//
+	// Staff
+	//   -> Lab sesuai LabsID
+	//
+	// =====================================================
+
+	if user.Role == "staff" || user.Role == "manager" {
+
 		if user.LabsID == nil {
-			return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"success": false, "message": "Staff belum memiliki Lab"})
+			return ctx.Status(
+				fiber.StatusForbidden,
+			).JSON(fiber.Map{
+				"success": false,
+				"message": "User belum memiliki Lab",
+			})
 		}
+
 		query = query.Where(`
 			EXISTS (
 				SELECT 1
 				FROM peralatan AS p
-				INNER JOIN ruangan AS r ON r.id = p.ruangan_id
+				INNER JOIN ruangan AS r
+					ON r.id = p.ruangan_id
 				WHERE p.id = verifikasi.id_peralatan
 				AND r.labs_id = ?
 			)
 		`, *user.LabsID)
-	} else if user.Role != "admin" && user.Role != "manager" {
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"success": false, "message": "Role tidak memiliki akses ke pengajuan verifikasi"})
+
+	} else if user.Role != "admin" {
+
+		return ctx.Status(
+			fiber.StatusForbidden,
+		).JSON(fiber.Map{
+			"success": false,
+			"message": "Role tidak memiliki akses ke pengajuan verifikasi",
+		})
 	}
+
+	// =====================================================
+	// AMBIL DATA
+	// =====================================================
 
 	var data []models.Verifikasi
-	if err := query.Order("verifikasi.pic_signed_at DESC").Find(&data).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"success": false, "message": "Gagal mengambil pengajuan", "error": err.Error()})
+
+	if err := query.
+		Order("verifikasi.pic_signed_at DESC").
+		Find(&data).
+		Error; err != nil {
+
+		return ctx.Status(
+			fiber.StatusInternalServerError,
+		).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal mengambil pengajuan",
+			"error":   err.Error(),
+		})
 	}
 
-	return ctx.JSON(fiber.Map{"success": true, "data": data})
+	return ctx.JSON(fiber.Map{
+		"success": true,
+		"data":    data,
+	})
 }
 
 func (c *VerifikasiController) GetVerifikasiByID(
@@ -1844,9 +1970,7 @@ func (c *VerifikasiController) RejectVerifikasi(
 }
 
 // =====================================================
-
 // GET LOG
-
 // =====================================================
 
 func (c *VerifikasiController) GetLogPeninjauan(
@@ -1854,32 +1978,81 @@ func (c *VerifikasiController) GetLogPeninjauan(
 ) error {
 	user, err := c.getAuthenticatedUser(ctx)
 	if err != nil {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"success": false, "message": err.Error()})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": err.Error(),
+		})
 	}
 
 	var data []models.LogPeninjauanPeralatan
-	query := c.Repository.DB.Model(&models.LogPeninjauanPeralatan{})
+
+	query := c.Repository.DB.
+		Model(&models.LogPeninjauanPeralatan{})
+
+	// =====================================================
+	// FILTER BERDASARKAN ROLE
+	// =====================================================
 
 	if user.Role == "staff" {
+
+		// Staff wajib memiliki Lab
 		if user.LabsID == nil {
-			return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"success": false, "message": "Staff belum memiliki Lab"})
+			return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"success": false,
+				"message": "Staff belum memiliki Lab",
+			})
 		}
-		query = query.Where("id_peralatan IN (?)",
+
+		// Staff hanya dapat melihat log
+		// peralatan yang berada di Lab miliknya
+		query = query.Where(
+			"id_peralatan IN (?)",
 			c.Repository.DB.
 				Table("peralatan AS p").
 				Select("p.id").
-				Joins("INNER JOIN ruangan AS r ON r.id = p.ruangan_id").
-				Where("r.labs_id = ?", *user.LabsID),
+				Joins(
+					"INNER JOIN ruangan AS r ON r.id = p.ruangan_id",
+				).
+				Where(
+					"r.labs_id = ?",
+					*user.LabsID,
+				),
 		)
+
 	} else if user.Role != "admin" && user.Role != "manager" {
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"success": false, "message": "Role tidak memiliki akses ke log peninjauan"})
+
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "Role tidak memiliki akses ke log peninjauan",
+		})
 	}
 
-	if err := query.Order("id DESC").Find(&data).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"success": false, "message": "Gagal mengambil log peninjauan", "error": err.Error()})
+	// =====================================================
+	// AMBIL DATA LOG
+	// =====================================================
+	//
+	// Primary key tabel log_peninjauan_peralatan:
+	// id_log
+	//
+	// BUKAN:
+	// id
+	//
+
+	if err := query.
+		Order("id_log DESC").
+		Find(&data).Error; err != nil {
+
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal mengambil log peninjauan",
+			"error":   err.Error(),
+		})
 	}
 
-	return ctx.JSON(fiber.Map{"success": true, "data": data})
+	return ctx.JSON(fiber.Map{
+		"success": true,
+		"data":    data,
+	})
 }
 
 func (c *VerifikasiController) GetLogByPeralatan(
@@ -1998,4 +2171,93 @@ func (c *VerifikasiController) DeleteVerifikasi(
 	}
 
 	return ctx.JSON(fiber.Map{"success": true, "message": "Verifikasi berhasil dihapus"})
+}
+
+// =====================================================
+// GET HISTORI VERIFIKASI PERALATAN
+// =====================================================
+//
+// Semua user yang sudah login dapat melihat histori
+// verifikasi suatu peralatan.
+//
+// Tidak menggunakan filter LabsID.
+// Tidak menggunakan canAccessPeralatan().
+//
+// =====================================================
+
+func (c *VerifikasiController) GetHistoriVerifikasi(
+	ctx *fiber.Ctx,
+) error {
+
+	// =====================================================
+	// PARSE ID PERALATAN
+	// =====================================================
+
+	peralatanID, err := strconv.ParseUint(
+		ctx.Params("peralatan_id"),
+		10,
+		64,
+	)
+
+	if err != nil || peralatanID == 0 {
+
+		return ctx.Status(
+			fiber.StatusBadRequest,
+		).JSON(fiber.Map{
+			"success": false,
+			"message": "ID peralatan tidak valid",
+		})
+	}
+
+	// =====================================================
+	// CEK PERALATAN
+	// =====================================================
+
+	peralatan, err :=
+		c.PeralatanRepository.FindByID(
+			uint(peralatanID),
+		)
+
+	if err != nil || peralatan == nil {
+
+		return ctx.Status(
+			fiber.StatusNotFound,
+		).JSON(fiber.Map{
+			"success": false,
+			"message": "Peralatan tidak ditemukan",
+		})
+	}
+
+	// =====================================================
+	// AMBIL HISTORI
+	// =====================================================
+
+	data, total, err :=
+		c.Repository.GetHistoriByPeralatan(
+			peralatanID,
+		)
+
+	if err != nil {
+
+		return ctx.Status(
+			fiber.StatusInternalServerError,
+		).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal mengambil histori verifikasi",
+			"error":   err.Error(),
+		})
+	}
+
+	// =====================================================
+	// RESPONSE
+	// =====================================================
+
+	return ctx.JSON(fiber.Map{
+		"success": true,
+		"data": fiber.Map{
+			"peralatan":        peralatan,
+			"total_verifikasi": total,
+			"histori":          data,
+		},
+	})
 }
