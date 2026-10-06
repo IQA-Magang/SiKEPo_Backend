@@ -106,6 +106,11 @@ func ConnectDatabase() error {
 		return fmt.Errorf("failed to migrate logbook table: %w", err)
 	}
 
+	// Tabel peminjaman dan kolom lab pada user (lihat config/migrate_peminjaman.go)
+	if err := MigratePeminjaman(database); err != nil {
+		return err
+	}
+
 	DB = database
 	SeedDummyData()
 

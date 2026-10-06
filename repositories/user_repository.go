@@ -247,6 +247,7 @@ func (r *UserRepository) UpdateUser(
 	existingUser.Email = user.Email
 	existingUser.Role = user.Role
 	existingUser.Position = user.Position
+	existingUser.LabsID = user.LabsID
 	existingUser.PIC = user.PIC
 
 	// ==============================

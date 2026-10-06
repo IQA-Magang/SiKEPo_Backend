@@ -178,6 +178,11 @@ func CreateApp() (*fiber.App, error) {
 		config.DB,
 	)
 
+	routes.PeminjamanRoutes(
+		app,
+		config.DB,
+	)
+
 	// =====================================================
 	// ROOT
 	// =====================================================

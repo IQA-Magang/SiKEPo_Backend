@@ -15,6 +15,7 @@ type User struct {
 	Role      string         `gorm:"column:role;not null" json:"role"`
 	Position  string         `gorm:"column:position;size:100;not null" json:"position"`
 	PIC       bool           `gorm:"column:pic;not null;default:false" json:"pic"`
+	LabsID    *uint64        `gorm:"column:labs_id" json:"labs_id"`
 	CreatedAt time.Time      `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"column:updated_at" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at" json:"-"`

@@ -93,6 +93,8 @@ func (c *UserController) GetUserByID(ctx *fiber.Ctx) error {
 func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 
 	type CreateUserRequest struct {
+		LabsID *uint64 `json:"labs_id"`
+
 		NIP      string `json:"nip"`
 		Name     string `json:"name"`
 		Email    string `json:"email"`
@@ -195,6 +197,21 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 	// CREATE
 	// ==============================
 
+	user.LabsID = request.LabsID
+
+	if ok, err := c.labsIDValid(request.LabsID); err != nil {
+		return ctx.Status(500).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal memeriksa lab",
+			"error":   err.Error(),
+		})
+	} else if !ok {
+		return ctx.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": "Lab tidak ditemukan",
+		})
+	}
+
 	err := c.Repository.CreateUser(
 		&user,
 		request.Password,
@@ -250,6 +267,8 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	}
 
 	type UpdateUserRequest struct {
+		LabsID *uint64 `json:"labs_id"`
+
 		NIP      string `json:"nip"`
 		Name     string `json:"name"`
 		Email    string `json:"email"`
@@ -318,6 +337,21 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	// ==============================
 	// UPDATE
 	// ==============================
+
+	user.LabsID = request.LabsID
+
+	if ok, err := c.labsIDValid(request.LabsID); err != nil {
+		return ctx.Status(500).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal memeriksa lab",
+			"error":   err.Error(),
+		})
+	} else if !ok {
+		return ctx.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": "Lab tidak ditemukan",
+		})
+	}
 
 	err = c.Repository.UpdateUser(
 		id,
