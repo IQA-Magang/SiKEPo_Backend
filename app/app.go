@@ -173,6 +173,11 @@ func CreateApp() (*fiber.App, error) {
 		notificationRepo,
 	)
 
+	routes.LogbookRoutes(
+		app,
+		config.DB,
+	)
+
 	// =====================================================
 	// ROOT
 	// =====================================================

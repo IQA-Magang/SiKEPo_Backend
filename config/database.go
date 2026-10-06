@@ -100,6 +100,12 @@ func ConnectDatabase() error {
 		log.Println("Semua tabel sudah ada. AutoMigrate dilewati.")
 	}
 
+	// Tabel logbook dimigrasi sendiri agar tabel lain pada database yang sudah
+	// berjalan tidak ikut disentuh AutoMigrate.
+	if err := database.AutoMigrate(&models.LogbookPeralatan{}); err != nil {
+		return fmt.Errorf("failed to migrate logbook table: %w", err)
+	}
+
 	DB = database
 	SeedDummyData()
 
