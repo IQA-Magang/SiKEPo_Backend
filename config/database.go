@@ -113,6 +113,7 @@ func ConnectDatabase() error {
 
 	DB = database
 	SeedDummyData()
+	SeedPeminjaman()
 
 	log.Println("Database connected successfully!")
 	return nil
