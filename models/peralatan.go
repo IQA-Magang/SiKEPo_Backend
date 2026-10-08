@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // =========================================================
 // MASTER PERALATAN
@@ -13,27 +17,100 @@ type Peralatan struct {
 	KategoriID     uint   `gorm:"not null" json:"kategori_id"`
 	KelompokAsetID uint   `gorm:"not null" json:"kelompok_aset_id"`
 	RuanganID      uint   `gorm:"not null" json:"ruangan_id"`
+
 	// PIC otomatis diisi dengan Manager Lab
 	// berdasarkan ruangan yang dipilih.
-	PICID     uint   `gorm:"not null" json:"pic_id"`
+	PICID uint `gorm:"not null" json:"pic_id"`
+
 	Merek     string `gorm:"type:varchar(100)" json:"merek"`
 	TipeModel string `gorm:"type:varchar(100)" json:"tipe_model"`
 	NomorSeri string `gorm:"type:varchar(100)" json:"nomor_seri"`
 	Foto      string `gorm:"type:varchar(255)" json:"foto"`
-	// Status fisik / penggunaan alat
+
+	// =====================================================
+	// STATUS FISIK / PENGGUNAAN ALAT
+	// =====================================================
+
 	StatusAlat string `gorm:"type:enum('Karantina','Aktif','Dipinjam','Dalam Kalibrasi','Rusak','Dihapuskan');default:'Karantina'" json:"status_alat"`
-	// Status proses verifikasi
-	StatusVerifikasi    string             `gorm:"type:enum('Belum Diverifikasi','Draft','Diajukan','Disetujui','Ditolak');default:'Belum Diverifikasi'" json:"status_verifikasi"`
-	Keterangan          string             `gorm:"type:text" json:"keterangan"`
+
+	// =====================================================
+	// STATUS PROSES VERIFIKASI
+	// =====================================================
+
+	StatusVerifikasi string `gorm:"type:enum('Belum Diverifikasi','Draft','Diajukan','Disetujui','Ditolak');default:'Belum Diverifikasi'" json:"status_verifikasi"`
+
+	// =====================================================
+	// AKTIVITAS TERAKHIR
+	// =====================================================
+	//
+	// Contoh:
+	// A1 = aktivitas saat peralatan pertama kali dibuat
+	// A3 = aktivitas saat peralatan dipinjam
+	//
+	// Nilai ini otomatis diperbarui oleh GORM Hook.
+	//
+
+	KodeAktivitas string `gorm:"type:varchar(20);default:'A1';index" json:"kode_aktivitas"`
+
+	Keterangan string `gorm:"type:text" json:"keterangan"`
+
 	KategoriPeralatanID uint               `gorm:"not null" json:"kategori_peralatan_id"`
 	KategoriPeralatan   *KategoriPeralatan `gorm:"foreignKey:KategoriPeralatanID;references:ID" json:"kategori_peralatan,omitempty"`
-	CreatedAt           time.Time          `json:"created_at"`
-	UpdatedAt           time.Time          `json:"updated_at"`
-	DeletedAt           *time.Time         `gorm:"index" json:"deleted_at,omitempty"`
+
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (Peralatan) TableName() string {
 	return "peralatan"
+}
+
+// =========================================================
+// AKTIVITAS OTOMATIS
+// =========================================================
+//
+// A1 = peralatan pertama kali dibuat
+// A3 = peralatan dipinjam
+//
+// Kode lain belum ditentukan karena belum ada mapping
+// kode aktivitas pada data yang Anda berikan.
+// =========================================================
+
+func (p *Peralatan) BeforeCreate(tx *gorm.DB) error {
+
+	// Jika belum ada aktivitas,
+	// otomatis menjadi A1.
+	if p.KodeAktivitas == "" {
+		p.KodeAktivitas = "A1"
+	}
+
+	return nil
+}
+
+// =========================================================
+// UPDATE AKTIVITAS OTOMATIS
+// =========================================================
+
+func (p *Peralatan) BeforeUpdate(tx *gorm.DB) error {
+	if !tx.Statement.Changed("StatusAlat") {
+		return nil
+	}
+
+	statusAlat := p.StatusAlat
+	if updates, ok := tx.Statement.Dest.(map[string]interface{}); ok {
+		if value, exists := updates["status_alat"]; exists {
+			statusAlat, _ = value.(string)
+		} else if value, exists := updates["StatusAlat"]; exists {
+			statusAlat, _ = value.(string)
+		}
+	}
+
+	if statusAlat == "Dipinjam" {
+		tx.Statement.SetColumn("KodeAktivitas", "A3")
+	}
+
+	return nil
 }
 
 // =========================================================
@@ -131,9 +208,9 @@ type CreatePeralatanRequest struct {
 	KategoriPeralatanID uint   `json:"kategori_id" validate:"required"`
 	KelompokAsetID      uint   `json:"kelompok_aset_id" validate:"required"`
 	RuanganID           uint   `json:"ruangan_id" validate:"required"`
-	// PICID sengaja tidak ada di request.
-	// PIC otomatis ditentukan oleh backend berdasarkan
-	// Manager Lab dari ruangan yang dipilih.
+
+	// PIC otomatis ditentukan backend berdasarkan
+	// Manager Lab dari ruangan.
 	Merek      string                 `json:"merek"`
 	TipeModel  string                 `json:"tipe_model"`
 	NomorSeri  string                 `json:"nomor_seri"`

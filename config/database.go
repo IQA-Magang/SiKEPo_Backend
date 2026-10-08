@@ -144,6 +144,10 @@ func ConnectDatabase() error {
 		log.Println("Semua tabel sudah ada. AutoMigrate dilewati.")
 	}
 
+	if err := database.AutoMigrate(&models.Peralatan{}); err != nil {
+		return fmt.Errorf("failed to migrate peralatan table: %w", err)
+	}
+
 	// ========================================================
 	// SET GLOBAL DB
 	// ========================================================

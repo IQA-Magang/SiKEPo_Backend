@@ -74,36 +74,22 @@ func NewVerifikasiController(
 // =====================================================
 
 type CreateVerifikasiRequest struct {
-	IDPeralatan uint64 `json:"id_peralatan"`
-
-	TanggalVerifikasi string `json:"tanggal_verifikasi"`
-
-	KodeAktivitas string `json:"kode_aktivitas"`
-
-	IDKriteria *uint64 `json:"id_kriteria"`
-
-	TindakLanjut string `json:"tindak_lanjut"`
-
-	Catatan string `json:"catatan"`
+	IDPeralatan       uint64  `json:"id_peralatan"`
+	TanggalVerifikasi string  `json:"tanggal_verifikasi"`
+	IDKriteria        *uint64 `json:"id_kriteria"`
+	TindakLanjut      string  `json:"tindak_lanjut"`
+	Catatan           string  `json:"catatan"`
 
 	HasilVerifikasi struct {
-		Identitas string `json:"identitas"`
-
-		Kelengkapan string `json:"kelengkapan"`
-
-		Firmware string `json:"firmware"`
-
-		KondisiFisik string `json:"kondisi_fisik"`
-
-		Segel string `json:"segel"`
-
-		FungsiAwal string `json:"fungsi_awal"`
-
-		Metrologi string `json:"metrologi"`
-
-		Sertifikat string `json:"sertifikat"`
-
-		Catatan string `json:"catatan"`
+		Identitas     string `json:"identitas"`
+		Kelengkapan   string `json:"kelengkapan"`
+		Firmware      string `json:"firmware"`
+		KondisiFisik  string `json:"kondisi_fisik"`
+		Segel         string `json:"segel"`
+		FungsiAwal    string `json:"fungsi_awal"`
+		Metrologi     string `json:"metrologi"`
+		Sertifikat    string `json:"sertifikat"`
+		Catatan       string `json:"catatan"`
 	} `json:"hasil_verifikasi"`
 }
 
@@ -882,25 +868,16 @@ func (c *VerifikasiController) CreateVerifikasi(
 		})
 	}
 
-	request.KodeAktivitas =
+	// =====================================================
+	// KODE AKTIVITAS OTOMATIS
+	// =====================================================
 
-		strings.TrimSpace(
+	kodeAktivitas := strings.TrimSpace(
+		peralatan.KodeAktivitas,
+	)
 
-			request.KodeAktivitas,
-		)
-
-	if request.KodeAktivitas == "" {
-
-		return ctx.Status(
-
-			fiber.StatusBadRequest,
-		).JSON(fiber.Map{
-
-			"success": false,
-
-			"message": "Kode aktivitas wajib diisi",
-		})
-
+	if kodeAktivitas == "" {
+		kodeAktivitas = "A1"
 	}
 
 	tanggal := time.Now()
@@ -978,23 +955,15 @@ func (c *VerifikasiController) CreateVerifikasi(
 		func(tx *gorm.DB) error {
 
 			verifikasi = models.Verifikasi{
-
-				IDPeralatan: request.IDPeralatan,
-
-				TanggalVerifikasi: tanggal,
-
-				KodeAktivitas: request.KodeAktivitas,
-
-				IDKriteria: request.IDKriteria,
-
-				Status: "Draft",
-
-				TindakLanjut: request.TindakLanjut,
-
-				PICID: &userID,
-
-				Catatan: request.Catatan,
-			}
+			IDPeralatan:       request.IDPeralatan,
+			TanggalVerifikasi: tanggal,
+			KodeAktivitas:     kodeAktivitas,
+			IDKriteria:        request.IDKriteria,
+			Status:            "Draft",
+			TindakLanjut:      request.TindakLanjut,
+			PICID:             &userID,
+			Catatan:           request.Catatan,
+		}
 
 			if err :=
 
@@ -2217,9 +2186,7 @@ func (c *VerifikasiController) GetHistoriVerifikasi(
 		c.PeralatanRepository.FindByID(
 			uint(peralatanID),
 		)
-
-	if err != nil || peralatan == nil {
-
+	if err != nil {
 		return ctx.Status(
 			fiber.StatusNotFound,
 		).JSON(fiber.Map{

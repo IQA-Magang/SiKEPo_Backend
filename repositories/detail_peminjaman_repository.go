@@ -172,13 +172,27 @@ func (r *DetailPeminjamanRepository) SetKondisiPinjam(
 	catatan string,
 ) error {
 
-	return r.DB.
-		Model(&models.DetailPeminjaman{}).
-		Where("id = ?", id).
-		Updates(map[string]interface{}{
-			"kondisi_saat_pinjam": kondisi,
-			"catatan":             catatan,
-		}).Error
+	return r.DB.Transaction(func(tx *gorm.DB) error {
+		var detail models.DetailPeminjaman
+		if err := tx.Select("peralatan_id").First(&detail, id).Error; err != nil {
+			return err
+		}
+
+		if err := tx.
+			Model(&models.DetailPeminjaman{}).
+			Where("id = ?", id).
+			Updates(map[string]interface{}{
+				"kondisi_saat_pinjam": kondisi,
+				"catatan":             catatan,
+			}).Error; err != nil {
+			return err
+		}
+
+		return tx.
+			Model(&models.Peralatan{}).
+			Where("id = ?", detail.PeralatanID).
+			Update("status_alat", "Dipinjam").Error
+	})
 }
 
 // ========================================

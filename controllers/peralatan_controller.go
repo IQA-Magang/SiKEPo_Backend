@@ -397,3 +397,4 @@ func (c *PeralatanController) UploadFoto(ctx *fiber.Ctx) error {
 		"foto":   path,
 	})
 }
+
