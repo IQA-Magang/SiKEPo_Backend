@@ -10,6 +10,9 @@ type NotificationRepository interface {
 	Create(notification *models.Notification) error
 	GetByUserID(userID uint64) ([]models.Notification, error)
 	MarkAsRead(id uint64) error
+	// MarkAsReadByOwner menandai dibaca hanya bila notifikasi itu milik userID.
+	// Mengembalikan false bila notifikasinya tidak ada atau milik user lain.
+	MarkAsReadByOwner(id uint64, userID uint64) (bool, error)
 	CountUnreadByUserID(userID uint64) (int64, error)
 }
 
@@ -35,6 +38,25 @@ func (r *notificationRepository) GetByUserID(userID uint64) ([]models.Notificati
 
 func (r *notificationRepository) MarkAsRead(id uint64) error {
 	return r.db.Model(&models.Notification{}).Where("id = ?", id).Update("is_read", true).Error
+}
+
+func (r *notificationRepository) MarkAsReadByOwner(id uint64, userID uint64) (bool, error) {
+	var total int64
+	if err := r.db.Model(&models.Notification{}).
+		Where("id = ? AND user_id = ?", id, userID).
+		Count(&total).Error; err != nil {
+		return false, err
+	}
+
+	if total == 0 {
+		return false, nil
+	}
+
+	err := r.db.Model(&models.Notification{}).
+		Where("id = ? AND user_id = ?", id, userID).
+		Update("is_read", true).Error
+
+	return err == nil, err
 }
 
 func (r *notificationRepository) CountUnreadByUserID(userID uint64) (int64, error) {
