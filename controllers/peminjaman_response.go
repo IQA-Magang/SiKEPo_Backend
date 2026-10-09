@@ -29,8 +29,8 @@ type peminjamanPeminjamResp struct {
 }
 
 // persetujuanResp adalah satu tahap persetujuan. Status berisi pending,
-// approved, rejected, atau skipped. TTD selalu null sampai fitur tanda tangan
-// di profil tersedia.
+// approved, rejected, atau skipped. TTD selalu null karena persetujuan belum
+// memakai tanda tangan.
 type persetujuanResp struct {
 	UserID  uint64     `json:"user_id"`
 	Nama    string     `json:"nama"`
@@ -50,6 +50,32 @@ type alatAlternatifResp struct {
 type pengelolaResp struct {
 	persetujuanResp
 	AlatAlternatif *alatAlternatifResp `json:"alat_alternatif"`
+}
+
+// lampiranAResp adalah satu butir Lampiran A. Frontend membaca isinya berdasarkan
+// urutan array, dengan field status dan keterangan.
+type lampiranAResp struct {
+	NomorButir int    `json:"nomor_butir"`
+	Butir      string `json:"butir"`
+	Status     string `json:"status"`
+	Keterangan string `json:"keterangan"`
+}
+
+// serahTerimaResp adalah lembar serah terima keluar. Nilainya null sampai
+// Pengelola menyimpan checklist. Tanggal diterima dan tanda tangan peminjam
+// terisi setelah peminjam mengonfirmasi terima. Gambar tanda tangan hanya
+// dikirim pada response detail agar daftar tetap ringan.
+type serahTerimaResp struct {
+	Tanggal          time.Time       `json:"tanggal"`
+	PICPetugas       string          `json:"pic_petugas"`
+	PeminjamPenerima string          `json:"peminjam_penerima"`
+	TanggalDiterima  *time.Time      `json:"tanggal_diterima"`
+	AdaTS            bool            `json:"ada_ts"`
+	LampiranA        []lampiranAResp `json:"lampiran_a"`
+	TTDPengelola     *string         `json:"ttd_pengelola"`
+	TTDPeminjam      *string         `json:"ttd_peminjam"`
+	Catatan          string          `json:"catatan"`
+	F006Nomor        *string         `json:"f006_nomor"`
 }
 
 type peminjamanResp struct {
@@ -74,6 +100,10 @@ type peminjamanResp struct {
 	ApprovalManagerPeminjam persetujuanResp `json:"approval_manager_peminjam"`
 	ApprovalPengelola       pengelolaResp   `json:"approval_pengelola"`
 	ApprovalManagerLab      persetujuanResp `json:"approval_manager_lab"`
+
+	SerahTerimaKeluar   *serahTerimaResp `json:"serah_terima_keluar"`
+	TanggalKeluarAktual *time.Time       `json:"tanggal_keluar_aktual"`
+	AlasanPembatalan    string           `json:"alasan_pembatalan"`
 }
 
 func buildPersetujuan(
@@ -99,9 +129,21 @@ func buildPersetujuan(
 	return resp
 }
 
-// buildResponse menyusun response satu peminjaman. Relasi harus sudah dimuat,
-// misalnya lewat repository FindByID atau FindAll.
+// buildResponse menyusun response satu peminjaman untuk daftar dan hasil aksi.
+// Gambar tanda tangan serah terima tidak disertakan.
 func (c *PeminjamanController) buildResponse(p *models.Peminjaman) peminjamanResp {
+	return c.susunResponse(p, false)
+}
+
+// buildResponseDetail sama seperti buildResponse, tetapi menyertakan gambar
+// tanda tangan serah terima. Dipakai untuk response satu peminjaman.
+func (c *PeminjamanController) buildResponseDetail(p *models.Peminjaman) peminjamanResp {
+	return c.susunResponse(p, true)
+}
+
+// susunResponse menyusun response satu peminjaman. Relasi harus sudah dimuat,
+// misalnya lewat repository FindByID atau FindAll.
+func (c *PeminjamanController) susunResponse(p *models.Peminjaman, denganTTD bool) peminjamanResp {
 	resp := peminjamanResp{
 		ID:                    p.ID,
 		Kode:                  p.Kode,
@@ -116,6 +158,8 @@ func (c *PeminjamanController) buildResponse(p *models.Peminjaman) peminjamanRes
 		KebutuhanKelengkapan:  p.KebutuhanKelengkapan,
 		KebutuhanAksesori:     p.KebutuhanAksesori,
 		Catatan:               p.Catatan,
+		TanggalKeluarAktual:   p.TglKeluarAktual,
+		AlasanPembatalan:      p.AlasanPembatalan,
 	}
 
 	if p.Peralatan != nil {
@@ -176,6 +220,49 @@ func (c *PeminjamanController) buildResponse(p *models.Peminjaman) peminjamanRes
 		p.ManagerLab, p.ManagerLabID,
 		p.ManagerLabStatus, p.ManagerLabAt, p.ManagerLabCatatan,
 	)
+
+	if p.SerahTerima != nil {
+		st := p.SerahTerima
+
+		serah := &serahTerimaResp{
+			Tanggal:         st.DiperiksaAt,
+			TanggalDiterima: st.DiterimaAt,
+			AdaTS:           st.AdaTS,
+			Catatan:         st.Catatan,
+			LampiranA:       make([]lampiranAResp, 0, len(st.Items)),
+		}
+
+		if p.Pengelola != nil {
+			serah.PICPetugas = p.Pengelola.Name
+		}
+
+		if p.Peminjam != nil {
+			serah.PeminjamPenerima = p.Peminjam.Name
+		}
+
+		for _, item := range st.Items {
+			serah.LampiranA = append(serah.LampiranA, lampiranAResp{
+				NomorButir: item.NomorButir,
+				Butir:      item.Butir,
+				Status:     item.Hasil,
+				Keterangan: item.Keterangan,
+			})
+		}
+
+		if denganTTD {
+			if st.PengelolaTTD != "" {
+				ttd := st.PengelolaTTD
+				serah.TTDPengelola = &ttd
+			}
+
+			if st.PeminjamTTD != "" {
+				ttd := st.PeminjamTTD
+				serah.TTDPeminjam = &ttd
+			}
+		}
+
+		resp.SerahTerimaKeluar = serah
+	}
 
 	return resp
 }

@@ -30,7 +30,7 @@ type Peralatan struct {
 	Foto string `gorm:"type:varchar(255)" json:"foto"`
 
 	// Status fisik / penggunaan alat
-	StatusAlat string `gorm:"type:enum('Karantina','Aktif','Dipinjam','Dalam Kalibrasi','Rusak','Dihapuskan');default:'Karantina'" json:"status_alat"`
+	StatusAlat string `gorm:"type:enum('Karantina','Aktif','Dipinjam','Dalam Kalibrasi','Rusak','Dihapuskan','Do Not Use');default:'Karantina'" json:"status_alat"`
 
 	// Status proses verifikasi
 	StatusVerifikasi string `gorm:"type:enum('Belum Diverifikasi','Draft','Diajukan','Disetujui','Ditolak');default:'Belum Diverifikasi'" json:"status_verifikasi"`

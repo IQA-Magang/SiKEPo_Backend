@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"log"
+	"strings"
 
 	"backend/models"
 
@@ -18,11 +20,15 @@ func MigratePeminjaman(db *gorm.DB) error {
 		return err
 	}
 
-	if err := db.AutoMigrate(&models.Peminjaman{}); err != nil {
-		return fmt.Errorf("failed to migrate peminjaman table: %w", err)
+	if err := db.AutoMigrate(
+		&models.Peminjaman{},
+		&models.SerahTerima{},
+		&models.SerahTerimaItem{},
+	); err != nil {
+		return fmt.Errorf("failed to migrate peminjaman tables: %w", err)
 	}
 
-	return nil
+	return ensureStatusAlatDoNotUse(db)
 }
 
 // ensureUserLabsColumn menambahkan kolom users.labs_id bila belum ada.
@@ -35,6 +41,35 @@ func ensureUserLabsColumn(db *gorm.DB) error {
 	if err := db.Migrator().AddColumn(&models.User{}, "LabsID"); err != nil {
 		return fmt.Errorf("failed to add users.labs_id column: %w", err)
 	}
+
+	return nil
+}
+
+// ensureStatusAlatDoNotUse menambahkan nilai "Do Not Use" ke enum
+// peralatan.status_alat pada database yang tabelnya sudah terlanjur dibuat.
+// Nilai itu dipakai saat serah terima menemukan butir TS.
+func ensureStatusAlatDoNotUse(db *gorm.DB) error {
+	var columnType string
+
+	err := db.Raw(
+		`SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+		 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+		"peralatan",
+		"status_alat",
+	).Scan(&columnType).Error
+	if err != nil {
+		return fmt.Errorf("failed to read peralatan.status_alat type: %w", err)
+	}
+
+	if columnType == "" || strings.Contains(columnType, "'Do Not Use'") {
+		return nil
+	}
+
+	if err := db.Migrator().AlterColumn(&models.Peralatan{}, "StatusAlat"); err != nil {
+		return fmt.Errorf("failed to add 'Do Not Use' to peralatan.status_alat: %w", err)
+	}
+
+	log.Println("Enum peralatan.status_alat diperbarui dengan nilai 'Do Not Use'")
 
 	return nil
 }

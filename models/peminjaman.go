@@ -20,6 +20,12 @@ const (
 	StatusPeminjamanMenungguManagerLab      = "MENUNGGU_MANAGER_LAB"
 	StatusPeminjamanDisetujui               = "DISETUJUI"
 	StatusPeminjamanDitolak                 = "DITOLAK"
+
+	// Serah terima keluar: setelah DISETUJUI, Pengelola mengisi checklist
+	// lalu peminjam mengonfirmasi terima. Satu butir TS membatalkan peminjaman.
+	StatusPeminjamanSiapDiserahkan = "SIAP_DISERAHKAN"
+	StatusPeminjamanSedangDipinjam = "SEDANG_DIPINJAM"
+	StatusPeminjamanDibatalkanTS   = "DIBATALKAN_TS"
 )
 
 // StatusPeminjamanAktif adalah status yang masih memegang jadwal alat.
@@ -29,6 +35,8 @@ var StatusPeminjamanAktif = []string{
 	StatusPeminjamanMenungguPengelola,
 	StatusPeminjamanMenungguManagerLab,
 	StatusPeminjamanDisetujui,
+	StatusPeminjamanSiapDiserahkan,
+	StatusPeminjamanSedangDipinjam,
 }
 
 // Status keputusan pada setiap tahap persetujuan.
@@ -84,19 +92,24 @@ type Peminjaman struct {
 	ManagerLabCatatan string     `gorm:"column:manager_lab_catatan;type:text" json:"manager_lab_catatan"`
 	ManagerLabAt      *time.Time `gorm:"column:manager_lab_at" json:"manager_lab_at"`
 
+	// Serah terima keluar
+	TglKeluarAktual  *time.Time `gorm:"column:tgl_keluar_aktual" json:"tgl_keluar_aktual"`
+	AlasanPembatalan string     `gorm:"column:alasan_pembatalan;type:text" json:"alasan_pembatalan"`
+
 	CreatedAt time.Time      `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"column:updated_at" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at;index" json:"-"`
 
 	// Relasi
-	Peralatan       *Peralatan `gorm:"foreignKey:PeralatanID;references:ID" json:"-"`
-	Peminjam        *User      `gorm:"foreignKey:PeminjamID;references:UserID" json:"-"`
-	LabPeminjam     *Labs      `gorm:"foreignKey:LabPeminjamID;references:ID" json:"-"`
-	LabPemilik      *Labs      `gorm:"foreignKey:LabPemilikID;references:ID" json:"-"`
-	ManajerPeminjam *User      `gorm:"foreignKey:ManajerPeminjamID;references:UserID" json:"-"`
-	Pengelola       *User      `gorm:"foreignKey:PengelolaID;references:UserID" json:"-"`
-	ManagerLab      *User      `gorm:"foreignKey:ManagerLabID;references:UserID" json:"-"`
-	AlatAlternatif  *Peralatan `gorm:"foreignKey:AlatAlternatifID;references:ID" json:"-"`
+	Peralatan       *Peralatan   `gorm:"foreignKey:PeralatanID;references:ID" json:"-"`
+	Peminjam        *User        `gorm:"foreignKey:PeminjamID;references:UserID" json:"-"`
+	LabPeminjam     *Labs        `gorm:"foreignKey:LabPeminjamID;references:ID" json:"-"`
+	LabPemilik      *Labs        `gorm:"foreignKey:LabPemilikID;references:ID" json:"-"`
+	ManajerPeminjam *User        `gorm:"foreignKey:ManajerPeminjamID;references:UserID" json:"-"`
+	Pengelola       *User        `gorm:"foreignKey:PengelolaID;references:UserID" json:"-"`
+	ManagerLab      *User        `gorm:"foreignKey:ManagerLabID;references:UserID" json:"-"`
+	AlatAlternatif  *Peralatan   `gorm:"foreignKey:AlatAlternatifID;references:ID" json:"-"`
+	SerahTerima     *SerahTerima `gorm:"foreignKey:PeminjamanID;references:ID" json:"-"`
 }
 
 func (Peminjaman) TableName() string {

@@ -26,4 +26,8 @@ func PeminjamanRoutes(app *fiber.App, db *gorm.DB) {
 	peminjaman.Post("/", controller.Create)
 	peminjaman.Get("/:id", controller.GetByID)
 	peminjaman.Put("/:id/keputusan", controller.Keputusan)
+
+	// Serah terima keluar: Pengelola mengisi checklist, lalu peminjam mengonfirmasi.
+	peminjaman.Post("/:id/serah-terima", controller.SerahTerima)
+	peminjaman.Put("/:id/konfirmasi-terima", controller.KonfirmasiTerima)
 }

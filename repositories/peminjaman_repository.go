@@ -43,7 +43,11 @@ func (r *PeminjamanRepository) withRelations(query *gorm.DB) *gorm.DB {
 		Preload("ManajerPeminjam").
 		Preload("Pengelola").
 		Preload("ManagerLab").
-		Preload("AlatAlternatif")
+		Preload("AlatAlternatif").
+		Preload("SerahTerima").
+		Preload("SerahTerima.Items", func(db *gorm.DB) *gorm.DB {
+			return db.Order("nomor_butir ASC")
+		})
 }
 
 // =====================================================
@@ -103,10 +107,14 @@ func (r *PeminjamanRepository) FindAll(filter PeminjamanFilter) ([]models.Peminj
 
 	if filter.MenungguSaya {
 		query = query.Where(
-			"((status = ? AND manajer_peminjam_id = ?) OR (status = ? AND pengelola_id = ?) OR (status = ? AND manager_lab_id = ?))",
+			"((status = ? AND manajer_peminjam_id = ?) OR (status = ? AND pengelola_id = ?) OR (status = ? AND manager_lab_id = ?) OR (status = ? AND pengelola_id = ?) OR (status = ? AND peminjam_id = ?))",
 			models.StatusPeminjamanMenungguManajerPeminjam, uid,
 			models.StatusPeminjamanMenungguPengelola, uid,
 			models.StatusPeminjamanMenungguManagerLab, uid,
+			// Disetujui: Pengelola perlu mengisi checklist serah terima.
+			models.StatusPeminjamanDisetujui, uid,
+			// Siap diserahkan: peminjam perlu mengonfirmasi terima.
+			models.StatusPeminjamanSiapDiserahkan, uid,
 		)
 	}
 

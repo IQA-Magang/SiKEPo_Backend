@@ -237,7 +237,10 @@ func cekKelayakanPeminjaman(db *gorm.DB, p *models.Peralatan, rencanaKembali tim
 			"Komponen pendukung tidak dapat dipinjam")
 	}
 
-	if p.StatusAlat != "Aktif" {
+	// Alat yang sedang dipinjam boleh dipesan untuk periode sesudahnya. Jadwal
+	// yang bertumpuk sudah dicegah terpisah, dan serah terima baru bisa jalan
+	// setelah alatnya kembali berstatus Aktif.
+	if p.StatusAlat != "Aktif" && p.StatusAlat != "Dipinjam" {
 		return errPeminjaman(fiber.StatusBadRequest,
 			"Peralatan berstatus %s sehingga tidak dapat dipinjam", p.StatusAlat)
 	}
@@ -610,6 +613,6 @@ func (c *PeminjamanController) GetByID(ctx *fiber.Ctx) error {
 
 	return ctx.JSON(fiber.Map{
 		"success": true,
-		"data":    c.buildResponse(data),
+		"data":    c.buildResponseDetail(data),
 	})
 }
