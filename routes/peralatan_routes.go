@@ -18,7 +18,10 @@ func SetupPeralatanRoutes(app *fiber.App, db *gorm.DB, notificationRepo reposito
 	peralatanController.DB = db
 
 	guest := app.Group("/api/peralatan")
-	guest.Get("/:nomor_aset", peralatanController.GetByNomorAset)
+	// Endpoint ini publik karena dipakai halaman hasil pindai QR. OptionalAuth
+	// hanya mengenali user yang login, supaya data pribadi seperti pemakai
+	// terakhir tidak ikut tampil bagi pengunjung tanpa login.
+	guest.Get("/:nomor_aset", middleware.OptionalAuth, peralatanController.GetByNomorAset)
 
 	// 2. Grouping Route API
 	api := app.Group("/api/peralatan", middleware.RequireAuth)

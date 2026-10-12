@@ -15,6 +15,9 @@ import (
 type PeralatanRepository interface {
 	FindAll() ([]models.Peralatan, error)
 
+	// FindPemakaiTerakhir mengambil orang yang terakhir menerima satu alat.
+	FindPemakaiTerakhir(id uint) (*models.PemakaiTerakhir, error)
+
 	CreatePeralatan(
 		req *models.CreatePeralatanRequest,
 	) (string, error)
@@ -63,8 +66,15 @@ func (r *peralatanRepository) FindAll() (
 		Order("id DESC").
 		Find(&data).
 		Error
+	if err != nil {
+		return data, err
+	}
 
-	return data, err
+	if err := r.isiPemakaiTerakhir(data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 // =========================================================

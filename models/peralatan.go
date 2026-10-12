@@ -46,6 +46,10 @@ type Peralatan struct {
 	UpdatedAt time.Time `json:"updated_at"`
 
 	DeletedAt *time.Time `gorm:"index" json:"deleted_at,omitempty"`
+
+	// PemakaiTerakhir hanya dipakai untuk response, tidak disimpan di tabel.
+	// Diisi pada daftar peralatan, dan null bila alat belum pernah diserahkan.
+	PemakaiTerakhir *PemakaiTerakhir `gorm:"-" json:"pemakai_terakhir"`
 }
 
 func (Peralatan) TableName() string {
