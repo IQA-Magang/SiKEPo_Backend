@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -31,26 +33,54 @@ type SerahTerimaItemRequest struct {
 }
 
 type SerahTerimaRequest struct {
-	// LampiranA berisi sepuluh butir, berurutan dari butir 1 sampai 10.
+	// LampiranA berisi tujuh butir bagian B F/010, berurutan dari butir 1
+	// sampai 7. Nama field dipertahankan agar frontend tidak berubah.
 	LampiranA []SerahTerimaItemRequest `json:"lampiran_a"`
 	Catatan   string                   `json:"catatan"`
 
-	// TTD opsional, berupa teks gambar seperti yang dikirim kanvas frontend.
+	// TTD wajib, data URL PNG seperti yang dikirim kanvas frontend.
 	TTD string `json:"ttd"`
 }
 
 type KonfirmasiTerimaRequest struct {
+	// TTD wajib, data URL PNG.
 	TTD string `json:"ttd"`
 }
 
-// validasiLampiranA memeriksa sepuluh butir. Butir ke-i pada array adalah
-// butir nomor i+1. Mengembalikan butir siap simpan dan daftar butir TS.
-func validasiLampiranA(items []SerahTerimaItemRequest) ([]models.SerahTerimaItem, []string, error) {
-	daftar := models.DaftarButirLampiranA
+// validasiTTD memastikan tanda tangan berupa gambar PNG (data URL base64).
+// Tanda tangan wajib karena lembar F/010 meminta nama dan tanda tangan kedua pihak.
+func validasiTTD(ttd, pihak string) error {
+	const awalan = "data:image/png;base64,"
+
+	if ttd == "" {
+		return errPeminjaman(fiber.StatusBadRequest, "Tanda tangan %s wajib diisi", pihak)
+	}
+
+	if len(ttd) > maksUkuranTTD {
+		return errPeminjaman(fiber.StatusBadRequest, "Ukuran tanda tangan %s terlalu besar", pihak)
+	}
+
+	if !strings.HasPrefix(ttd, awalan) {
+		return errPeminjaman(fiber.StatusBadRequest, "Tanda tangan %s harus berupa gambar PNG", pihak)
+	}
+
+	data, err := base64.StdEncoding.DecodeString(ttd[len(awalan):])
+	if err != nil || !bytes.HasPrefix(data, []byte("\x89PNG\r\n\x1a\n")) {
+		return errPeminjaman(fiber.StatusBadRequest, "Tanda tangan %s bukan gambar PNG yang valid", pihak)
+	}
+
+	return nil
+}
+
+// validasiLembarSerahTerima memeriksa tujuh butir bagian B F/010. Butir ke-i
+// pada array adalah butir nomor i+1. Mengembalikan butir siap simpan dan
+// daftar butir TS.
+func validasiLembarSerahTerima(items []SerahTerimaItemRequest) ([]models.SerahTerimaItem, []string, error) {
+	daftar := models.DaftarButirSerahTerima
 
 	if len(items) != len(daftar) {
 		return nil, nil, errPeminjaman(fiber.StatusBadRequest,
-			"lampiran_a harus berisi %d butir", len(daftar))
+			"pemeriksaan harus berisi %d butir", len(daftar))
 	}
 
 	hasil := make([]models.SerahTerimaItem, 0, len(items))
@@ -66,11 +96,15 @@ func validasiLampiranA(items []SerahTerimaItemRequest) ([]models.SerahTerimaItem
 				"Butir %d belum diisi", butir.Nomor)
 
 		case models.HasilSesuai:
-
-		case models.HasilTidakBerlaku:
-			if !butir.BolehTB {
+			if butir.KeteranganWajibJikaS && keterangan == "" {
 				return nil, nil, errPeminjaman(fiber.StatusBadRequest,
-					"Butir %d tidak boleh bernilai TB", butir.Nomor)
+					"Butir %d bernilai S wajib menuliskan jenis pemeriksaan pada keterangan", butir.Nomor)
+			}
+
+		case models.HasilNA:
+			if !butir.BolehNA {
+				return nil, nil, errPeminjaman(fiber.StatusBadRequest,
+					"Butir %d tidak boleh bernilai N/A", butir.Nomor)
 			}
 
 		case models.HasilTidakSesuai:
@@ -82,7 +116,7 @@ func validasiLampiranA(items []SerahTerimaItemRequest) ([]models.SerahTerimaItem
 
 		default:
 			return nil, nil, errPeminjaman(fiber.StatusBadRequest,
-				"Hasil butir %d harus S, TS, atau TB", butir.Nomor)
+				"Hasil butir %d harus S, TS, atau N/A", butir.Nomor)
 		}
 
 		hasil = append(hasil, models.SerahTerimaItem{
@@ -149,12 +183,11 @@ func (c *PeminjamanController) SerahTerima(ctx *fiber.Ctx) error {
 	req.Catatan = strings.TrimSpace(req.Catatan)
 	req.TTD = strings.TrimSpace(req.TTD)
 
-	if len(req.TTD) > maksUkuranTTD {
-		return respondPeminjamanError(ctx,
-			errPeminjaman(fiber.StatusBadRequest, "Ukuran tanda tangan terlalu besar"), "")
+	if err := validasiTTD(req.TTD, "Pengelola"); err != nil {
+		return respondPeminjamanError(ctx, err, "")
 	}
 
-	items, butirTS, err := validasiLampiranA(req.LampiranA)
+	items, butirTS, err := validasiLembarSerahTerima(req.LampiranA)
 	if err != nil {
 		return respondPeminjamanError(ctx, err, "")
 	}
@@ -212,7 +245,7 @@ func (c *PeminjamanController) SerahTerima(ctx *fiber.Ctx) error {
 		p.Status = models.StatusPeminjamanSiapDiserahkan
 
 		if err := c.catatLogbook(tx, p, models.LogbookAksiChecklistKeluar, user.UserID,
-			fmt.Sprintf("Pemeriksaan serah terima keluar oleh Pengelola Peralatan (%s). Seluruh butir sesuai. Menunggu konfirmasi terima dari peminjam.",
+			fmt.Sprintf("Pemeriksaan serah terima keluar oleh Pengelola Peralatan (%s). Tidak ada butir tidak sesuai. Menunggu konfirmasi terima dari peminjam.",
 				user.Name),
 		); err != nil {
 			return err
@@ -307,20 +340,16 @@ func (c *PeminjamanController) KonfirmasiTerima(ctx *fiber.Ctx) error {
 		return respondPeminjamanError(ctx, err, "")
 	}
 
-	// Body boleh kosong karena tanda tangan opsional.
 	var req KonfirmasiTerimaRequest
-	if len(ctx.Body()) > 0 {
-		if err := ctx.BodyParser(&req); err != nil {
-			return respondPeminjamanError(ctx,
-				errPeminjaman(fiber.StatusBadRequest, "Format JSON tidak valid"), "")
-		}
+	if err := ctx.BodyParser(&req); err != nil {
+		return respondPeminjamanError(ctx,
+			errPeminjaman(fiber.StatusBadRequest, "Format JSON tidak valid"), "")
 	}
 
 	req.TTD = strings.TrimSpace(req.TTD)
 
-	if len(req.TTD) > maksUkuranTTD {
-		return respondPeminjamanError(ctx,
-			errPeminjaman(fiber.StatusBadRequest, "Ukuran tanda tangan terlalu besar"), "")
+	if err := validasiTTD(req.TTD, "peminjam"); err != nil {
+		return respondPeminjamanError(ctx, err, "")
 	}
 
 	err = c.Repository.DB.Transaction(func(tx *gorm.DB) error {

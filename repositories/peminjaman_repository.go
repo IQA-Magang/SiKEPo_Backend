@@ -65,6 +65,10 @@ func (r *PeminjamanRepository) FindByID(id uint64) (*models.Peminjaman, error) {
 		return nil, err
 	}
 
+	if err := r.isiLokasiAsal([]*models.Peminjaman{&data}); err != nil {
+		return nil, err
+	}
+
 	return &data, nil
 }
 
@@ -132,8 +136,20 @@ func (r *PeminjamanRepository) FindAll(filter PeminjamanFilter) ([]models.Peminj
 		Order("id DESC").
 		Find(&data).
 		Error
+	if err != nil {
+		return data, err
+	}
 
-	return data, err
+	pointer := make([]*models.Peminjaman, len(data))
+	for i := range data {
+		pointer[i] = &data[i]
+	}
+
+	if err := r.isiLokasiAsal(pointer); err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 // =====================================================

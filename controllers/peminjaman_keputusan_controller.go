@@ -23,6 +23,74 @@ type KeputusanPeminjamanRequest struct {
 
 	// AlatAlternatifID opsional, hanya dipakai saat Pengelola menolak.
 	AlatAlternatifID *uint64 `json:"alat_alternatif_id"`
+
+	// Hasil cek Pengelola, hanya dipakai pada tahap Pengelola. Untuk setuju,
+	// spesifikasi dan operator wajib true, dan lokasi wajib true bila
+	// peminjaman eksternal. Untuk tolak nilainya bebas.
+	CekSpesifikasi *bool `json:"cek_spesifikasi"`
+	CekOperator    *bool `json:"cek_operator"`
+	CekLokasi      *bool `json:"cek_lokasi"`
+
+	// TTD adalah tanda tangan penyetuju, data URL PNG dari kanvas frontend.
+	// Wajib saat setuju. Saat tolak boleh kosong, tetapi bila diisi harus valid.
+	TTD string `json:"ttd"`
+}
+
+// ringkasanCekPengelola menyusun kalimat hasil cek untuk logbook. Saat setuju
+// berisi butir yang lolos, saat tolak berisi butir yang tidak lolos.
+func ringkasanCekPengelola(req KeputusanPeminjamanRequest, eksternal, setuju bool) string {
+	butir := []struct {
+		nama  string
+		nilai *bool
+		perlu bool
+	}{
+		{"spesifikasi", req.CekSpesifikasi, true},
+		{"operator", req.CekOperator, true},
+		{"lokasi tujuan", req.CekLokasi, eksternal},
+	}
+
+	daftar := []string{}
+
+	for _, b := range butir {
+		if !b.perlu || b.nilai == nil {
+			continue
+		}
+
+		if *b.nilai == setuju {
+			daftar = append(daftar, b.nama)
+		}
+	}
+
+	if len(daftar) == 0 {
+		return ""
+	}
+
+	if setuju {
+		return "Cek lolos: " + strings.Join(daftar, ", ") + "."
+	}
+
+	return "Cek tidak lolos: " + strings.Join(daftar, ", ") + "."
+}
+
+// validasiCekPengelola memastikan Pengelola sudah melakukan cek sebelum
+// meneruskan pengajuan, sesuai alur: cek lolos baru boleh klik Teruskan.
+func validasiCekPengelola(req KeputusanPeminjamanRequest, eksternal bool) error {
+	if req.CekSpesifikasi == nil || !*req.CekSpesifikasi {
+		return errPeminjaman(fiber.StatusBadRequest,
+			"Cek spesifikasi harus lolos sebelum pengajuan diteruskan")
+	}
+
+	if req.CekOperator == nil || !*req.CekOperator {
+		return errPeminjaman(fiber.StatusBadRequest,
+			"Cek operator harus lolos sebelum pengajuan diteruskan")
+	}
+
+	if eksternal && (req.CekLokasi == nil || !*req.CekLokasi) {
+		return errPeminjaman(fiber.StatusBadRequest,
+			"Cek lokasi tujuan harus lolos sebelum pengajuan eksternal diteruskan")
+	}
+
+	return nil
 }
 
 // tahapPersetujuan menggambarkan tahap yang sedang menunggu keputusan.
@@ -114,8 +182,14 @@ func (c *PeminjamanController) Keputusan(ctx *fiber.Ctx) error {
 
 	setuju := keputusan == "setuju"
 	catatan := strings.TrimSpace(req.Catatan)
+	ttd := strings.TrimSpace(req.TTD)
 
-	if !setuju && catatan == "" {
+	// Pengelola boleh menolak dengan alasan atau dengan mengusulkan alat lain.
+	// Tahap lain wajib mengisi alasan, dicek di dalam transaksi setelah tahap
+	// diketahui.
+	usulAlat := req.AlatAlternatifID != nil && *req.AlatAlternatifID != 0
+
+	if !setuju && catatan == "" && !usulAlat {
 		return respondPeminjamanError(ctx,
 			errPeminjaman(fiber.StatusBadRequest, "Alasan penolakan wajib diisi"), "")
 	}
@@ -154,6 +228,22 @@ func (c *PeminjamanController) Keputusan(ctx *fiber.Ctx) error {
 				"Anda bukan %s yang ditetapkan untuk pengajuan ini", tahap.label)
 		}
 
+		if !setuju && catatan == "" && tahap.prefix != "pengelola" {
+			return errPeminjaman(fiber.StatusBadRequest, "Alasan penolakan wajib diisi")
+		}
+
+		if setuju && tahap.prefix == "pengelola" {
+			if err := validasiCekPengelola(req, p.IsEksternal); err != nil {
+				return err
+			}
+		}
+
+		if setuju || ttd != "" {
+			if err := validasiTTD(ttd, tahap.label); err != nil {
+				return err
+			}
+		}
+
 		// Kondisi alat bisa berubah sejak pengajuan dibuat, misalnya masuk
 		// karantina atau melewati jatuh tempo, jadi dicek ulang sebelum setuju.
 		if setuju {
@@ -182,6 +272,11 @@ func (c *PeminjamanController) Keputusan(ctx *fiber.Ctx) error {
 			}
 
 			alternatif = &usulan
+
+			// Usulan alat lain sudah cukup sebagai alasan penolakan.
+			if catatan == "" {
+				catatan = "Mengusulkan alat lain"
+			}
 		}
 
 		statusBaru := models.StatusPeminjamanDitolak
@@ -199,8 +294,26 @@ func (c *PeminjamanController) Keputusan(ctx *fiber.Ctx) error {
 			tahap.prefix + "_at":      time.Now(),
 		}
 
+		if ttd != "" {
+			updates[tahap.prefix+"_ttd"] = ttd
+		}
+
 		if alternatif != nil {
 			updates["alat_alternatif_id"] = alternatif.ID
+		}
+
+		if tahap.prefix == "pengelola" {
+			if req.CekSpesifikasi != nil {
+				updates["pengelola_cek_spesifikasi"] = *req.CekSpesifikasi
+			}
+
+			if req.CekOperator != nil {
+				updates["pengelola_cek_operator"] = *req.CekOperator
+			}
+
+			if req.CekLokasi != nil {
+				updates["pengelola_cek_lokasi"] = *req.CekLokasi
+			}
 		}
 
 		if err := tx.Model(&models.Peminjaman{}).
@@ -224,6 +337,12 @@ func (c *PeminjamanController) Keputusan(ctx *fiber.Ctx) error {
 			}
 		} else if catatan != "" {
 			keterangan += fmt.Sprintf(" Catatan: %s.", catatan)
+		}
+
+		if tahap.prefix == "pengelola" {
+			if cek := ringkasanCekPengelola(req, p.IsEksternal, setuju); cek != "" {
+				keterangan += " " + cek
+			}
 		}
 
 		if err := c.catatLogbook(tx, &p, aksi, user.UserID, keterangan); err != nil {
@@ -252,7 +371,7 @@ func (c *PeminjamanController) Keputusan(ctx *fiber.Ctx) error {
 	return ctx.JSON(fiber.Map{
 		"success": true,
 		"message": message,
-		"data":    c.buildResponse(result),
+		"data":    c.buildResponseDetail(result),
 	})
 }
 

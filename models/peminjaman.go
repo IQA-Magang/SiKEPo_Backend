@@ -78,19 +78,28 @@ type Peminjaman struct {
 	ManajerPeminjamStatus  string     `gorm:"column:manajer_peminjam_status;size:10;not null;default:'pending'" json:"manajer_peminjam_status"`
 	ManajerPeminjamCatatan string     `gorm:"column:manajer_peminjam_catatan;type:text" json:"manajer_peminjam_catatan"`
 	ManajerPeminjamAt      *time.Time `gorm:"column:manajer_peminjam_at" json:"manajer_peminjam_at"`
+	ManajerPeminjamTTD     string     `gorm:"column:manajer_peminjam_ttd;type:mediumtext" json:"-"`
 
 	// Tahap 2: Pengelola Peralatan.
 	PengelolaID      uint64     `gorm:"column:pengelola_id;not null;index" json:"pengelola_id"`
 	PengelolaStatus  string     `gorm:"column:pengelola_status;size:10;not null;default:'pending'" json:"pengelola_status"`
 	PengelolaCatatan string     `gorm:"column:pengelola_catatan;type:text" json:"pengelola_catatan"`
 	PengelolaAt      *time.Time `gorm:"column:pengelola_at" json:"pengelola_at"`
+	PengelolaTTD     string     `gorm:"column:pengelola_ttd;type:mediumtext" json:"-"`
 	AlatAlternatifID *uint64    `gorm:"column:alat_alternatif_id" json:"alat_alternatif_id"`
+
+	// Hasil cek Pengelola: spesifikasi, operator, dan lokasi tujuan (hanya
+	// untuk peminjaman eksternal). Kosong (NULL) bila belum diperiksa.
+	PengelolaCekSpesifikasi *bool `gorm:"column:pengelola_cek_spesifikasi" json:"pengelola_cek_spesifikasi"`
+	PengelolaCekOperator    *bool `gorm:"column:pengelola_cek_operator" json:"pengelola_cek_operator"`
+	PengelolaCekLokasi      *bool `gorm:"column:pengelola_cek_lokasi" json:"pengelola_cek_lokasi"`
 
 	// Tahap 3: Manager Lab pemilik peralatan.
 	ManagerLabID      uint64     `gorm:"column:manager_lab_id;not null;index" json:"manager_lab_id"`
 	ManagerLabStatus  string     `gorm:"column:manager_lab_status;size:10;not null;default:'pending'" json:"manager_lab_status"`
 	ManagerLabCatatan string     `gorm:"column:manager_lab_catatan;type:text" json:"manager_lab_catatan"`
 	ManagerLabAt      *time.Time `gorm:"column:manager_lab_at" json:"manager_lab_at"`
+	ManagerLabTTD     string     `gorm:"column:manager_lab_ttd;type:mediumtext" json:"-"`
 
 	// Serah terima keluar
 	TglKeluarAktual  *time.Time `gorm:"column:tgl_keluar_aktual" json:"tgl_keluar_aktual"`
@@ -99,6 +108,10 @@ type Peminjaman struct {
 	CreatedAt time.Time      `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"column:updated_at" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at;index" json:"-"`
+
+	// LokasiAsalPeralatan hanya untuk response, tidak disimpan di tabel. Diisi
+	// repository dari ruangan alat, formatnya kode, nama ruangan, lalu nama lab.
+	LokasiAsalPeralatan string `gorm:"-" json:"-"`
 
 	// Relasi
 	Peralatan       *Peralatan   `gorm:"foreignKey:PeralatanID;references:ID" json:"-"`

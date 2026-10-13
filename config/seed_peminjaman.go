@@ -280,6 +280,7 @@ type seedTahap struct {
 	status       *string
 	catatan      *string
 	at           **time.Time
+	ttd          *string
 }
 
 func buatSeedPengajuan(tx *gorm.DB, sp seedPengajuan) error {
@@ -330,21 +331,21 @@ func buatSeedPengajuan(tx *gorm.DB, sp seedPengajuan) error {
 			aksiSetuju: models.LogbookAksiDivalidasiManajerPinjam, aksiTolak: models.LogbookAksiDitolakManajerPinjam,
 			menunggu: models.StatusPeminjamanMenungguManajerPeminjam, statusLanjut: models.StatusPeminjamanMenungguPengelola,
 			approverID: p.ManajerPeminjamID,
-			status:     &p.ManajerPeminjamStatus, catatan: &p.ManajerPeminjamCatatan, at: &p.ManajerPeminjamAt,
+			status:     &p.ManajerPeminjamStatus, catatan: &p.ManajerPeminjamCatatan, at: &p.ManajerPeminjamAt, ttd: &p.ManajerPeminjamTTD,
 		},
 		{
 			label: "Pengelola Peralatan", kata: "Diperiksa dan diteruskan ke Manager Lab",
 			aksiSetuju: models.LogbookAksiDiteruskanPengelola, aksiTolak: models.LogbookAksiDitolakPengelola,
 			menunggu: models.StatusPeminjamanMenungguPengelola, statusLanjut: models.StatusPeminjamanMenungguManagerLab,
 			approverID: p.PengelolaID,
-			status:     &p.PengelolaStatus, catatan: &p.PengelolaCatatan, at: &p.PengelolaAt,
+			status:     &p.PengelolaStatus, catatan: &p.PengelolaCatatan, at: &p.PengelolaAt, ttd: &p.PengelolaTTD,
 		},
 		{
 			label: "Manager Lab", kata: "Disetujui",
 			aksiSetuju: models.LogbookAksiDisetujuiManagerLab, aksiTolak: models.LogbookAksiDitolakManagerLab,
 			menunggu: models.StatusPeminjamanMenungguManagerLab, statusLanjut: models.StatusPeminjamanDisetujui,
 			approverID: p.ManagerLabID,
-			status:     &p.ManagerLabStatus, catatan: &p.ManagerLabCatatan, at: &p.ManagerLabAt,
+			status:     &p.ManagerLabStatus, catatan: &p.ManagerLabCatatan, at: &p.ManagerLabAt, ttd: &p.ManagerLabTTD,
 		},
 	}
 
@@ -381,8 +382,15 @@ func buatSeedPengajuan(tx *gorm.DB, sp seedPengajuan) error {
 		case i < berhenti:
 			*t.status = models.TahapApproved
 			*t.at = &waktu
+			*t.ttd = ttdContoh(i + 1)
 			if i == 1 {
 				*t.catatan = "Spesifikasi dan kelengkapan sesuai"
+				lolos := true
+				p.PengelolaCekSpesifikasi = &lolos
+				p.PengelolaCekOperator = &lolos
+				if sp.eksternal {
+					p.PengelolaCekLokasi = &lolos
+				}
 			}
 			selesai[i] = waktu
 
@@ -390,6 +398,11 @@ func buatSeedPengajuan(tx *gorm.DB, sp seedPengajuan) error {
 			*t.status = models.TahapRejected
 			*t.at = &waktu
 			*t.catatan = alasanTolak[i]
+			if i == 1 {
+				lolos, gagal := true, false
+				p.PengelolaCekSpesifikasi = &gagal
+				p.PengelolaCekOperator = &lolos
+			}
 			selesai[i] = waktu
 
 		default:

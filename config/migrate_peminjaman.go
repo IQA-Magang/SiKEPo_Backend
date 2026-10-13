@@ -28,7 +28,45 @@ func MigratePeminjaman(db *gorm.DB) error {
 		return fmt.Errorf("failed to migrate peminjaman tables: %w", err)
 	}
 
+	if err := ensureHasilSerahTerimaNA(db); err != nil {
+		return err
+	}
+
 	return ensureStatusAlatDoNotUse(db)
+}
+
+// ensureHasilSerahTerimaNA menyesuaikan serah_terima_item.hasil dengan form
+// F/010. Nilai "N/A" butuh 3 karakter, dan nilai lama "TB" diganti "N/A".
+// AutoMigrate di atas tidak mengubah ukuran kolom yang sudah ada, jadi
+// diperlebar di sini.
+func ensureHasilSerahTerimaNA(db *gorm.DB) error {
+	var lebar int
+
+	err := db.Raw(
+		`SELECT COALESCE(CHARACTER_MAXIMUM_LENGTH, 0) FROM information_schema.COLUMNS
+		 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+		"serah_terima_item",
+		"hasil",
+	).Scan(&lebar).Error
+	if err != nil {
+		return fmt.Errorf("failed to read serah_terima_item.hasil size: %w", err)
+	}
+
+	if lebar > 0 && lebar < 3 {
+		if err := db.Migrator().AlterColumn(&models.SerahTerimaItem{}, "Hasil"); err != nil {
+			return fmt.Errorf("failed to widen serah_terima_item.hasil: %w", err)
+		}
+
+		log.Println("Kolom serah_terima_item.hasil diperlebar untuk nilai 'N/A'")
+	}
+
+	if err := db.Model(&models.SerahTerimaItem{}).
+		Where("hasil = ?", "TB").
+		Update("hasil", models.HasilNA).Error; err != nil {
+		return fmt.Errorf("failed to convert TB to N/A: %w", err)
+	}
+
+	return nil
 }
 
 // ensureUserLabsColumn menambahkan kolom users.labs_id bila belum ada.

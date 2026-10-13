@@ -29,8 +29,8 @@ type peminjamanPeminjamResp struct {
 }
 
 // persetujuanResp adalah satu tahap persetujuan. Status berisi pending,
-// approved, rejected, atau skipped. TTD selalu null karena persetujuan belum
-// memakai tanda tangan.
+// approved, rejected, atau skipped. TTD berisi gambar tanda tangan PNG dan
+// hanya terisi pada response detail, null bila tahap belum menandatangani.
 type persetujuanResp struct {
 	UserID  uint64     `json:"user_id"`
 	Nama    string     `json:"nama"`
@@ -50,6 +50,12 @@ type alatAlternatifResp struct {
 type pengelolaResp struct {
 	persetujuanResp
 	AlatAlternatif *alatAlternatifResp `json:"alat_alternatif"`
+
+	// Hasil cek Pengelola. null bila belum diperiksa, dan cek_lokasi null
+	// untuk peminjaman internal.
+	CekSpesifikasi *bool `json:"cek_spesifikasi"`
+	CekOperator    *bool `json:"cek_operator"`
+	CekLokasi      *bool `json:"cek_lokasi"`
 }
 
 // lampiranAResp adalah satu butir Lampiran A. Frontend membaca isinya berdasarkan
@@ -66,6 +72,13 @@ type lampiranAResp struct {
 // terisi setelah peminjam mengonfirmasi terima. Gambar tanda tangan hanya
 // dikirim pada response detail agar daftar tetap ringan.
 type serahTerimaResp struct {
+	// Kepala lembar F/010. Jenis kegiatan, nomor referensi, dan lokasi diambil
+	// dari pengajuan, jadi tidak diisi ulang oleh Pengelola.
+	JenisKegiatan string `json:"jenis_kegiatan"`
+	NoReferensi   string `json:"no_referensi"`
+	LokasiAsal    string `json:"lokasi_asal"`
+	LokasiTujuan  string `json:"lokasi_tujuan"`
+
 	Tanggal          time.Time       `json:"tanggal"`
 	PICPetugas       string          `json:"pic_petugas"`
 	PeminjamPenerima string          `json:"peminjam_penerima"`
@@ -127,6 +140,15 @@ func buildPersetujuan(
 	}
 
 	return resp
+}
+
+// ttdPointer mengembalikan nil bila tanda tangan kosong, supaya JSON bernilai null.
+func ttdPointer(ttd string) *string {
+	if ttd == "" {
+		return nil
+	}
+
+	return &ttd
 }
 
 // buildResponse menyusun response satu peminjaman untuk daftar dan hasil aksi.
@@ -206,6 +228,9 @@ func (c *PeminjamanController) susunResponse(p *models.Peminjaman, denganTTD boo
 			p.Pengelola, p.PengelolaID,
 			p.PengelolaStatus, p.PengelolaAt, p.PengelolaCatatan,
 		),
+		CekSpesifikasi: p.PengelolaCekSpesifikasi,
+		CekOperator:    p.PengelolaCekOperator,
+		CekLokasi:      p.PengelolaCekLokasi,
 	}
 
 	if p.AlatAlternatif != nil {
@@ -221,15 +246,34 @@ func (c *PeminjamanController) susunResponse(p *models.Peminjaman, denganTTD boo
 		p.ManagerLabStatus, p.ManagerLabAt, p.ManagerLabCatatan,
 	)
 
+	if denganTTD {
+		resp.ApprovalManagerPeminjam.TTD = ttdPointer(p.ManajerPeminjamTTD)
+		resp.ApprovalPengelola.TTD = ttdPointer(p.PengelolaTTD)
+		resp.ApprovalManagerLab.TTD = ttdPointer(p.ManagerLabTTD)
+	}
+
 	if p.SerahTerima != nil {
 		st := p.SerahTerima
 
 		serah := &serahTerimaResp{
+			JenisKegiatan:   "Peminjaman internal",
+			NoReferensi:     p.NomorSPK,
+			LokasiTujuan:    p.LokasiPenggunaan,
 			Tanggal:         st.DiperiksaAt,
 			TanggalDiterima: st.DiterimaAt,
 			AdaTS:           st.AdaTS,
 			Catatan:         st.Catatan,
 			LampiranA:       make([]lampiranAResp, 0, len(st.Items)),
+		}
+
+		if p.IsEksternal {
+			serah.JenisKegiatan = "Peminjaman eksternal"
+		}
+
+		// Ruangan alat. Bila ruangannya sudah tidak ada, pakai nama lab pemilik.
+		serah.LokasiAsal = p.LokasiAsalPeralatan
+		if serah.LokasiAsal == "" && p.LabPemilik != nil {
+			serah.LokasiAsal = p.LabPemilik.NamaLabs
 		}
 
 		if p.Pengelola != nil {

@@ -2,11 +2,12 @@ package models
 
 import "time"
 
-// SerahTerima adalah lembar Lampiran A untuk serah terima keluar. Satu
+// SerahTerima adalah lembar TLKM13/F/010 untuk serah terima keluar. Satu
 // peminjaman punya paling banyak satu lembar.
 //
 // Pengelola mengisi dan menandatangani lebih dulu. Peminjam lalu
-// mengonfirmasi terima dan menandatangani di lembar yang sama.
+// mengonfirmasi terima dan menandatangani di lembar yang sama. Tanda tangan
+// keduanya wajib berupa PNG.
 type SerahTerima struct {
 	ID           uint64 `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
 	PeminjamanID uint64 `gorm:"column:peminjaman_id;not null;uniqueIndex" json:"peminjaman_id"`
@@ -39,7 +40,7 @@ type SerahTerimaItem struct {
 	SerahTerimaID uint64 `gorm:"column:serah_terima_id;not null;index" json:"serah_terima_id"`
 	NomorButir    int    `gorm:"column:nomor_butir;not null" json:"nomor_butir"`
 	Butir         string `gorm:"column:butir;size:255;not null" json:"butir"`
-	Hasil         string `gorm:"column:hasil;size:2;not null" json:"hasil"`
+	Hasil         string `gorm:"column:hasil;size:3;not null" json:"hasil"`
 	Keterangan    string `gorm:"column:keterangan;type:text" json:"keterangan"`
 }
 
@@ -47,31 +48,35 @@ func (SerahTerimaItem) TableName() string {
 	return "serah_terima_item"
 }
 
-// Hasil pemeriksaan: S sesuai, TS tidak sesuai, TB tidak berlaku.
+// Hasil pemeriksaan: S sesuai, TS tidak sesuai, N/A tidak relevan.
 const (
-	HasilSesuai       = "S"
-	HasilTidakSesuai  = "TS"
-	HasilTidakBerlaku = "TB"
+	HasilSesuai      = "S"
+	HasilTidakSesuai = "TS"
+	HasilNA          = "N/A"
 )
 
-// ButirLampiranA mendefinisikan satu butir Lampiran A. BolehTB bernilai true
-// untuk butir yang di IK bertanda "bila ada" atau "bila relevan".
-type ButirLampiranA struct {
+// ButirLembarSerahTerima mendefinisikan satu butir pemeriksaan pada lembar
+// TLKM13/F/010. BolehNA bernilai true untuk butir yang boleh dikosongkan,
+// yaitu butir yang di form bertanda "bila perlu".
+type ButirLembarSerahTerima struct {
 	Nomor   int
 	Butir   string
-	BolehTB bool
+	BolehNA bool
+
+	// KeteranganWajibJikaS bernilai true untuk butir fungsi khusus. Bila
+	// dinyatakan sesuai, jenis pemeriksaan yang dilakukan wajib ditulis.
+	KeteranganWajibJikaS bool
 }
 
-// DaftarButirLampiranA adalah 10 butir Lampiran A TLKM13/IK/005.
-var DaftarButirLampiranA = []ButirLampiranA{
-	{1, "Identitas peralatan sesuai TLKM13/F/001", false},
-	{2, "Label status terpasang, terbaca, dan berlaku sampai rencana tanggal kembali", false},
-	{3, "Segel atau penguncian pengaturan utuh (bila ada)", true},
-	{4, "Kondisi fisik casing, layar, tombol, dan konektor/port baik", false},
-	{5, "Kelengkapan aksesori, kabel, adaptor, catu daya/baterai sesuai daftar kelengkapan", false},
-	{6, "Fungsi dasar: menyala normal, swauji/inisialisasi berhasil, tidak ada pesan galat", false},
-	{7, "Versi peranti lunak/firmware sesuai yang tercatat (bila relevan)", true},
-	{8, "Konektor/antarmuka optik bersih dan tertutup pelindung (bila relevan)", true},
-	{9, "Wadah atau kemasan pelindung dalam kondisi baik", false},
-	{10, "Dokumen pendukung: manual pengoperasian dan salinan sertifikat atau laporan verifikasi", false},
+// DaftarButirSerahTerima adalah 7 butir bagian B TLKM13/F/010. Butir 4, 6, dan
+// 7 memuat isian bebas (daftar kelengkapan dan jenis fungsi khusus) yang
+// ditulis pada keterangan.
+var DaftarButirSerahTerima = []ButirLembarSerahTerima{
+	{1, "Identitas peralatan (nomor aset, nomor seri) sesuai dengan TLKM13/F/001", false, false},
+	{2, "Label status terpasang, terbaca, dan masih berlaku", false, false},
+	{3, "Kondisi fisik baik (casing, layar, tombol, konektor/port)", false, false},
+	{4, "Kelengkapan sesuai daftar", false, false},
+	{5, "Fungsi dasar normal (menyala, swauji/inisialisasi berhasil)", false, false},
+	{6, "Pemeriksaan fungsi khusus (bila perlu)", true, true},
+	{7, "Pemeriksaan fungsi khusus (bila perlu)", true, true},
 }
