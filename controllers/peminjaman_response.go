@@ -91,6 +91,35 @@ type serahTerimaResp struct {
 	F006Nomor        *string         `json:"f006_nomor"`
 }
 
+// butirKembaliResp memuat satu butir pemeriksaan dengan kondisi saat keluar
+// sebagai pembanding terhadap kondisi saat kembali.
+type butirKembaliResp struct {
+	NomorButir       int    `json:"nomor_butir"`
+	Butir            string `json:"butir"`
+	StatusKeluar     string `json:"status_keluar"`
+	KeteranganKeluar string `json:"keterangan_keluar"`
+	Status           string `json:"status"`
+	Keterangan       string `json:"keterangan"`
+}
+
+// serahTerimaKembaliResp adalah kolom Kembali pada lembar F/010. Nilainya null
+// sampai Pengelola mencatat pengembalian. TindakLanjut berisi DO_NOT_USE atau
+// PERLU_VERIFIKASI.
+type serahTerimaKembaliResp struct {
+	Tanggal            time.Time          `json:"tanggal"`
+	PICPenerima        string             `json:"pic_penerima"`
+	PeminjamPenyerah   string             `json:"peminjam_penyerah"`
+	AdaKejadian        bool               `json:"ada_kejadian"`
+	UraianKejadian     string             `json:"uraian_kejadian"`
+	AdaTS              bool               `json:"ada_ts"`
+	LampiranA          []butirKembaliResp `json:"lampiran_a"`
+	TindakLanjut       string             `json:"tindak_lanjut"`
+	AlasanTindakLanjut string             `json:"alasan_tindak_lanjut"`
+	TTDPengelola       *string            `json:"ttd_pengelola"`
+	TTDPeminjam        *string            `json:"ttd_peminjam"`
+	Catatan            string             `json:"catatan"`
+}
+
 type peminjamanResp struct {
 	ID               uint64    `json:"id"`
 	Kode             string    `json:"kode"`
@@ -114,9 +143,11 @@ type peminjamanResp struct {
 	ApprovalPengelola       pengelolaResp   `json:"approval_pengelola"`
 	ApprovalManagerLab      persetujuanResp `json:"approval_manager_lab"`
 
-	SerahTerimaKeluar   *serahTerimaResp `json:"serah_terima_keluar"`
-	TanggalKeluarAktual *time.Time       `json:"tanggal_keluar_aktual"`
-	AlasanPembatalan    string           `json:"alasan_pembatalan"`
+	SerahTerimaKeluar    *serahTerimaResp        `json:"serah_terima_keluar"`
+	SerahTerimaKembali   *serahTerimaKembaliResp `json:"serah_terima_kembali"`
+	TanggalKeluarAktual  *time.Time              `json:"tanggal_keluar_aktual"`
+	TanggalKembaliAktual *time.Time              `json:"tanggal_kembali_aktual"`
+	AlasanPembatalan     string                  `json:"alasan_pembatalan"`
 }
 
 func buildPersetujuan(
@@ -181,6 +212,7 @@ func (c *PeminjamanController) susunResponse(p *models.Peminjaman, denganTTD boo
 		KebutuhanAksesori:     p.KebutuhanAksesori,
 		Catatan:               p.Catatan,
 		TanggalKeluarAktual:   p.TglKeluarAktual,
+		TanggalKembaliAktual:  p.TglKembaliAktual,
 		AlasanPembatalan:      p.AlasanPembatalan,
 	}
 
@@ -306,6 +338,45 @@ func (c *PeminjamanController) susunResponse(p *models.Peminjaman, denganTTD boo
 		}
 
 		resp.SerahTerimaKeluar = serah
+
+		if st.KembaliAt != nil {
+			kembali := &serahTerimaKembaliResp{
+				Tanggal:            *st.KembaliAt,
+				AdaKejadian:        st.AdaKejadian,
+				UraianKejadian:     st.UraianKejadian,
+				AdaTS:              st.KembaliAdaTS,
+				TindakLanjut:       st.TindakLanjut,
+				AlasanTindakLanjut: st.AlasanTindakLanjut,
+				Catatan:            st.KembaliCatatan,
+				LampiranA:          make([]butirKembaliResp, 0, len(st.Items)),
+			}
+
+			if p.Pengelola != nil {
+				kembali.PICPenerima = p.Pengelola.Name
+			}
+
+			if p.Peminjam != nil {
+				kembali.PeminjamPenyerah = p.Peminjam.Name
+			}
+
+			for _, item := range st.Items {
+				kembali.LampiranA = append(kembali.LampiranA, butirKembaliResp{
+					NomorButir:       item.NomorButir,
+					Butir:            item.Butir,
+					StatusKeluar:     item.Hasil,
+					KeteranganKeluar: item.Keterangan,
+					Status:           item.HasilKembali,
+					Keterangan:       item.KeteranganKembali,
+				})
+			}
+
+			if denganTTD {
+				kembali.TTDPengelola = ttdPointer(st.KembaliPengelolaTTD)
+				kembali.TTDPeminjam = ttdPointer(st.KembaliPeminjamTTD)
+			}
+
+			resp.SerahTerimaKembali = kembali
+		}
 	}
 
 	return resp

@@ -111,7 +111,7 @@ func (r *PeminjamanRepository) FindAll(filter PeminjamanFilter) ([]models.Peminj
 
 	if filter.MenungguSaya {
 		query = query.Where(
-			"((status = ? AND manajer_peminjam_id = ?) OR (status = ? AND pengelola_id = ?) OR (status = ? AND manager_lab_id = ?) OR (status = ? AND pengelola_id = ?) OR (status = ? AND peminjam_id = ?))",
+			"((status = ? AND manajer_peminjam_id = ?) OR (status = ? AND pengelola_id = ?) OR (status = ? AND manager_lab_id = ?) OR (status = ? AND pengelola_id = ?) OR (status = ? AND peminjam_id = ?) OR (status = ? AND pengelola_id = ?))",
 			models.StatusPeminjamanMenungguManajerPeminjam, uid,
 			models.StatusPeminjamanMenungguPengelola, uid,
 			models.StatusPeminjamanMenungguManagerLab, uid,
@@ -119,6 +119,8 @@ func (r *PeminjamanRepository) FindAll(filter PeminjamanFilter) ([]models.Peminj
 			models.StatusPeminjamanDisetujui, uid,
 			// Siap diserahkan: peminjam perlu mengonfirmasi terima.
 			models.StatusPeminjamanSiapDiserahkan, uid,
+			// Sedang dipinjam: Pengelola menunggu alat dikembalikan.
+			models.StatusPeminjamanSedangDipinjam, uid,
 		)
 	}
 

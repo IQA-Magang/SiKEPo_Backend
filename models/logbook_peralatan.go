@@ -63,6 +63,9 @@ const (
 	LogbookAksiChecklistKeluar         = "checklist_keluar"
 	LogbookAksiDibatalkanChecklist     = "dibatalkan_checklist"
 	LogbookAksiSerahTerimaKeluar       = "serah_terima_keluar"
+	LogbookAksiPengembalian            = "pengembalian"
+	LogbookAksiDihentikanPengembalian  = "dihentikan_pengembalian"
+	LogbookAksiPerluVerifikasi         = "perlu_verifikasi"
 )
 
 var logbookJudul = map[string]string{
@@ -77,6 +80,9 @@ var logbookJudul = map[string]string{
 	LogbookAksiChecklistKeluar:         "Pemeriksaan serah terima keluar",
 	LogbookAksiDibatalkanChecklist:     "Peminjaman dibatalkan",
 	LogbookAksiSerahTerimaKeluar:       "Serah terima keluar",
+	LogbookAksiPengembalian:            "Pengembalian peralatan",
+	LogbookAksiDihentikanPengembalian:  "Peralatan dihentikan (Do Not Use)",
+	LogbookAksiPerluVerifikasi:         "Perlu verifikasi ulang",
 }
 
 // LogbookJudul mengubah kode aksi menjadi judul yang ditampilkan. Judul tidak

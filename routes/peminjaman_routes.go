@@ -30,4 +30,7 @@ func PeminjamanRoutes(app *fiber.App, db *gorm.DB) {
 	// Serah terima keluar: Pengelola mengisi checklist, lalu peminjam mengonfirmasi.
 	peminjaman.Post("/:id/serah-terima", controller.SerahTerima)
 	peminjaman.Put("/:id/konfirmasi-terima", controller.KonfirmasiTerima)
+
+	// Pengembalian: Pengelola menerima alat dan mengisi kolom Kembali F/010.
+	peminjaman.Post("/:id/pengembalian", controller.Pengembalian)
 }

@@ -24,6 +24,19 @@ type SerahTerima struct {
 	DiterimaAt   *time.Time `gorm:"column:diterima_at" json:"diterima_at"`
 	PeminjamTTD  string     `gorm:"column:peminjam_ttd;type:mediumtext" json:"-"`
 
+	// Diisi Pengelola saat pengembalian (kolom Kembali pada F/010). Peminjam
+	// yang menyerahkan dan Pengelola yang menerima sama-sama menandatangani.
+	KembaliDiterimaOleh *uint64    `gorm:"column:kembali_diterima_oleh" json:"kembali_diterima_oleh"`
+	KembaliAt           *time.Time `gorm:"column:kembali_at" json:"kembali_at"`
+	KembaliPengelolaTTD string     `gorm:"column:kembali_pengelola_ttd;type:mediumtext" json:"-"`
+	KembaliPeminjamTTD  string     `gorm:"column:kembali_peminjam_ttd;type:mediumtext" json:"-"`
+	AdaKejadian         bool       `gorm:"column:ada_kejadian;not null;default:false" json:"ada_kejadian"`
+	UraianKejadian      string     `gorm:"column:uraian_kejadian;type:text" json:"uraian_kejadian"`
+	KembaliAdaTS        bool       `gorm:"column:kembali_ada_ts;not null;default:false" json:"kembali_ada_ts"`
+	KembaliCatatan      string     `gorm:"column:kembali_catatan;type:text" json:"kembali_catatan"`
+	TindakLanjut        string     `gorm:"column:tindak_lanjut;size:20" json:"tindak_lanjut"`
+	AlasanTindakLanjut  string     `gorm:"column:alasan_tindak_lanjut;type:text" json:"alasan_tindak_lanjut"`
+
 	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
 
@@ -42,7 +55,22 @@ type SerahTerimaItem struct {
 	Butir         string `gorm:"column:butir;size:255;not null" json:"butir"`
 	Hasil         string `gorm:"column:hasil;size:3;not null" json:"hasil"`
 	Keterangan    string `gorm:"column:keterangan;type:text" json:"keterangan"`
+
+	// Hasil dan keterangan saat kembali. Kosong sampai alat dikembalikan.
+	HasilKembali      string `gorm:"column:hasil_kembali;size:3" json:"hasil_kembali"`
+	KeteranganKembali string `gorm:"column:keterangan_kembali;type:text" json:"keterangan_kembali"`
 }
+
+// Tindak lanjut setelah alat kembali. Nilainya mengikuti istilah flowchart.
+const (
+	// TindakLanjutDoNotUse: ada kejadian, butir TS, atau kembali setelah jatuh
+	// tempo pemeriksaan. Alat dihentikan dan ditangani sesuai IK/012.
+	TindakLanjutDoNotUse = "DO_NOT_USE"
+
+	// TindakLanjutPerluVerifikasi: alat wajib diverifikasi ulang (IK/003)
+	// sebelum dipakai lagi.
+	TindakLanjutPerluVerifikasi = "PERLU_VERIFIKASI"
+)
 
 func (SerahTerimaItem) TableName() string {
 	return "serah_terima_item"

@@ -26,6 +26,11 @@ const (
 	StatusPeminjamanSiapDiserahkan = "SIAP_DISERAHKAN"
 	StatusPeminjamanSedangDipinjam = "SEDANG_DIPINJAM"
 	StatusPeminjamanDibatalkanTS   = "DIBATALKAN_TS"
+
+	// Pengembalian: Pengelola memeriksa alat bersama peminjam. Peminjaman
+	// ditutup di sini, sedangkan nasib alatnya (Do Not Use atau menunggu
+	// verifikasi ulang) dicatat pada lembar serah terima dan status alat.
+	StatusPeminjamanDikembalikan = "DIKEMBALIKAN"
 )
 
 // StatusPeminjamanAktif adalah status yang masih memegang jadwal alat.
@@ -104,6 +109,9 @@ type Peminjaman struct {
 	// Serah terima keluar
 	TglKeluarAktual  *time.Time `gorm:"column:tgl_keluar_aktual" json:"tgl_keluar_aktual"`
 	AlasanPembatalan string     `gorm:"column:alasan_pembatalan;type:text" json:"alasan_pembatalan"`
+
+	// Pengembalian
+	TglKembaliAktual *time.Time `gorm:"column:tgl_kembali_aktual" json:"tgl_kembali_aktual"`
 
 	CreatedAt time.Time      `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"column:updated_at" json:"updated_at"`
