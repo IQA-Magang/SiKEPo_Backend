@@ -113,6 +113,7 @@ func ConnectDatabase() error {
 			&models.KelompokAsset{},
 			&models.Notification{},
 			&models.Verifikasi{},
+			&models.JadwalPemeriksaanBerkala{},
 		)
 
 		if err != nil {

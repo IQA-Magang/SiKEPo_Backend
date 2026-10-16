@@ -172,6 +172,10 @@ func CreateApp() (*fiber.App, error) {
 		config.DB,
 		notificationRepo,
 	)
+	routes.SetupJadwalPemeriksaanBerkalaRoutes(
+    	app,
+    	config.DB,
+	)
 
 	// =====================================================
 	// ROOT
