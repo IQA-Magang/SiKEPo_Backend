@@ -208,6 +208,16 @@ func (c *PeminjamanController) Pengembalian(ctx *fiber.Ctx) error {
 
 		p.Status = models.StatusPeminjamanDikembalikan
 
+		// Perpanjangan yang masih menunggu tidak relevan lagi karena alat sudah kembali.
+		if err := tx.Model(&models.Perpanjangan{}).
+			Where("peminjaman_id = ? AND status = ?", p.ID, models.PerpanjanganMenunggu).
+			Updates(map[string]interface{}{
+				"status":            models.PerpanjanganDibatalkan,
+				"catatan_keputusan": "Alat sudah dikembalikan sebelum perpanjangan diputuskan",
+			}).Error; err != nil {
+			return err
+		}
+
 		perubahanAlat := map[string]interface{}{"status_alat": "Do Not Use"}
 		if tindakLanjut == models.TindakLanjutPerluVerifikasi {
 			perubahanAlat = map[string]interface{}{

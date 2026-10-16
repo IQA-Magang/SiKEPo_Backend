@@ -131,6 +131,9 @@ type Peminjaman struct {
 	ManagerLab      *User        `gorm:"foreignKey:ManagerLabID;references:UserID" json:"-"`
 	AlatAlternatif  *Peralatan   `gorm:"foreignKey:AlatAlternatifID;references:ID" json:"-"`
 	SerahTerima     *SerahTerima `gorm:"foreignKey:PeminjamanID;references:ID" json:"-"`
+
+	// Riwayat perpanjangan, terlama lebih dulu.
+	Perpanjangan []Perpanjangan `gorm:"foreignKey:PeminjamanID;references:ID" json:"-"`
 }
 
 func (Peminjaman) TableName() string {

@@ -120,6 +120,23 @@ type serahTerimaKembaliResp struct {
 	Catatan            string             `json:"catatan"`
 }
 
+// perpanjanganResp adalah satu pengajuan perpanjangan tanggal kembali. Status
+// berisi menunggu, disetujui, ditolak, atau dibatalkan. Gambar tanda tangan
+// Manager Lab hanya dikirim pada response detail.
+type perpanjanganResp struct {
+	ID                 uint64     `json:"id"`
+	Status             string     `json:"status"`
+	TanggalKembaliLama string     `json:"tanggal_kembali_lama"`
+	TanggalKembaliBaru string     `json:"tanggal_kembali_baru"`
+	Alasan             string     `json:"alasan"`
+	DiajukanOleh       string     `json:"diajukan_oleh"`
+	DiajukanPada       time.Time  `json:"diajukan_pada"`
+	DiputuskanOleh     string     `json:"diputuskan_oleh"`
+	DiputuskanPada     *time.Time `json:"diputuskan_pada"`
+	CatatanKeputusan   string     `json:"catatan_keputusan"`
+	TTD                *string    `json:"ttd"`
+}
+
 type peminjamanResp struct {
 	ID               uint64    `json:"id"`
 	Kode             string    `json:"kode"`
@@ -135,9 +152,23 @@ type peminjamanResp struct {
 	IsEksternal           bool   `json:"is_eksternal"`
 	RencanaTanggalKeluar  string `json:"rencana_tanggal_keluar"`
 	RencanaTanggalKembali string `json:"rencana_tanggal_kembali"`
-	KebutuhanKelengkapan  string `json:"kebutuhan_kelengkapan"`
-	KebutuhanAksesori     string `json:"kebutuhan_aksesori"`
-	Catatan               string `json:"catatan"`
+
+	// RencanaTanggalKembaliAwal adalah tanggal kembali sebelum perpanjangan
+	// pertama yang disetujui. Sama dengan RencanaTanggalKembali bila belum
+	// pernah diperpanjang.
+	RencanaTanggalKembaliAwal string `json:"rencana_tanggal_kembali_awal"`
+
+	// DapatDiperpanjang bernilai true bila pengajuan sedang berjalan, belum ada
+	// perpanjangan yang menunggu, dan belum lewat tanggal kembali. Tidak
+	// memeriksa siapa yang login, jadi frontend perlu menambahkan pengecekan
+	// bahwa user adalah peminjamnya.
+	DapatDiperpanjang bool `json:"dapat_diperpanjang"`
+
+	Perpanjangan []perpanjanganResp `json:"perpanjangan"`
+
+	KebutuhanKelengkapan string `json:"kebutuhan_kelengkapan"`
+	KebutuhanAksesori    string `json:"kebutuhan_aksesori"`
+	Catatan              string `json:"catatan"`
 
 	ApprovalManagerPeminjam persetujuanResp `json:"approval_manager_peminjam"`
 	ApprovalPengelola       pengelolaResp   `json:"approval_pengelola"`
@@ -215,6 +246,50 @@ func (c *PeminjamanController) susunResponse(p *models.Peminjaman, denganTTD boo
 		TanggalKembaliAktual:  p.TglKembaliAktual,
 		AlasanPembatalan:      p.AlasanPembatalan,
 	}
+
+	resp.RencanaTanggalKembaliAwal = resp.RencanaTanggalKembali
+	resp.Perpanjangan = make([]perpanjanganResp, 0, len(p.Perpanjangan))
+	adaMenunggu := false
+
+	for _, pj := range p.Perpanjangan {
+		item := perpanjanganResp{
+			ID:                 pj.ID,
+			Status:             pj.Status,
+			TanggalKembaliLama: formatTanggalID(pj.TglKembaliLama),
+			TanggalKembaliBaru: formatTanggalID(pj.TglKembaliBaru),
+			Alasan:             pj.Alasan,
+			DiajukanPada:       pj.CreatedAt,
+			DiputuskanPada:     pj.DiputuskanAt,
+			CatatanKeputusan:   pj.CatatanKeputusan,
+		}
+
+		if pj.Pengaju != nil {
+			item.DiajukanOleh = pj.Pengaju.Name
+		}
+
+		if pj.Pemutus != nil {
+			item.DiputuskanOleh = pj.Pemutus.Name
+		}
+
+		if denganTTD {
+			item.TTD = ttdPointer(pj.TTD)
+		}
+
+		if pj.Status == models.PerpanjanganMenunggu {
+			adaMenunggu = true
+		}
+
+		// Perpanjangan disetujui pertama menentukan tanggal kembali awal.
+		if pj.Status == models.PerpanjanganDisetujui && resp.RencanaTanggalKembaliAwal == resp.RencanaTanggalKembali {
+			resp.RencanaTanggalKembaliAwal = item.TanggalKembaliLama
+		}
+
+		resp.Perpanjangan = append(resp.Perpanjangan, item)
+	}
+
+	resp.DapatDiperpanjang = p.Status == models.StatusPeminjamanSedangDipinjam &&
+		!adaMenunggu &&
+		!tanggalSaja(time.Now()).After(tanggalSaja(p.RencanaTanggalKembali))
 
 	if p.Peralatan != nil {
 		resp.Peralatan = peminjamanPeralatanResp{

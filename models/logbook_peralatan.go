@@ -66,6 +66,9 @@ const (
 	LogbookAksiPengembalian            = "pengembalian"
 	LogbookAksiDihentikanPengembalian  = "dihentikan_pengembalian"
 	LogbookAksiPerluVerifikasi         = "perlu_verifikasi"
+	LogbookAksiPerpanjanganDiajukan    = "perpanjangan_diajukan"
+	LogbookAksiPerpanjanganDisetujui   = "perpanjangan_disetujui"
+	LogbookAksiPerpanjanganDitolak     = "perpanjangan_ditolak"
 )
 
 var logbookJudul = map[string]string{
@@ -83,6 +86,9 @@ var logbookJudul = map[string]string{
 	LogbookAksiPengembalian:            "Pengembalian peralatan",
 	LogbookAksiDihentikanPengembalian:  "Peralatan dihentikan (Do Not Use)",
 	LogbookAksiPerluVerifikasi:         "Perlu verifikasi ulang",
+	LogbookAksiPerpanjanganDiajukan:    "Perpanjangan diajukan",
+	LogbookAksiPerpanjanganDisetujui:   "Perpanjangan disetujui",
+	LogbookAksiPerpanjanganDitolak:     "Perpanjangan ditolak",
 }
 
 // LogbookJudul mengubah kode aksi menjadi judul yang ditampilkan. Judul tidak

@@ -44,6 +44,11 @@ func (r *PeminjamanRepository) withRelations(query *gorm.DB) *gorm.DB {
 		Preload("Pengelola").
 		Preload("ManagerLab").
 		Preload("AlatAlternatif").
+		Preload("Perpanjangan", func(db *gorm.DB) *gorm.DB {
+			return db.Order("id ASC")
+		}).
+		Preload("Perpanjangan.Pengaju").
+		Preload("Perpanjangan.Pemutus").
 		Preload("SerahTerima").
 		Preload("SerahTerima.Items", func(db *gorm.DB) *gorm.DB {
 			return db.Order("nomor_butir ASC")
@@ -111,7 +116,7 @@ func (r *PeminjamanRepository) FindAll(filter PeminjamanFilter) ([]models.Peminj
 
 	if filter.MenungguSaya {
 		query = query.Where(
-			"((status = ? AND manajer_peminjam_id = ?) OR (status = ? AND pengelola_id = ?) OR (status = ? AND manager_lab_id = ?) OR (status = ? AND pengelola_id = ?) OR (status = ? AND peminjam_id = ?) OR (status = ? AND pengelola_id = ?))",
+			"((status = ? AND manajer_peminjam_id = ?) OR (status = ? AND pengelola_id = ?) OR (status = ? AND manager_lab_id = ?) OR (status = ? AND pengelola_id = ?) OR (status = ? AND peminjam_id = ?) OR (status = ? AND pengelola_id = ?) OR (status = ? AND manager_lab_id = ? AND EXISTS (SELECT 1 FROM perpanjangan_peminjaman pp WHERE pp.peminjaman_id = peminjaman.id AND pp.status = ?)))",
 			models.StatusPeminjamanMenungguManajerPeminjam, uid,
 			models.StatusPeminjamanMenungguPengelola, uid,
 			models.StatusPeminjamanMenungguManagerLab, uid,
@@ -121,6 +126,8 @@ func (r *PeminjamanRepository) FindAll(filter PeminjamanFilter) ([]models.Peminj
 			models.StatusPeminjamanSiapDiserahkan, uid,
 			// Sedang dipinjam: Pengelola menunggu alat dikembalikan.
 			models.StatusPeminjamanSedangDipinjam, uid,
+			// Perpanjangan menunggu: Manager Lab perlu memutuskan.
+			models.StatusPeminjamanSedangDipinjam, uid, models.PerpanjanganMenunggu,
 		)
 	}
 

@@ -24,6 +24,7 @@ func MigratePeminjaman(db *gorm.DB) error {
 		&models.Peminjaman{},
 		&models.SerahTerima{},
 		&models.SerahTerimaItem{},
+		&models.Perpanjangan{},
 	); err != nil {
 		return fmt.Errorf("failed to migrate peminjaman tables: %w", err)
 	}

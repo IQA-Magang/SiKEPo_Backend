@@ -33,4 +33,8 @@ func PeminjamanRoutes(app *fiber.App, db *gorm.DB) {
 
 	// Pengembalian: Pengelola menerima alat dan mengisi kolom Kembali F/010.
 	peminjaman.Post("/:id/pengembalian", controller.Pengembalian)
+
+	// Perpanjangan: peminjam mengajukan, Manager Lab pemilik memutuskan.
+	peminjaman.Post("/:id/perpanjangan", controller.AjukanPerpanjangan)
+	peminjaman.Put("/:id/perpanjangan/:perpanjangan_id/keputusan", controller.KeputusanPerpanjangan)
 }

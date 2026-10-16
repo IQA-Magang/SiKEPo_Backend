@@ -669,12 +669,145 @@ func seedSerahTerima(db *gorm.DB) error {
 			}
 		}
 
+		if err := seedPerpanjanganContoh(tx, alat); err != nil {
+			return err
+		}
+
 		log.Printf("Seeder serah terima selesai: %d alat contoh (DEM-001 sampai DEM-014) dan %d pengajuan dibuat",
 			len(alat), len(daftarKasusSerah))
 		log.Println("Gunakan staff@sikepo.local dan staff2@sikepo.local, password password123")
 
 		return nil
 	})
+}
+
+// seedPerpanjanganContoh menambah dua perpanjangan pada peminjaman yang sedang
+// berjalan: DEM-005 dengan perpanjangan yang sudah disetujui, dan DEM-006
+// dengan perpanjangan yang menunggu keputusan Manager Lab.
+func seedPerpanjanganContoh(tx *gorm.DB, alat []*models.Peralatan) error {
+	kasus := []struct {
+		indeksAlat int
+		status     string
+	}{
+		{4, models.PerpanjanganDisetujui},
+		{5, models.PerpanjanganMenunggu},
+	}
+
+	for _, k := range kasus {
+		var p models.Peminjaman
+		if err := tx.
+			Where("peralatan_id = ? AND status = ?", alat[k.indeksAlat].ID, models.StatusPeminjamanSedangDipinjam).
+			First(&p).Error; err != nil {
+			return err
+		}
+
+		var peminjam, managerLab models.User
+		if err := tx.Where("user_id = ?", p.PeminjamID).First(&peminjam).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("user_id = ?", p.ManagerLabID).First(&managerLab).Error; err != nil {
+			return err
+		}
+
+		sekarang := time.Now()
+		nama := fmt.Sprintf("%s (%s)", alat[k.indeksAlat].NamaPeralatan, alat[k.indeksAlat].NomorAset)
+
+		catat := func(aksi string, userID uint64, keterangan string, waktu time.Time) error {
+			return tx.Create(&models.LogbookPeralatan{
+				PeralatanID: p.PeralatanID,
+				Jenis:       models.LogbookJenisPeminjaman,
+				ReferensiID: &p.ID,
+				Aksi:        aksi,
+				Status:      models.StatusPeminjamanSedangDipinjam,
+				UserID:      &userID,
+				Keterangan:  keterangan,
+				CreatedAt:   waktu,
+			}).Error
+		}
+
+		if k.status == models.PerpanjanganDisetujui {
+			// Tanggal kembali pada peminjaman sudah berisi tanggal baru.
+			lama := p.RencanaTanggalKembali.AddDate(0, 0, -2)
+			diajukan := sekarang.Add(-30 * time.Hour)
+			diputuskan := sekarang.Add(-28 * time.Hour)
+
+			pj := models.Perpanjangan{
+				PeminjamanID:   p.ID,
+				DiajukanOleh:   p.PeminjamID,
+				TglKembaliLama: lama,
+				TglKembaliBaru: p.RencanaTanggalKembali,
+				Alasan:         "Pengujian belum selesai, butuh dua hari tambahan",
+				Status:         models.PerpanjanganDisetujui,
+				DiputuskanOleh: &p.ManagerLabID,
+				DiputuskanAt:   &diputuskan,
+				TTD:            ttdContoh(3),
+				CreatedAt:      diajukan,
+				UpdatedAt:      diputuskan,
+			}
+
+			if err := tx.Create(&pj).Error; err != nil {
+				return err
+			}
+
+			if err := catat(models.LogbookAksiPerpanjanganDiajukan, p.PeminjamID,
+				fmt.Sprintf("Perpanjangan diajukan oleh %s: tanggal kembali dari %s menjadi %s. Alasan: %s.",
+					peminjam.Name, formatTanggalSeed(lama), formatTanggalSeed(p.RencanaTanggalKembali), pj.Alasan),
+				diajukan); err != nil {
+				return err
+			}
+
+			if err := catat(models.LogbookAksiPerpanjanganDisetujui, p.ManagerLabID,
+				fmt.Sprintf("Perpanjangan disetujui oleh Manager Lab (%s). Tanggal kembali dari %s menjadi %s.",
+					managerLab.Name, formatTanggalSeed(lama), formatTanggalSeed(p.RencanaTanggalKembali)),
+				diputuskan); err != nil {
+				return err
+			}
+
+			continue
+		}
+
+		baru := p.RencanaTanggalKembali.AddDate(0, 0, 3)
+		diajukan := sekarang.Add(-3 * time.Hour)
+
+		pj := models.Perpanjangan{
+			PeminjamanID:   p.ID,
+			DiajukanOleh:   p.PeminjamID,
+			TglKembaliLama: p.RencanaTanggalKembali,
+			TglKembaliBaru: baru,
+			Alasan:         "Perlu pengukuran ulang pada beban berbeda",
+			Status:         models.PerpanjanganMenunggu,
+			CreatedAt:      diajukan,
+			UpdatedAt:      diajukan,
+		}
+
+		if err := tx.Create(&pj).Error; err != nil {
+			return err
+		}
+
+		if err := catat(models.LogbookAksiPerpanjanganDiajukan, p.PeminjamID,
+			fmt.Sprintf("Perpanjangan diajukan oleh %s: tanggal kembali dari %s menjadi %s. Alasan: %s.",
+				peminjam.Name, formatTanggalSeed(p.RencanaTanggalKembali), formatTanggalSeed(baru), pj.Alasan),
+			diajukan); err != nil {
+			return err
+		}
+
+		if err := utils.SendNotification(tx, p.ManagerLabID,
+			"perpanjangan_diajukan", "Pengajuan perpanjangan menunggu keputusan Anda",
+			fmt.Sprintf("%s mengajukan perpanjangan %s (pengajuan %s) dari %s menjadi %s. Alasan: %s.",
+				peminjam.Name, nama, p.Kode, formatTanggalSeed(p.RencanaTanggalKembali), formatTanggalSeed(baru), pj.Alasan)); err != nil {
+			return err
+		}
+
+		if err := utils.SendNotification(tx, p.PengelolaID,
+			"perpanjangan_diajukan", "Peminjam mengajukan perpanjangan",
+			fmt.Sprintf("%s mengajukan perpanjangan %s (pengajuan %s) menjadi %s. Menunggu keputusan Manager Lab.",
+				peminjam.Name, nama, p.Kode, formatTanggalSeed(baru))); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // buatAlatDemo membuat alat contoh beserta detailnya. Ruangan dan kelompok aset
