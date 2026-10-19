@@ -32,7 +32,7 @@ type Peralatan struct {
 	Foto string `gorm:"type:varchar(255)" json:"foto"`
 
 	// Status fisik / penggunaan alat
-	StatusAlat string `gorm:"type:enum('Karantina','Aktif','Dipinjam','Dalam Kalibrasi','Rusak','Dihapuskan');default:'Karantina'" json:"status_alat"`
+	StatusAlat string `gorm:"type:enum('Karantina','Aktif','Dipinjam','Dalam Kalibrasi','Rusak','Dihapuskan','Do Not Use');default:'Karantina'" json:"status_alat"`
 
 	// Status proses verifikasi
 	StatusVerifikasi string `gorm:"type:enum('Belum Diverifikasi','Draft','Diajukan','Disetujui','Ditolak');default:'Belum Diverifikasi'" json:"status_verifikasi"`
@@ -48,6 +48,10 @@ type Peralatan struct {
 	UpdatedAt time.Time `json:"updated_at"`
 
 	DeletedAt *time.Time `gorm:"index" json:"deleted_at,omitempty"`
+
+	// PemakaiTerakhir hanya dipakai untuk response, tidak disimpan di tabel.
+	// Diisi pada daftar peralatan, dan null bila alat belum pernah diserahkan.
+	PemakaiTerakhir *PemakaiTerakhir `gorm:"-" json:"pemakai_terakhir"`
 }
 
 func (Peralatan) TableName() string {

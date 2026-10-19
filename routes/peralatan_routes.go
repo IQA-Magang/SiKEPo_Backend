@@ -44,8 +44,12 @@ func SetupPeralatanRoutes(
 	guest :=
 		app.Group("/api/peralatan")
 
+	// Endpoint ini publik karena dipakai halaman hasil pindai QR. OptionalAuth
+	// hanya mengenali user yang login, supaya data pribadi seperti pemakai
+	// terakhir tidak ikut tampil bagi pengunjung tanpa login.
 	guest.Get(
 		"/:nomor_aset",
+		middleware.OptionalAuth,
 		peralatanController.GetByNomorAset,
 	)
 

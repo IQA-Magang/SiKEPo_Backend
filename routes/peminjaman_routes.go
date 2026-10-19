@@ -1,0 +1,40 @@
+package routes
+
+import (
+	"backend/controllers"
+	"backend/middleware"
+	"backend/repositories"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+)
+
+// PeminjamanRoutes mendaftarkan endpoint peminjaman peralatan.
+//
+// Semua endpoint hanya membutuhkan login. Hak akses tiap langkah, yaitu staff
+// peminjam atau penyetuju yang ditetapkan, dicek di controller karena
+// bergantung pada data pengajuan, bukan sekadar role.
+func PeminjamanRoutes(app *fiber.App, db *gorm.DB) {
+	controller := controllers.NewPeminjamanController(
+		repositories.NewPeminjamanRepository(db),
+		repositories.NewLogbookRepository(db),
+	)
+
+	peminjaman := app.Group("/api/peminjaman", middleware.RequireAuth)
+
+	peminjaman.Get("/", controller.GetAll)
+	peminjaman.Post("/", controller.Create)
+	peminjaman.Get("/:id", controller.GetByID)
+	peminjaman.Put("/:id/keputusan", controller.Keputusan)
+
+	// Serah terima keluar: Pengelola mengisi checklist, lalu peminjam mengonfirmasi.
+	peminjaman.Post("/:id/serah-terima", controller.SerahTerima)
+	peminjaman.Put("/:id/konfirmasi-terima", controller.KonfirmasiTerima)
+
+	// Pengembalian: Pengelola menerima alat dan mengisi kolom Kembali F/010.
+	peminjaman.Post("/:id/pengembalian", controller.Pengembalian)
+
+	// Perpanjangan: peminjam mengajukan, Manager Lab pemilik memutuskan.
+	peminjaman.Post("/:id/perpanjangan", controller.AjukanPerpanjangan)
+	peminjaman.Put("/:id/perpanjangan/:perpanjangan_id/keputusan", controller.KeputusanPerpanjangan)
+}

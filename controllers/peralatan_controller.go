@@ -107,6 +107,21 @@ func (c *PeralatanController) GetByNomorAset(ctx *fiber.Ctx) error {
 		})
 	}
 
+	// Pemakai terakhir hanya ditampilkan untuk user yang login. Halaman QR
+	// publik tetap mendapat nilai kosong.
+	if ctx.Locals("user_id") != nil {
+		pemakai, err := c.Repo.FindPemakaiTerakhir(peralatan.ID)
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Gagal mengambil pemakai terakhir",
+				"error":   err.Error(),
+			})
+		}
+
+		peralatan.PemakaiTerakhir = pemakai
+	}
+
 	var detail interface{}
 	if c.DB != nil {
 		switch peralatan.KategoriPeralatanID {
