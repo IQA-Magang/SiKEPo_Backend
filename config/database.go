@@ -74,7 +74,8 @@ func ConnectDatabase() error {
 	hasVerifikasiTable := database.Migrator().HasTable(&models.Verifikasi{})
 	hasLogPeninjauanPeralatanTable := database.Migrator().HasTable(&models.LogPeninjauanPeralatan{})
 	hasHasilVerifikasiTable := database.Migrator().HasTable(&models.HasilVerifikasi{})
-
+	hasJadwalPemeriksaanBerkalaTable := database.Migrator().HasTable(&models.JadwalPemeriksaanBerkala{})
+	
 	if !hasUserTable ||
 		!hasDetailPeminjamanTable ||
 		!hasRuanganTable ||
@@ -90,7 +91,8 @@ func ConnectDatabase() error {
 		!hasNotificationTable ||
 		!hasVerifikasiTable ||
 		!hasLogPeninjauanPeralatanTable ||
-		!hasHasilVerifikasiTable {
+		!hasHasilVerifikasiTable ||
+		!hasJadwalPemeriksaanBerkalaTable {
 
 		log.Println("Beberapa tabel belum ada. Membuat tabel...")
 
