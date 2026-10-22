@@ -75,7 +75,7 @@ func ConnectDatabase() error {
 	hasLogPeninjauanPeralatanTable := database.Migrator().HasTable(&models.LogPeninjauanPeralatan{})
 	hasHasilVerifikasiTable := database.Migrator().HasTable(&models.HasilVerifikasi{})
 	hasJadwalPemeriksaanBerkalaTable := database.Migrator().HasTable(&models.JadwalPemeriksaanBerkala{})
-	
+
 	if !hasUserTable ||
 		!hasDetailPeminjamanTable ||
 		!hasRuanganTable ||
@@ -383,9 +383,12 @@ func SeedLabUsers() error {
 func ensureLabSeedUser(db *gorm.DB, user models.User, labsID uint64) (*models.User, error) {
 	var existing models.User
 	err := db.Where("email = ?", user.Email).First(&existing).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		err = db.Where("nip = ?", user.NIP).First(&existing).Error
+	}
 	if err == nil {
 		if existing.Role != user.Role {
-			return nil, fmt.Errorf("seed account %s has role %s, expected %s", user.Email, existing.Role, user.Role)
+			return nil, fmt.Errorf("seed account with NIP %s has role %s, expected %s", user.NIP, existing.Role, user.Role)
 		}
 		if existing.LabsID == nil {
 			if err := db.Model(&existing).Update("labs_id", labsID).Error; err != nil {

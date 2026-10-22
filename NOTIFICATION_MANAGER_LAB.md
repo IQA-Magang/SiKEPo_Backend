@@ -11,6 +11,20 @@ Notifikasi dibuat secara umum agar reusable untuk berbagai event, bukan hanya un
 
 Dengan pola ini, notifikasi tidak lagi hanya dibuat khusus untuk satu role saja.
 
+Saat pengelola menandatangani pengajuan melalui `PUT /api/verifikasi/:id/sign-pic`, sistem juga mengirim email melalui SMTP ke Manager Lab. Email memuat nama dan nomor aset peralatan, nama pengaju, serta tautan ke halaman verifikasi Manager. Pengiriman email dilakukan setelah pengajuan tersimpan; jika email gagal, pengajuan tetap berhasil dan response memuat `email_sent: false` serta `email_warning`.
+
+Konfigurasikan environment berikut untuk mengaktifkan email:
+
+| Variabel | Keterangan |
+| --- | --- |
+| `SMTP_HOST` | Host server SMTP |
+| `SMTP_PORT` | Port SMTP; `587` menggunakan STARTTLS, `465` menggunakan TLS implisit |
+| `SMTP_EMAIL` / `SMTP_PASSWORD` | Email akun dan password SMTP; isi keduanya atau biarkan kosong untuk relay tanpa autentikasi |
+| `SMTP_USERNAME` | Nama environment alternatif untuk email akun SMTP; digunakan jika `SMTP_EMAIL` kosong |
+| `SMTP_FROM` | Alamat pengirim; jika kosong, menggunakan email akun SMTP (wajib diisi jika relay tidak memakai autentikasi) |
+| `FRONTEND_URL` | URL dasar aplikasi frontend |
+| `MANAGER_VERIFICATION_PATH` | Route halaman Manager, default `/#/verifikasi`; link umum tidak menyertakan ID. Jika diperlukan, `{id}` di route akan diganti dengan ID verifikasi. |
+
 ---
 
 ## Alur kerja saat ini

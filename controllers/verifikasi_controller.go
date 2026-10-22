@@ -5,6 +5,8 @@ import (
 
 	"fmt"
 
+	"log"
+
 	"strconv"
 
 	"strings"
@@ -14,6 +16,8 @@ import (
 	"backend/models"
 
 	"backend/repositories"
+
+	"backend/utils"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -84,12 +88,12 @@ type CreateVerifikasiRequest struct {
 		Identitas     string `json:"identitas"`
 		Kelengkapan   string `json:"kelengkapan"`
 		Firmware      string `json:"firmware"`
-		KondisiFisik  string `json:"kondisi_fisik"`
-		Segel         string `json:"segel"`
-		FungsiAwal    string `json:"fungsi_awal"`
-		Metrologi     string `json:"metrologi"`
-		Sertifikat    string `json:"sertifikat"`
-		Catatan       string `json:"catatan"`
+		KondisiFisik string `json:"kondisi_fisik"`
+		Segel        string `json:"segel"`
+		FungsiAwal   string `json:"fungsi_awal"`
+		Metrologi    string `json:"metrologi"`
+		Sertifikat   string `json:"sertifikat"`
+		Catatan      string `json:"catatan"`
 	} `json:"hasil_verifikasi"`
 }
 
@@ -1241,6 +1245,17 @@ func (c *VerifikasiController) SignPIC(
 
 	}
 
+	applicant, err := c.getAuthenticatedUser(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal mengambil data pengaju",
+			"error":   err.Error(),
+		})
+	}
+
+	managerEmail := ""
+
 	err = c.Repository.DB.Transaction(
 
 		func(tx *gorm.DB) error {
@@ -1295,7 +1310,8 @@ func (c *VerifikasiController) SignPIC(
 			if err :=
 
 				tx.
-					Preload("Labs").
+					Preload("Labs.Manager").
+					Where("id = ?", data.Peralatan.RuanganID).
 					First(
 
 						&ruangan,
@@ -1306,8 +1322,8 @@ func (c *VerifikasiController) SignPIC(
 			}
 
 			if ruangan.Labs == nil ||
-
-				ruangan.Labs.ManagerID == nil {
+				ruangan.Labs.ManagerID == nil ||
+				ruangan.Labs.Manager == nil {
 
 				return nil
 
@@ -1316,6 +1332,7 @@ func (c *VerifikasiController) SignPIC(
 			managerID :=
 
 				*ruangan.Labs.ManagerID
+			managerEmail = ruangan.Labs.Manager.Email
 
 			// =================================================
 
@@ -1387,6 +1404,25 @@ func (c *VerifikasiController) SignPIC(
 
 	}
 
+	emailSent := false
+	emailWarning := ""
+	if managerEmail == "" {
+		emailWarning = "Email Manager Lab tidak tersedia"
+		log.Printf("Email pengajuan verifikasi %d tidak dikirim: %s", id, emailWarning)
+	} else if err := utils.SendVerificationSubmissionEmail(
+		managerEmail,
+		applicant.Name,
+		data.Peralatan.NamaPeralatan,
+		data.Peralatan.NomorAset,
+		id,
+	); err != nil {
+		emailWarning = "Gagal mengirim email ke Manager Lab"
+		log.Printf("Gagal mengirim email pengajuan verifikasi %d ke Manager Lab: %v", id, err)
+	} else {
+		emailSent = true
+		log.Printf("Server SMTP menerima email pengajuan verifikasi %d untuk Manager Lab", id)
+	}
+
 	return ctx.JSON(fiber.Map{
 
 		"success": true,
@@ -1394,6 +1430,10 @@ func (c *VerifikasiController) SignPIC(
 		"message": "Verifikasi berhasil ditandatangani PIC dan diajukan kepada Manager",
 
 		"data": result,
+
+		"email_sent": emailSent,
+
+		"email_warning": emailWarning,
 	})
 
 }
