@@ -24,9 +24,9 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	}
 }
 
-// ==============================
+// =====================================================
 // GET ALL
-// ==============================
+// =====================================================
 
 func (r *UserRepository) GetAllUsers() ([]models.User, error) {
 
@@ -40,9 +40,35 @@ func (r *UserRepository) GetAllUsers() ([]models.User, error) {
 	return users, err
 }
 
-// ==============================
+func (r *UserRepository) GetUsersByLabsID(labsID uint64) ([]models.User, error) {
+	var users []models.User
+
+	err := r.DB.
+		Where("labs_id = ?", labsID).
+		Order("user_id DESC").
+		Find(&users).
+		Error
+
+	return users, err
+}
+
+func (r *UserRepository) GetUsersByLabsIDs(labsIDs []uint64) ([]models.User, error) {
+	var users []models.User
+	if len(labsIDs) == 0 {
+		return users, nil
+	}
+
+	err := r.DB.
+		Where("labs_id IN ?", labsIDs).
+		Order("user_id DESC").
+		Find(&users).
+		Error
+	return users, err
+}
+
+// =====================================================
 // GET BY ID
-// ==============================
+// =====================================================
 
 func (r *UserRepository) GetUserByID(id uint64) (*models.User, error) {
 
@@ -60,9 +86,40 @@ func (r *UserRepository) GetUserByID(id uint64) (*models.User, error) {
 	return &user, nil
 }
 
-// ==============================
+func (r *UserRepository) GetUserByIDAndLabsID(id, labsID uint64) (*models.User, error) {
+	var user models.User
+
+	err := r.DB.
+		Where("user_id = ? AND labs_id = ?", id, labsID).
+		First(&user).
+		Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *UserRepository) GetUserByIDAndLabsIDs(id uint64, labsIDs []uint64) (*models.User, error) {
+	var user models.User
+	if len(labsIDs) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	err := r.DB.
+		Where("user_id = ? AND labs_id IN ?", id, labsIDs).
+		First(&user).
+		Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// =====================================================
 // GET BY EMAIL
-// ==============================
+// =====================================================
 
 func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 
@@ -80,9 +137,9 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-// ==============================
+// =====================================================
 // GET BY NIP
-// ==============================
+// =====================================================
 
 func (r *UserRepository) GetUserByNIP(nip string) (*models.User, error) {
 
@@ -100,18 +157,14 @@ func (r *UserRepository) GetUserByNIP(nip string) (*models.User, error) {
 	return &user, nil
 }
 
-// ==============================
+// =====================================================
 // CREATE
-// ==============================
+// =====================================================
 
 func (r *UserRepository) CreateUser(
 	user *models.User,
 	password string,
 ) error {
-
-	// ==============================
-	// CEK NIP
-	// ==============================
 
 	var nipCount int64
 
@@ -129,10 +182,6 @@ func (r *UserRepository) CreateUser(
 		return ErrNIPAlreadyExists
 	}
 
-	// ==============================
-	// CEK EMAIL
-	// ==============================
-
 	var emailCount int64
 
 	err = r.DB.
@@ -149,10 +198,6 @@ func (r *UserRepository) CreateUser(
 		return ErrEmailAlreadyExists
 	}
 
-	// ==============================
-	// HASH PASSWORD
-	// ==============================
-
 	passwordHash, err := bcrypt.GenerateFromPassword(
 		[]byte(password),
 		bcrypt.DefaultCost,
@@ -164,13 +209,12 @@ func (r *UserRepository) CreateUser(
 
 	user.Password = string(passwordHash)
 
-	// Simpan user termasuk PIC
 	return r.DB.Create(user).Error
 }
 
-// ==============================
+// =====================================================
 // UPDATE
-// ==============================
+// =====================================================
 
 func (r *UserRepository) UpdateUser(
 	id uint64,
@@ -180,10 +224,6 @@ func (r *UserRepository) UpdateUser(
 
 	var existingUser models.User
 
-	// ==============================
-	// CARI USER
-	// ==============================
-
 	err := r.DB.
 		Where("user_id = ?", id).
 		First(&existingUser).
@@ -192,10 +232,6 @@ func (r *UserRepository) UpdateUser(
 	if err != nil {
 		return err
 	}
-
-	// ==============================
-	// CEK NIP
-	// ==============================
 
 	var nipCount int64
 
@@ -217,10 +253,6 @@ func (r *UserRepository) UpdateUser(
 		return ErrNIPAlreadyExists
 	}
 
-	// ==============================
-	// CEK EMAIL
-	// ==============================
-
 	var emailCount int64
 
 	err = r.DB.
@@ -241,22 +273,19 @@ func (r *UserRepository) UpdateUser(
 		return ErrEmailAlreadyExists
 	}
 
-	// Update user
 	existingUser.NIP = user.NIP
 	existingUser.Name = user.Name
 	existingUser.Email = user.Email
 	existingUser.Role = user.Role
 	existingUser.Position = user.Position
-	existingUser.PIC = user.PIC
+	existingUser.Pengelola = user.Pengelola
 
-	// ==============================
-	// UPDATE PASSWORD
-	// ==============================
+	// =====================================================
+	// UPDATE LAB SCOPE
+	// =====================================================
 
-	// Update PIC
-	existingUser.PIC = user.PIC
+	existingUser.LabsID = user.LabsID
 
-	// Update password jika diisi
 	if password != "" {
 
 		passwordHash, err := bcrypt.GenerateFromPassword(
@@ -271,16 +300,46 @@ func (r *UserRepository) UpdateUser(
 		existingUser.Password = string(passwordHash)
 	}
 
-	// ==============================
-	// SIMPAN
-	// ==============================
-
 	return r.DB.Save(&existingUser).Error
 }
 
-// ==============================
+func (r *UserRepository) SetStaffPengelolaByLabsIDs(
+	id uint64,
+	labsIDs []uint64,
+	pengelola bool,
+) (*models.User, error) {
+	if len(labsIDs) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	var staff models.User
+	if err := r.DB.
+		Where("user_id = ? AND labs_id IN ? AND role = ?", id, labsIDs, "staff").
+		First(&staff).
+		Error; err != nil {
+		return nil, err
+	}
+
+	result := r.DB.Model(&models.User{}).
+		Where("user_id = ? AND labs_id IN ? AND role = ?", id, labsIDs, "staff").
+		Update("pengelola", pengelola)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	var updatedUser models.User
+	if err := r.DB.
+		Where("user_id = ? AND labs_id IN ? AND role = ?", id, labsIDs, "staff").
+		First(&updatedUser).
+		Error; err != nil {
+		return nil, err
+	}
+	return &updatedUser, nil
+}
+
+// =====================================================
 // DELETE
-// ==============================
+// =====================================================
 
 func (r *UserRepository) DeleteUser(id uint64) error {
 

@@ -25,7 +25,21 @@ type UserController struct {
 
 func (c *UserController) GetUsers(ctx *fiber.Ctx) error {
 
-	users, err := c.Repository.GetAllUsers()
+	var users []models.User
+	var err error
+
+	if role, _ := ctx.Locals("role").(string); role == "manager" {
+		labsIDs, scopeErr := c.managerLabsIDs(ctx)
+		if scopeErr != nil {
+			return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"success": false,
+				"message": "Manager tidak memiliki akses lab yang valid",
+			})
+		}
+		users, err = c.Repository.GetUsersByLabsIDs(labsIDs)
+	} else {
+		users, err = c.Repository.GetAllUsers()
+	}
 
 	if err != nil {
 		return ctx.Status(500).JSON(fiber.Map{
@@ -61,7 +75,19 @@ func (c *UserController) GetUserByID(ctx *fiber.Ctx) error {
 		})
 	}
 
-	user, err := c.Repository.GetUserByID(id)
+	var user *models.User
+	if role, _ := ctx.Locals("role").(string); role == "manager" {
+		labsIDs, scopeErr := c.managerLabsIDs(ctx)
+		if scopeErr != nil {
+			return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"success": false,
+				"message": "Manager tidak memiliki akses lab yang valid",
+			})
+		}
+		user, err = c.Repository.GetUserByIDAndLabsIDs(id, labsIDs)
+	} else {
+		user, err = c.Repository.GetUserByID(id)
+	}
 
 	if err != nil {
 
@@ -86,6 +112,44 @@ func (c *UserController) GetUserByID(ctx *fiber.Ctx) error {
 	})
 }
 
+func (c *UserController) managerLabsIDs(ctx *fiber.Ctx) ([]uint64, error) {
+	email, ok := ctx.Locals("email").(string)
+	if !ok || email == "" {
+		return nil, errors.New("email manager tidak ditemukan di token")
+	}
+
+	manager, err := c.Repository.GetUserByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	if !strings.EqualFold(strings.TrimSpace(manager.Role), "manager") {
+		return nil, errors.New("pengguna bukan manager")
+	}
+
+	var labsIDs []uint64
+	if err := c.Repository.DB.Model(&models.Labs{}).
+		Where("manager_id = ?", manager.UserID).
+		Pluck("id", &labsIDs).Error; err != nil {
+		return nil, err
+	}
+	if manager.LabsID != nil && !containsLabsID(labsIDs, *manager.LabsID) {
+		labsIDs = append(labsIDs, *manager.LabsID)
+	}
+	if len(labsIDs) == 0 {
+		return nil, errors.New("manager tidak memiliki lab")
+	}
+	return labsIDs, nil
+}
+
+func containsLabsID(labsIDs []uint64, target uint64) bool {
+	for _, labsID := range labsIDs {
+		if labsID == target {
+			return true
+		}
+	}
+	return false
+}
+
 // ========================================
 // CREATE USER
 // ========================================
@@ -93,15 +157,14 @@ func (c *UserController) GetUserByID(ctx *fiber.Ctx) error {
 func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 
 	type CreateUserRequest struct {
-		NIP      string `json:"nip"`
-		Name     string `json:"name"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		Role     string `json:"role"`
-		Position string `json:"position"`
-
-		// PIC
-		PIC bool `json:"pic"`
+		NIP       string  `json:"nip"`
+		Name      string  `json:"name"`
+		Email     string  `json:"email"`
+		Password  string  `json:"password"`
+		Role      string  `json:"role"`
+		Position  string  `json:"position"`
+		Pengelola bool    `json:"pengelola"`
+		LabsID    *uint64 `json:"labs_id"`
 	}
 
 	var request CreateUserRequest
@@ -113,19 +176,11 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ==============================
-	// NORMALISASI
-	// ==============================
-
 	request.NIP = strings.TrimSpace(request.NIP)
 	request.Name = strings.TrimSpace(request.Name)
 	request.Email = strings.TrimSpace(request.Email)
 	request.Role = strings.TrimSpace(request.Role)
 	request.Position = strings.TrimSpace(request.Position)
-
-	// ==============================
-	// VALIDASI
-	// ==============================
 
 	if request.NIP == "" {
 		return ctx.Status(400).JSON(fiber.Map{
@@ -176,24 +231,28 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ==============================
-	// MODEL
-	// ==============================
+	// =====================================================
+	// VALIDASI LAB
+	// =====================================================
 
-	user := models.User{
-		NIP:      request.NIP,
-		Name:     request.Name,
-		Email:    request.Email,
-		Role:     request.Role,
-		Position: request.Position,
-
-		// PIC
-		PIC: request.PIC,
+	// Admin boleh tanpa Lab.
+	// Staff dan Manager wajib memiliki Lab.
+	if request.Role != "admin" && request.LabsID == nil {
+		return ctx.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": "Staff dan Manager wajib memiliki Lab",
+		})
 	}
 
-	// ==============================
-	// CREATE
-	// ==============================
+	user := models.User{
+		NIP:       request.NIP,
+		Name:      request.Name,
+		Email:     request.Email,
+		Role:      request.Role,
+		Position:  request.Position,
+		Pengelola: request.Pengelola,
+		LabsID:    request.LabsID,
+	}
 
 	err := c.Repository.CreateUser(
 		&user,
@@ -250,15 +309,14 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	}
 
 	type UpdateUserRequest struct {
-		NIP      string `json:"nip"`
-		Name     string `json:"name"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		Role     string `json:"role"`
-		Position string `json:"position"`
-
-		// PIC
-		PIC bool `json:"pic"`
+		NIP       string  `json:"nip"`
+		Name      string  `json:"name"`
+		Email     string  `json:"email"`
+		Password  string  `json:"password"`
+		Role      string  `json:"role"`
+		Position  string  `json:"position"`
+		Pengelola bool    `json:"pengelola"`
+		LabsID    *uint64 `json:"labs_id"`
 	}
 
 	var request UpdateUserRequest
@@ -270,19 +328,11 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ==============================
-	// NORMALISASI
-	// ==============================
-
 	request.NIP = strings.TrimSpace(request.NIP)
 	request.Name = strings.TrimSpace(request.Name)
 	request.Email = strings.TrimSpace(request.Email)
 	request.Role = strings.TrimSpace(request.Role)
 	request.Position = strings.TrimSpace(request.Position)
-
-	// ==============================
-	// VALIDASI
-	// ==============================
 
 	if request.NIP == "" ||
 		request.Name == "" ||
@@ -303,27 +353,24 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Model
-	user := models.User{
-		NIP:      request.NIP,
-		Name:     request.Name,
-		Email:    request.Email,
-		Role:     request.Role,
-		Position: request.Position,
-
-		// PIC
-		PIC: request.PIC,
+	if request.Role != "admin" && request.LabsID == nil {
+		return ctx.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": "Staff dan Manager wajib memiliki Lab",
+		})
 	}
 
-	// ==============================
-	// UPDATE
-	// ==============================
+	user := models.User{
+		NIP:       request.NIP,
+		Name:      request.Name,
+		Email:     request.Email,
+		Role:      request.Role,
+		Position:  request.Position,
+		Pengelola: request.Pengelola,
+		LabsID:    request.LabsID,
+	}
 
-	err = c.Repository.UpdateUser(
-		id,
-		&user,
-		request.Password,
-	)
+	err = c.Repository.UpdateUser(id, &user, request.Password)
 
 	if err != nil {
 
@@ -355,10 +402,6 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ==============================
-	// GET DATA TERBARU
-	// ==============================
-
 	updatedUser, err := c.Repository.GetUserByID(id)
 
 	if err != nil {
@@ -372,6 +415,55 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 		"success": true,
 		"message": "User berhasil diubah",
 		"data":    updatedUser,
+	})
+}
+
+func (c *UserController) SetStaffPengelola(ctx *fiber.Ctx) error {
+	id, err := strconv.ParseUint(ctx.Params("id"), 10, 64)
+	if err != nil || id == 0 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "ID user tidak valid",
+		})
+	}
+
+	var request struct {
+		Pengelola *bool `json:"pengelola"`
+	}
+	if err := ctx.BodyParser(&request); err != nil || request.Pengelola == nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Status pengelola wajib diisi",
+		})
+	}
+
+	labsIDs, err := c.managerLabsIDs(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"success": false,
+			"message": "Manager tidak memiliki akses lab yang valid",
+		})
+	}
+
+	user, err := c.Repository.SetStaffPengelolaByLabsIDs(id, labsIDs, *request.Pengelola)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"success": false,
+				"message": "Staff tidak ditemukan dalam lab yang dikelola",
+			})
+		}
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal memperbarui status pengelola",
+			"error":   err.Error(),
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"success": true,
+		"message": "Status pengelola berhasil diperbarui",
+		"data":    user,
 	})
 }
 

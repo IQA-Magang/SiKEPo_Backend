@@ -41,6 +41,10 @@ go run .
 
 Aplikasi berjalan di port `APP_PORT`, atau default `5000` jika tidak diisi.
 
+## Log request
+
+Setiap request HTTP dicatat di terminal dengan waktu, status response, durasi, IP, method, path, dan error jika ada. Header, token, dan body request tidak dicatat.
+
 ## Data dummy otomatis
 
 Saat database baru dibuat dan masih kosong, aplikasi akan otomatis membuat data dummy saat startup. Data yang dibuat meliputi:

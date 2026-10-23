@@ -1,10 +1,14 @@
 package app
 
 import (
+	"encoding/json"
+	"log"
 	"os"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	"backend/config"
 	"backend/controllers"
@@ -31,6 +35,38 @@ func CreateApp() (*fiber.App, error) {
 		BodyLimit: 50 * 1024 * 1024,
 	})
 
+	app.Use(logger.New(logger.Config{
+		Format:     "${time} | ${status} | ${latency} | ${ip} | ${method} ${path} | ${error}\n",
+		TimeFormat: "2006-01-02 15:04:05",
+		TimeZone:   "Local",
+		Output:     os.Stdout,
+		Done: func(c *fiber.Ctx, _ []byte) {
+			if c.Response().StatusCode() < fiber.StatusBadRequest {
+				return
+			}
+
+			var response struct {
+				Message string `json:"message"`
+				Error   string `json:"error"`
+			}
+			_ = json.Unmarshal(c.Response().Body(), &response)
+			detail := strings.TrimSpace(response.Error)
+			if detail == "" {
+				detail = strings.TrimSpace(response.Message)
+			}
+			if len(detail) > 500 {
+				detail = detail[:500] + "..."
+			}
+
+			log.Printf(
+				"HTTP error response | status=%d | %s %s | %s",
+				c.Response().StatusCode(),
+				c.Method(),
+				c.Path(),
+				detail,
+			)
+		},
+	}))
 	app.Use(cors.New())
 
 	// =====================================================
@@ -171,6 +207,10 @@ func CreateApp() (*fiber.App, error) {
 		app,
 		config.DB,
 		notificationRepo,
+	)
+	routes.SetupJadwalPemeriksaanBerkalaRoutes(
+		app,
+		config.DB,
 	)
 
 	// =====================================================

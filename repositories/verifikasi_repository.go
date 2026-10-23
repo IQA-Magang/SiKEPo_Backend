@@ -224,3 +224,37 @@ func (r *VerifikasiRepository) DeleteVerifikasi(
 
 	return r.DB.Delete(&data).Error
 }
+
+// =====================================================
+// HISTORI VERIFIKASI PERALATAN
+// =====================================================
+
+func (r *VerifikasiRepository) GetHistoriByPeralatan(
+	peralatanID uint64,
+) ([]models.Verifikasi, int64, error) {
+
+	var data []models.Verifikasi
+	var total int64
+
+	query := r.DB.
+		Model(&models.Verifikasi{}).
+		Where("id_peralatan = ?", peralatanID).
+		Where("deleted_at IS NULL")
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := query.
+		Preload("Peralatan").
+		Preload("PICUser").
+		Preload("VerifiedByUser").
+		Preload("HasilVerifikasi").
+		Order("tanggal_verifikasi DESC").
+		Find(&data).Error; err != nil {
+
+		return nil, 0, err
+	}
+
+	return data, total, nil
+}

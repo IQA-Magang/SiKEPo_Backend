@@ -68,7 +68,7 @@ curl -X POST http://localhost:5000/api/users/ \
     "password": "password123",
     "role": "staff",
     "position": "Staff Laboratorium",
-    "pic": false
+    "pengelola": false
   }'
 ```
 
@@ -102,6 +102,24 @@ curl -X PUT http://localhost:5000/api/users/1 \
     "name": "User Updated"
   }'
 ```
+
+### GET /api/users/manager/
+
+List pengguna dalam lab yang dikelola manager.
+
+### GET /api/users/manager/:id
+
+Detail pengguna dalam lab yang dikelola manager.
+
+### PATCH /api/users/manager/:id/pengelola
+
+Manager dapat menetapkan atau melepas status pengelola untuk staff dalam lab yang dikelolanya dengan body:
+
+```json
+{ "pengelola": true }
+```
+
+Manager tidak dapat mengedit atau menghapus data pengguna.
 
 ### DELETE /api/users/:id
 
@@ -538,4 +556,3 @@ curl -X PATCH http://localhost:5000/api/notifications/1/read \
 ```
 
 ---
-

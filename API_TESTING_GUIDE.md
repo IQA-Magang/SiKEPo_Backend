@@ -105,7 +105,7 @@ Response sukses:
       "email": "admin@sikepo.local",
       "role": "admin",
       "position": "Administrator",
-      "pic": true
+      "pengelola": true
     }
   }
 }
@@ -140,13 +140,25 @@ curl -X POST http://localhost:5000/api/users \
     "password": "password123",
     "role": "staff",
     "position": "Staff Laboratorium",
-    "pic": false
+    "pengelola": false
   }'
 ```
 
 ### PUT /api/users/:id
 
 Hanya admin.
+
+### GET /api/users/manager/
+
+Manager only. Menampilkan pengguna dalam lab yang dikelola manager.
+
+### GET /api/users/manager/:id
+
+Manager only. Hanya menampilkan pengguna dalam lab cakupan manager.
+
+### PATCH /api/users/manager/:id/pengelola
+
+Manager only. Menetapkan atau melepas status pengelola staff dalam lab cakupan manager. Manager tidak dapat mengedit atau menghapus pengguna.
 
 ### DELETE /api/users/:id
 

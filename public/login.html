@@ -46,6 +46,10 @@
         border-radius: 6px;
         cursor: pointer;
       }
+      button.secondary {
+        margin-top: 8px;
+        background: #64748b;
+      }
       .msg {
         margin-top: 12px;
         font-size: 13px;
@@ -62,6 +66,14 @@
     <div class="card">
       <h2>Login (test)</h2>
       <form id="loginForm">
+        <button
+          id="clearSavedToken"
+          class="secondary"
+          type="button"
+          style="display: none"
+        >
+          Hapus token lama
+        </button>
         <label for="email">Email</label>
         <input
           id="email"
@@ -83,8 +95,7 @@
     </div>
 
     <script>
-      const API_BASE_URL =
-        "https://si-ke-po-backend-dkfe-31rhkxj8d-rendy-kamaluddins-projects.vercel.app";
+      const API_BASE_URL = window.location.origin;
       
       // recaptcha widget id will be set after rendering
       let recaptchaWidgetId = null;
@@ -122,15 +133,20 @@
       const form = document.getElementById("loginForm");
       const msg = document.getElementById("msg");
       const out = document.getElementById("out");
+      const clearSavedTokenButton = document.getElementById("clearSavedToken");
 
       const savedToken = localStorage.getItem("sikepo_token");
       if (savedToken) {
         msg.textContent =
-          "Token sudah tersimpan. Mengarahkan ke halaman uji...";
-        setTimeout(() => {
-          window.location.href = ASSET_TEST_URL;
-        }, 500);
+          "Token lama tersimpan. Login kembali untuk mendapatkan token baru.";
+        clearSavedTokenButton.style.display = "block";
       }
+
+      clearSavedTokenButton.addEventListener("click", () => {
+        localStorage.removeItem("sikepo_token");
+        clearSavedTokenButton.style.display = "none";
+        msg.textContent = "Token lama dihapus. Silakan login kembali.";
+      });
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();

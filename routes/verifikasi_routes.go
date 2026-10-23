@@ -67,6 +67,12 @@ func VerifikasiRoutes(
 		controller.GetByPeralatan,
 	)
 
+	// GET HISTORI VERIFIKASI
+	verifikasi.Get(
+	"/histori/:peralatan_id",
+	controller.GetHistoriVerifikasi,
+	)
+
 	// GET BY ID
 	verifikasi.Get(
 		"/:id",
